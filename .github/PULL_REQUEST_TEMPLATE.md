@@ -1,6 +1,6 @@
 <!-- 제목: type(범위): 요약 [T-0XX] — onboarding/GitHub규약.md -->
 ## 티켓
-T-0XX — `tasks/T-0XX-*.md` · 브랜치 `feature/<레인>-T-0XX`
+T-0XX — `tasks/T-0XX-*.md` · 출발 브랜치 `feature/backend|frontend|ai|security|infra` · 대상 `dev` (최종 통합 시 `dev → main`)
 
 ## 바꾼 것 (한 줄)
 
@@ -13,7 +13,7 @@ T-0XX — `tasks/T-0XX-*.md` · 브랜치 `feature/<레인>-T-0XX`
 - [ ] 판정 테스트·게이트 green (위 출력)
 - [ ] `node seams/check-scope.mjs T-0XX` 무출력 — 내 레인 파일만
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
-- [ ] 본 코드 diff 150줄 이하 (`git diff --stat origin/main`)
+- [ ] 변경량·내용 확인 (`git diff --stat origin/dev...HEAD` · `dev → main` PR은 `origin/main...HEAD`)
 - [ ] 계약(SPEC §4·§6)을 바꿨다면 SPEC·mock·seams를 같은 PR에서
 - [ ] 보안 방어 코드는 `fix(security): [S-0N]` 커밋으로 분리
 - [ ] 화면 작업이면 `seams/smoke.md` 통과한 줄 번호: 

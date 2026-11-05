@@ -4,7 +4,7 @@
 > "팩 커밋" 대신 **각 오너가 자기 경로를 검토·실행 확인**하는 티켓으로 읽는다(확인 명령은 그대로). §2 오전 확인 표는 그대로 쓴다.
 
 이 zip에는 7개 레인의 시작 파일이 다 들어 있다. **한 사람이 통째로 올리지 않는다** — 개인 평가 70%가 git이라,
-각자 자기 레인 경로만 자기 계정으로 커밋한다(CODEOWNERS와 같은 경로). 순서는 컴파일이 깨지지 않는 순서다.
+각자 자기 레인과 티켓에서 허용된 경로만 자기 계정으로 커밋한다. 순서는 컴파일이 깨지지 않는 순서다.
 
 ## 0. 준비 (기술 리드)
 1. GitHub에 빈 리포 `jobgap` 생성 · 팀원 7명 초대
@@ -15,8 +15,8 @@
 
 | # | 누가 | 복사할 경로 (`../jobgap-d1/` → 리포) | 커밋 메시지 |
 |---|---|---|---|
-| 1 | 기술 리드 | `SPEC.md README.md CLAUDE.md .gitignore .env.example .github/CODEOWNERS .github/PULL_REQUEST_TEMPLATE.md mock/ seams/ scripts/ security/ tasks/ onboarding/ docs/` | `chore(setup): 설계 정본·목·게이트·원장 [T-001]` |
-| 2 | 팀장 | (리포 설정만) CODEOWNERS 핸들 교체 · main 보호(PR 1승인 · 직접 푸시 금지) · README 팀 표 | `chore(setup): 팀 핸들·보호 규칙 [T-002]` |
+| 1 | 기술 리드 | `SPEC.md README.md CLAUDE.md .gitignore .env.example .github/PULL_REQUEST_TEMPLATE.md mock/ seams/ scripts/ security/ tasks/ onboarding/ docs/` | `chore(setup): 설계 정본·목·게이트·원장 [T-001]` |
+| 2 | 팀장 | (리포 설정만) dev·main PR 흐름 설정(강제 리뷰 없음 · main 직접 푸시 금지) · README 팀 표 | `chore(setup): 팀 핸들·보호 규칙 [T-002]` |
 | 3 | 팀장(BE-인증) | `backend/pom.xml backend/src/main/resources/application.yml backend/src/main/java/com/jobgap/JobgapApplication.java` + start.spring.io에서 받은 `mvnw mvnw.cmd .mvn/` | `chore(be): Spring 골격 [T-004]` |
 | 4 | 기술 리드 | `backend/src/main/java/com/jobgap/common/ backend/src/main/java/com/jobgap/security/ backend/src/test/` | `feat(security): 공통 봉투·보안 설정·판정 테스트 [T-005]` |
 | 5 | 팀장(BE-인증) | `backend/src/main/java/com/jobgap/auth/ backend/src/main/java/com/jobgap/seed/` | `chore(auth): 인증 API 골격 [T-004]` |
@@ -48,7 +48,7 @@ git add backend && git commit -m "chore(be): Spring 골격 [T-004]" && git push 
 | 프론트 둘 | `cd frontend && npm ci && npx vitest run src/api` | 9 passed |
 | AI | `cd ai-module && pip install -r requirements.txt && pytest -q` | 2 passed · 5 failed(판정 — 내가 green으로 만든다) |
 | DevOps | `docker compose config -q && node scripts/check-sec-deploy.mjs` | 무출력 |
-| 기술 리드 | `node seams/check-scope.mjs --owners` | 무출력 |
+| 기술 리드 | `node scripts/check-sec-deploy.mjs` | 무출력 |
 
 ## 3. 판정 테스트 현황 (D1 시작 시점 — 이게 정상이다)
 

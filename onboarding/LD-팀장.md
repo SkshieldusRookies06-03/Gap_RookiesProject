@@ -196,8 +196,8 @@ user.recordSuccess();                                         // failed=0 · loc
 ## 9. 팀장 운영 업무 (BE-인증과 병행)
 
 ### T-002 리포 설정 (D1 오전)
-1. `.github/CODEOWNERS`의 `@TEAMLEAD` 등 7개 핸들 → 실제 GitHub 아이디(SPEC §8 표의 사람과 같게).
-2. GitHub Settings → Branches → `main` 규칙: Require a pull request · 승인 1 · Require review from Code Owners · 직접 푸시 금지.
+1. GitHub 협업자 7명의 저장소 접근 권한을 확인한다. 담당별 브랜치는 `feature/backend`, `feature/frontend`, `feature/ai`, `feature/security`, `feature/infra`를 사용한다.
+2. GitHub Settings → Branches에서 `main`은 `dev`에서 PR로 통합하고, `dev`는 `feature/*`에서 PR로 통합하도록 운영한다. 승인 1회·Code Owners 리뷰 필수는 설정하지 않는다.
 3. README 팀 표 채우기 · `docs/1-프로젝트계획서.md` §1·§2 초안.
 커밋: `chore(setup): 팀 핸들·보호 규칙 [T-002]`
 

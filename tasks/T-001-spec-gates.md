@@ -1,6 +1,6 @@
 # T-001 — 설계 정본·목 서버 둘·seam 검사·판정 테스트·원장·역할 문서를 리포에 둔다
 
-**담당:** 기술 리드·보안 · **브랜치:** `feature/techlead-T-001` · **예상:** D1 · **선행:** —
+**담당:** 기술 리드·보안 · **브랜치:** `feature/security` · **예상:** D1 · **선행:** —
 
 ## [배경]
 SPEC.md §0~§10 전체 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대로 붙여 넣는다(링크만 주지 않는다).
@@ -10,7 +10,6 @@ SPEC.md §0~§10 전체 — 이 절 본문을 지시서(에이전트 프롬프�
 
 ## [수용 기준]
 - [ ] `node mock/server.mjs` + `node seams/check-api.mjs http://localhost:8080` green 20줄
-- [ ] `node seams/check-scope.mjs --owners` 무출력
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-001` 무출력
@@ -24,5 +23,5 @@ SPEC.md §0~§10 전체 — 이 절 본문을 지시서(에이전트 프롬프�
 
 ## [확인 명령]
 ```bash
-node seams/check-scope.mjs --owners && node scripts/check-sec-deploy.mjs
+node scripts/check-sec-deploy.mjs
 ```

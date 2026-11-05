@@ -1,6 +1,6 @@
 # T-013 — Document·Analysis·AnalysisMessage 엔티티와 리포지토리 3개
 
-**담당:** BE-기능 · **브랜치:** `feature/be-feature-T-013` · **예상:** D2 · **선행:** T-012 · T-015(User)
+**담당:** BE-기능 · **브랜치:** `feature/backend` · **예상:** D2 · **선행:** T-012 · T-015(User)
 
 ## [배경]
 SPEC.md §2 · onboarding/BF §3 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대로 붙여 넣는다(링크만 주지 않는다).

@@ -30,7 +30,7 @@
 
 | 경로 | 역할 | 티켓 |
 |---|---|---|
-| `SPEC.md` · `CLAUDE.md` · `.github/CODEOWNERS` | 계약·규약·오너십 | T-001 |
+| `SPEC.md` · `CLAUDE.md` · `onboarding/GitHub규약.md` | 계약·규약·작업 경계 | T-001 |
 | `mock/server.mjs` · `seams/check-api.mjs` · `seams/check-ai.mjs` · `seams/check-scope.mjs` | 첫째 seam 목·검사 · 둘째 seam 검사 · 경계 검사 | T-001 |
 | `scripts/check-sec-deploy.mjs` · `scripts/check-rubric-p3.mjs` | 정적 보안 게이트 · 평가표 게이트(스킬 사본 — 고치지 않는다) | T-001 |
 | `backend/**/common/` | ApiResponse · PageResponse · ErrorCode · BusinessException · GlobalExceptionHandler · PageRequests | T-005 |
@@ -42,7 +42,7 @@
 ## 3. 티켓별 구현 명세
 
 ### T-001 · T-005 (D1) — 이미 완성본. 할 일은 확인과 동결
-1. 커밋 후 `node seams/check-scope.mjs --owners` 무출력 · `node mock/server.mjs` + `node seams/check-api.mjs http://localhost:8080` 20줄 green
+1. 커밋 후 `node mock/server.mjs` + `node seams/check-api.mjs http://localhost:8080` 20줄 green
 2. BE-인증의 골격 커밋 직후 `./mvnw test -Dtest='JobgapApplicationTests,PiiMaskerTest,SecurityAcceptanceTest'` — **처음 컴파일되는 순간**. 에러는 내 패키지면 내가, 남의 골격이면 그 레인과 같이 본다
 3. D1 저녁 동결 회의(팀장 진행 · 10분): SPEC §2·§4·§6 낭독 → 질문 → 팀장 승인 → SPEC 머리에 `동결 v1 · 2026-11-05`
 

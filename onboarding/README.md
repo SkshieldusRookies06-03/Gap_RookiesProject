@@ -34,9 +34,9 @@
 ## 하루 끝 (매일 · 5분)
 
 1. 게이트 1회 → green
-2. `git diff --stat main` 을 내가 읽는다. **본 코드가 150줄을 넘으면 머지하지 않고 티켓을 쪼갠다**
+2. `git diff --stat origin/dev...HEAD` 를 내가 읽는다. **본 코드가 150줄을 넘으면 머지하지 않고 티켓을 쪼갠다**
    (본 코드 = `backend/src/main` · `frontend/src`의 비테스트 파일 · `ai-module/app` — 테스트·문서·lock은 안 센다)
-3. 커밋·push는 **내가** 한다(에이전트가 아니라) → PR → 부오너 리뷰 요청
+3. 커밋·push는 **내가** 한다(에이전트가 아니라) → `feature/* → dev` PR → 통합 테스트(리뷰 요청은 선택)
 4. `worklog/<내이름>/D#.md` 3줄
    ```
    1) 머지: T-014 · a1b2c3d · DocumentAcceptanceTest ①⑥ green
@@ -47,11 +47,11 @@
 ## 충돌 났을 때 (초보용 · rebase 안 쓴다)
 
 1. 절대 억지로 풀지 않는다. 채널에 `T-0XX 충돌, <파일명>` 한 줄
-2. `git fetch origin && git checkout origin/main -- <충돌난 파일>` ← main 것을 그대로 받는다
-3. 내가 넣었던 줄만 다시 넣는다 (내 diff는 `git diff origin/main...HEAD -- <파일>` 이나 IDE 로컬 히스토리에 있다)
+2. `git fetch origin` 후 충돌 파일의 양쪽 수정 내용을 비교한다. `dev` 내용을 무조건 덮어쓰지 않는다.
+3. 충돌 표시를 확인하고 필요한 양쪽 수정 내용을 남긴 뒤 저장한다. 변경 비교는 `git diff origin/dev...HEAD -- <파일>`이나 IDE 비교 기능을 쓴다.
 4. 게이트 돌려서 green 확인 → 커밋
 
-공용 파일(`SPEC.md` · `application.yml` · `package.json` · `V*.sql` · `docker-compose.yml`)에서 충돌 나면 **2번을 무조건** 한다.
+공용 파일(`SPEC.md` · `application.yml` · `package.json` · `V*.sql` · `docker-compose.yml`)에서 충돌 나면 담당자와 확인한 뒤 필요한 수정 사항을 합친다.
 남의 줄을 손으로 합치려다 지우는 사고가 첫 주에 꼭 한 번 난다. `package-lock.json`은 합치지 말고 `npm install`로 재생성한다.
 
 ## 규약 (전원)

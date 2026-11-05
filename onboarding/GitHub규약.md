@@ -4,16 +4,27 @@
 
 ## 1. 브랜치
 
-| 브랜치 | 용도 | 규칙 |
+| 브랜치 | 담당 | 용도 |
 |---|---|---|
-| `main` | 통합·배포 기준 | **보호** — 직접 푸시 금지 · PR만 · 승인 1 · Code Owners 리뷰 필수 · CI 1단계 green 필수 |
-| `feature/<레인>-<T-0XX>` | 티켓 하나 | 티켓 하나 = 브랜치 하나 = PR 하나 · 레인: `lead` `techlead` `be-feature` `ai` `fe-screens` `fe-analysis` `devops` |
-| `spike/<이름>` | D1 스파이크 | 머지하지 않는다 — 결과는 `docs/spikes/*.md`로 따로 PR |
-| `demo/S-0N` | 보안 재현(방어 해제) | 머지하지 않는다 — 기술 리드 · FE-분석(S-01)만 |
+| `main` | 전원(최종 반영) | 검증 완료된 배포·제출 기준 · `dev`에서 PR로 병합 · 직접 Push하지 않음 |
+| `dev` | 전원(통합) | 모든 담당 브랜치의 변경을 PR로 통합해 테스트 |
+| `feature/backend` | 팀장(BE-인증) · BE-기능 | 인증·문서·분석 백엔드 공동 개발 |
+| `feature/frontend` | FE-화면 · FE-분석 | 프론트엔드 공동 개발 |
+| `feature/ai` | AI | AI 모듈 개발 |
+| `feature/security` | 기술 리드·보안 | 보안·계약 점검 |
+| `feature/infra` | DevOps | 배포·인프라·CI |
+
+- **실제 GitHub에 생성된 위 브랜치명을 그대로 사용한다.** 티켓마다 새 브랜치를 만들지 않는다.
+- 같은 브랜치를 공유하는 BE/FE 담당자는 작업 전 `git pull origin <해당 브랜치>`로 최신 변경을 받고, 티켓의 수정 허용 파일 범위를 지킨다.
+- `spike/<이름>`과 `demo/S-0N`은 필요할 때만 임시로 만들고 통합 브랜치에는 병합하지 않는다.
 
 ```bash
-git switch main && git pull
-git switch -c feature/be-feature-T-014
+git switch feature/backend
+git pull origin feature/backend
+# 작업·커밋 후
+git push origin feature/backend
+# GitHub PR: feature/backend → dev
+# dev 통합 검증 후 GitHub PR: dev → main
 ```
 
 ## 2. 커밋 메시지
@@ -36,39 +47,38 @@ git switch -c feature/be-feature-T-014
 
 ## 3. PR
 
-- 제목 = 대표 커밋 메시지와 같은 형식 (`feat(document): … [T-014]`)
-- 본문 = `.github/PULL_REQUEST_TEMPLATE.md` 그대로 채운다 — **확인 명령 출력을 붙인다**(산문 금지)
-- 크기: 본 코드 diff **150줄 이하**. 넘으면 티켓을 쪼개 PR을 둘로
-- 리뷰어: CODEOWNERS가 자동 지정(파일 오너) + 부오너(SPEC §8)
-- 계약 파일(`SPEC.md` · `mock/` · `seams/` · `ai-module/mock_app.py`)을 바꾸면 **기술 리드 리뷰 필수** · 같은 PR에서 목·검사도 함께
+- 개인·담당 영역 브랜치에서 `dev`로 PR을 생성한다. 통합 테스트를 통과하면 `dev`에서 `main`으로 PR을 생성한다.
+- 제목은 `type(범위): 요약 [T-0XX]` 규칙을 따른다. 여러 티켓을 모아 올렸다면 본문에 티켓 번호를 모두 적는다.
+- 본문은 `.github/PULL_REQUEST_TEMPLATE.md`를 사용하고 확인 명령과 결과를 기록한다.
+- 본 코드 변경은 가능하면 150줄 이내로 유지하며, 넘는 경우 변경 단위를 분리해 검증한다.
+- **CODEOWNERS·자동 리뷰어·승인 1회 필수 조건을 사용하지 않는다.** 필요할 때만 관련 담당자에게 선택적으로 리뷰를 요청한다.
+- API·SSE·AI 내부 API 계약이 변경되면 SPEC·목 서버·seam 검사도 같은 변경에 포함하고 영향받는 팀원과 합의한다.
 
-## 4. 리뷰 (30분 규칙)
+## 4. 확인·리뷰 (선택)
 
-| 리뷰어가 보는 것 | 기준 |
+| 확인 항목 | 기준 |
 |---|---|
-| 게이트 | PR 본문에 확인 명령 출력이 있고 green인가 |
-| 범위 | `node seams/check-scope.mjs <티켓>` 무출력인가 — 남의 파일을 건드리지 않았나 |
-| 계약 | 응답 필드·에러 코드·이벤트 이름이 SPEC과 같은가 |
-| 보안 | 비밀값·`*` CORS·HTML 주입·문자열 이어붙인 쿼리가 없나 · `check-sec-deploy` 무출력 |
+| 게이트 | PR 본문의 테스트·CI 결과가 기대 상태인지 |
+| 범위 | `node seams/check-scope.mjs T-0XX`가 허용 경로를 지키는지 |
+| 계약 | 응답 필드·에러 코드·이벤트 이름이 SPEC과 일치하는지 |
+| 보안 | 비밀값·CORS·HTML 주입·문자열 결합 쿼리 위험이 없는지 |
 
-- 요청받으면 **30분 안에** 리뷰하거나 "몇 시에 보겠다"를 단다
-- 승인 = "Approve" 버튼 · 고칠 것 = "Request changes" + 줄 단위 코멘트 · 말로만 하지 않는다
+리뷰는 권장할 수 있지만 필수는 아니다. **필수 리뷰 없이도 PR과 CI 결과를 확인한 뒤 병합할 수 있도록** 저장소 설정을 맞춘다.
 
 ## 5. 머지
 
-- **"Create a merge commit"만** 쓴다 (Settings → General → Pull Requests에서 squash·rebase 끄기)
-  — squash는 PR 하나를 커밋 하나로 뭉개 **개인 커밋 이력이 사라진다**
-- 머지는 PR 작성자가 승인 받은 뒤 직접 · 머지 후 브랜치 삭제
+- 개인 커밋 기록을 유지하기 위해 **"Create a merge commit"**을 사용한다(저장소의 squash·rebase 병합은 사용하지 않는 것을 권장).
+- PR은 테스트 확인 후 병합한다. 팀에서 계속 사용하는 `feature/*` 및 `dev`는 **병합 후에도 삭제하지 않는다**.
 - D5 저녁 기능 동결 이후에는 `fix:` PR만
 
 ## 6. 충돌
 
-`onboarding/README.md` "충돌 났을 때" 4단계 — rebase 쓰지 않는다 · 공용 파일은 main 것을 받고 내 줄만 다시 넣는다.
+`onboarding/README.md`의 충돌 절차를 따른다. 충돌 기준은 일반적으로 `dev`이며, 기존 변경을 무작정 덮어쓰지 않는다.
 
 ## 7. 금지
 
-- `git push -f` (남의 커밋이 사라진다) · `main` 직접 푸시 · `.env`·키 커밋(커밋했으면 **키부터 폐기·재발급** 후 기술 리드에게)
-- 남의 브랜치에 커밋 · 판정 테스트·게이트 파일 수정 · 다른 사람 이름으로 커밋
+- `git push -f` (공유 브랜치 이력이 사라진다) · `main` 직접 푸시 · `.env`·키 커밋(커밋했으면 **키부터 폐기·재발급** 후 기술 리드에게)
+- 합의 없이 타 담당 영역 파일 수정 · 판정 테스트·게이트 파일 임의 수정 · 다른 사람 이름으로 커밋
 
 ## 8. 제출
 

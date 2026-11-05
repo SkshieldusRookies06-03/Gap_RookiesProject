@@ -1,7 +1,7 @@
 # JobGap — 취업 갭 분석 리포트 · SPEC (정본 v1 · D1 동결 대상)
 
 > **이 파일이 정본이다.** 코드·문서 9종·발표 수치가 이 파일과 다르면 이 파일이 이긴다. 바꿀 때는 이 파일을 먼저 고치는
-> PR(`docs(spec): … [T-###]`)을 기술 리드 확인 + 팀장 승인으로 머지하고, 영향받는 레인에 알린다(§9 변경 규약).
+> PR(`docs(spec): … [T-###]`)로 `dev`에 반영하고, 팀장·기술 리드 및 영향받는 담당자에게 변경 내용을 공유한다(§9 변경 규약).
 > 근거 스킬: spec-bootcamp-web 1.5.4 · 프로파일 P3. 여기 없는 값은 스킬 기본값을 따른다. 스킬 예시의
 > `ChatSession`·`/api/chat/stream`·`documentId`는 이 프로젝트에서 `Analysis`·`/api/analyses/stream`·`postingId+resumeId`다.
 
@@ -37,7 +37,7 @@
 | SSE 설정 | 타임아웃 사슬 **WebClient 290s < `spring.mvc.async.request-timeout=300s` < nginx `proxy_read_timeout 310s`**(WebClient가 먼저 끊겨야 `event: error`를 보낼 수 있다 · 단 Spring은 Flux SSE 응답에 async 타임아웃을 걸지 않는다(SseEmitter 무제한) — **스트림의 실제 상한은 `Flux.timeout(290s)` 하나**, 300s는 일반 async용) · 스트림 location `proxy_buffering off` · `dispatcherTypeMatchers(ASYNC, ERROR).permitAll()` |
 | 분기 기준값 | 후속 질문의 grade: 검색 최고 relevance score **< 0.45** 이면 Tavily(D4 골든셋으로 1회 조정 · 바꾸면 이 칸만) |
 | 후속 질문 문맥 | 같은 분석의 이전 메시지 최근 **6개**를 history로 보낸다(이번 질문은 `question`에만 · history에 넣지 않는다) |
-| 커밋 | `type(범위): 요약 [T-###]` · 보안 수정 `fix(security): [S-0N] 무엇 · 행 [T-###]` · 브랜치 `feature/<레인>-<T-###>` → PR → main |
+| 커밋·브랜치 | `type(범위): 요약 [T-###]` · 보안 수정 `fix(security): [S-0N] 무엇 · 행 [T-###]` · **담당 영역 브랜치**(`feature/backend`, `feature/frontend`, `feature/ai`, `feature/security`, `feature/infra`) → PR → `dev`(통합·테스트) → PR → `main`(배포) · 티켓 번호는 커밋·PR에 유지 |
 
 관측 명령(D3 전 1회 · 결과를 이 표 옆에 적는다): 페이지 음수 400 · JWT alg · 시드 시각 `+09:00` · 200KB 경계 업로드(nginx 경유) ·
 스트림 30초 초과 완주 · temurin 이미지 curl 유무(`docker run --rm eclipse-temurin:17-jre sh -c 'command -v curl wget'`).
@@ -232,7 +232,7 @@ BE 문서 삭제 순서: ① 이 호출 ② 그 문서를 posting 또는 resume�
 잔여 위험(점검서 §7에 옮긴다): 다중 기기 로그인 불가(ADR-02) · 계정 잠금을 이용한 타인 잠금(DoS) · 이름·주소 미마스킹 · Refresh의 localStorage 보관(XSS 시 탈취) ·
 로그아웃 뒤 Access 최대 15분 유효(필터가 DB를 보지 않음) · 시드 계정(kim/lee · 공개 비밀번호)이 배포 DB에도 적용됨(V2) — 시연 직후 비밀번호 변경 또는 시연 전용 인스턴스.
 
-## 8. 레인 (7명 · 티켓은 `tasks/BOARD.md` · 경로는 `.github/CODEOWNERS`)
+## 8. 레인 (7명 · 티켓은 `tasks/BOARD.md` · 담당 경로는 티켓의 `수정 허용` 기준)
 
 | 레인 | 사람 | 맡는 것 | 문서 | 부오너 |
 |---|---|---|---|---|
@@ -246,9 +246,9 @@ BE 문서 삭제 순서: ① 이 호출 ② 그 문서를 posting 또는 resume�
 
 ## 9. 변경 규약
 
-- 이 파일·`mock/`·`seams/`·`ai-module/mock_app.py`의 계약 부분은 **기술 리드 리뷰 필수**(mock_app은 AI 오너 파일이지만 PR 리뷰어에 기술 리드를 넣는다).
+- 이 파일·`mock/`·`seams/`·`ai-module/mock_app.py`의 계약을 바꿀 때는 기술 리드와 영향받는 담당자에게 공유·확인한다. **GitHub PR 승인·리뷰어 지정은 필수가 아니다.**
 - 계약을 바꾸는 PR은 같은 PR에서 목 서버와 seam 검사도 고친다 — 하나만 고치면 머지하지 않는다.
-- D3 이후 계약 변경은 팀장 승인 + 영향 레인 전원 확인. D5 저녁 기능 동결 이후에는 버그 수정만.
+- D3 이후 계약 변경은 팀장과 영향받는 레인의 사전 합의를 기록한다(필수 PR 리뷰 승인과는 별개). D5 저녁 기능 동결 이후에는 버그 수정만.
 
 ## 10. 리포 지도 · 테스트 지도
 
