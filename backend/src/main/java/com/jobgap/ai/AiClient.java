@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
  *   async 300s보다 먼저 끊겨야 event: error를 보낼 수 있다(SPEC §1 SSE 사슬) · onErrorResume → event: error 봉투 ·
  *   AI 스트림이 done·error 없이 끝나면(EOF) event: error(AI_UNAVAILABLE)로 마감한다(SPEC §4.3 "장애 = error로 끝난다")
  * - ownerUuid는 AuthUser에서만 꺼낸다(프론트 값 금지 · A-3)
+ * - 본문에 null을 넣지 않는다 — question "" · history List.of() (AI pydantic이 null을 400으로 거부 · MockWebServer는 못 잡는다)
  */
 @Component
 public class AiClient {

@@ -53,7 +53,8 @@ AI는 MockWebServer가 흉내낸다(`AcceptanceSupport`): `X-Internal-Token: tes
 
 ### T-006 스파이크② (D1 · 30분 캡)
 FastAPI 목(`cd ai-module && AI_INTERNAL_TOKEN=dev-token uvicorn mock_app:app --port 8000`) → 임시 컨트롤러에서 `WebClient … bodyToFlux(ServerSentEvent)`를 그대로 반환 →
-`curl -N`에 토큰이 0.1초 간격으로. 실패 시 스킬 P3-6 전환표(D2 오전 AI와 짝 2시간). 임시 코드는 커밋하지 않고 T-025로 옮긴다.
+`curl -N`에 토큰이 0.1초 간격으로. BE도 **같은 토큰으로** 띄운다 — IntelliJ Run 설정 Environment variables에 `AI_INTERNAL_TOKEN=dev-token`
+(application.yml 기본값은 빈 값이라 안 넣으면 목이 401 → 업로드·삭제 503). 실패 시 스킬 P3-6 전환표(D2 오전 AI와 짝 2시간). 임시 코드는 커밋하지 않고 T-025로 옮긴다.
 
 ### T-012 Flyway (D2 · 선행 T-004)
 `V1`·`V2` 검토(바꿀 것은 SPEC §2 PR 먼저) · 빈 DB 기동 green · 시드 시각 응답 `+09:00` 관측. 적용된 V 파일 수정 금지(D3 이후 `V3__…`).
@@ -175,6 +176,8 @@ return isNew ? Flux.concat(Mono.just(analysisEvent(analysisId)), relay) : relay;
    - WebClient: `post().uri("/internal/analyze/stream").bodyValue(body).retrieve().bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})`
      `.timeout(Duration.ofSeconds(props.streamTimeoutSeconds()))` — `responseTimeout`은 토큰이 계속 오면 끝나지 않으므로 전체 상한은 이것(290s < async 300s). **RestClient로 받으면 끝까지 버퍼링**.
    - AI 요청 본문 키는 SPEC §6.2 그대로: ownerUuid·postingId·resumeId·postingTitle·mode(REPORT|FOLLOWUP)·question(REPORT면 "")·history[{role,content}].
+     **null을 보내지 않는다** — `question`은 `""`, `history`는 `List.of()`로 정규화(Jackson은 null도 직렬화하고 AI는 `"question":null`을 400으로 거부한다.
+     판정 테스트의 MockWebServer는 본문을 검사하지 않으니 green이어도 compose에서 깨진다 — AI 목(mock_app)은 실물 스키마로 검사한다).
 6. `list(AuthUser me, int page, int size)`: `@Transactional(readOnly = true)` · 최신순 · `lastStatus` = 마지막 메시지 role이 ASSISTANT면 DONE 아니면 INCOMPLETE(N+1 감수 — 50건 상한).
 7. `messages(AuthUser me, Long analysisId, int page, int size)`: 오래된 순 · sources는 DB 문자열 그대로(`@JsonRawValue`).
 - green: ①③④⑤ · ②⑥ 일부 · 확인 `./mvnw test -Dtest=AnalysisAcceptanceTest` + SPEC §4.3 curl

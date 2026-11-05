@@ -12,7 +12,10 @@ from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from app.schemas import AnalyzeRequest, IngestRequest  # 실물과 같은 스키마 — null·타입·Literal 위반을 목에서도 400으로
 
 TOKEN = os.environ.get("AI_INTERNAL_TOKEN", "dev-token")
 app = FastAPI(title="jobgap-ai-mock")
@@ -61,9 +64,10 @@ async def health():  # 내부 토큰 예외
 async def ingest(req: Request, x_internal_token: str | None = Header(default=None, alias="X-Internal-Token")):
     guard(x_internal_token)
     b = await body_of(req)
-    for k in ("documentId", "ownerUuid", "docType", "title", "text"):
-        if not b.get(k):
-            raise HTTPException(status_code=400, detail="VALIDATION_ERROR")
+    try:
+        IngestRequest.model_validate(b)
+    except ValidationError:
+        raise HTTPException(status_code=400, detail="VALIDATION_ERROR")
     chunks = max(1, len(b["text"]) // 500 + 1)  # 같은 documentId면 덮어쓴다(멱등)
     STORE[b["documentId"]] = {"owner": b["ownerUuid"], "chunks": chunks, "title": b["title"], "type": b["docType"]}
     return {"documentId": b["documentId"], "chunks": chunks}
@@ -86,7 +90,9 @@ def sse(event: str, data) -> str:
 async def analyze(req: Request, fail: int = 0, x_internal_token: str | None = Header(default=None, alias="X-Internal-Token")):
     guard(x_internal_token)
     b = await body_of(req)
-    if b.get("mode") == "FOLLOWUP" and not str(b.get("question") or "").strip():
+    try:  # "question": null · "history": null 처럼 BE가 null을 보내면 실물도 400이다 — 목이 통과시키면 compose에서야 드러난다
+        AnalyzeRequest.model_validate(b)
+    except ValidationError:
         raise HTTPException(status_code=400, detail="VALIDATION_ERROR")
 
     async def gen():

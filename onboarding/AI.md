@@ -75,7 +75,7 @@ def delete_document(document_id: str, owner_uuid: str) -> None                  
 def load_chunks(document_id: str, owner_uuid: str, limit: int) -> list[dict]                         # T-019
 def search(owner_uuid: str, document_ids: list[str], query: str, k: int) -> list[dict]               # T-029
 ```
-- 저장소: `langchain_chroma.Chroma(collection_name=settings().collection, embedding_function=providers.get_embeddings(), persist_directory=settings().chroma_dir)` — **경로별로 한 번만 만든다**(테스트는 임시 폴더를 쓰므로 경로를 키로 캐시).
+- 저장소: `langchain_chroma.Chroma(collection_name=settings().collection, embedding_function=providers.get_embeddings(), persist_directory=settings().chroma_dir, collection_metadata={"hnsw:space": "cosine"})` — **거리는 cosine 필수**(기본 L2면 relevance가 0~1을 벗어나 가장 비슷한 청크도 0.4 아래로 나와 분기 기준 0.45가 늘 web으로 간다 — 실측 L2 0.396 / cosine 0.573 · 바꾸면 vector-data 볼륨 재생성) · **경로별로 한 번만 만든다**(테스트는 임시 폴더를 쓰므로 경로를 키로 캐시).
 - 분할: `RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50).split_text(text)`
 - 청크 메타데이터 4개(정확히 이 이름): `owner_uuid` · `document_id` · `doc_type` · `seq`(0부터)
 - 멱등: ingest 첫 줄에서 `delete_document(document_id, owner_uuid)`.

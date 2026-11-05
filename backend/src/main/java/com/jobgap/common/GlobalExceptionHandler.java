@@ -97,7 +97,8 @@ public class GlobalExceptionHandler {
         return respond(ErrorCode.INTERNAL_SERVER_ERROR, null, null);
     }
 
-    /** 스트림 클라이언트가 끊었거나(중단 버튼) async 타임아웃 — 응답을 쓸 수 없으니 조용히 끝낸다 */
+    /** 스트림 클라이언트가 끊었거나(중단 버튼) async 타임아웃 — 응답을 쓸 수 없으니 조용히 끝낸다.
+     *  주의: Flux SSE 응답에는 Spring이 async 타임아웃을 걸지 않는다 — 스트림 상한은 AiClient의 Flux.timeout(290s) */
     @ExceptionHandler({AsyncRequestNotUsableException.class, AsyncRequestTimeoutException.class})
     public void streamGone(Exception e) {
         log.debug("스트림 종료: {}", e.getClass().getSimpleName());
