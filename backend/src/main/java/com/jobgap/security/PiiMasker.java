@@ -11,14 +11,19 @@ public final class PiiMasker {
     public record Result(String text, int count) {}
 
     // \b 대신 숫자 경계 lookaround — JDK 17의 \b는 한글을 단어 문자로 봐서 "전화010-…"을 놓친다(JDK-8264160)
-    private static final Pattern RRN = Pattern.compile("(?<!\\d)\\d{6}-?[1-4]\\d{6}(?!\\d)");
-    private static final Pattern PHONE = Pattern.compile("(?<!\\d)01[016789]-?\\d{3,4}-?\\d{4}(?!\\d)");
+    // 앞 6자리는 YYMMDD 형태만 — 사번·계좌 같은 일반 13자리 숫자를 주민번호로 세지 않는다
+    private static final Pattern RRN = Pattern.compile(
+            "(?<!\\d)\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])-?[1-4]\\d{6}(?!\\d)");
+    // 구분자는 하이픈·점·공백 모두(010.1234.5678 · 010 1234 5678) · 국가번호 +82(뒤에 0 없이 10…)도 같은 번호로 본다
+    private static final Pattern PHONE = Pattern.compile(
+            "(?<![\\d+])(?:\\+82[-.\\s]?|0)1[016789][-.\\s]?\\d{3,4}[-.\\s]?\\d{4}(?!\\d)");
     // 소유 수량자 ++ — '@' 없는 긴 텍스트에서 이차 시간으로 느려지지 않게(200KB에서 100초+ → 수십 ms)
     private static final Pattern EMAIL = Pattern.compile("(?<![\\w.+-])[\\w.+-]++@[\\w-]+(?:\\.[\\w-]+)+");
     // 생년월일은 "생년월일/출생/생일" 뒤 또는 "생" 앞의 날짜만 — 경력 기간(2021.03.15 ~ 2023.02.28)은 건드리지 않는다
+    // "생" 뒤가 각·산·활·성(생각·생산·생활·생성형)이면 생년월일이 아니다
     private static final String DATE = "(?:19|20)\\d{2}\\s?[.\\-/년]\\s?\\d{1,2}\\s?[.\\-/월]\\s?\\d{1,2}(?:\\s?일)?";
     private static final Pattern BIRTH_AFTER = Pattern.compile("(생년월일|출생일?|생일)(\\s*[:：]?\\s*)" + DATE);
-    private static final Pattern BIRTH_BEFORE = Pattern.compile(DATE + "(?=\\s?생(?![각산활]))");
+    private static final Pattern BIRTH_BEFORE = Pattern.compile(DATE + "(?=\\s?생(?![각산활성]))");
 
     private PiiMasker() {}
 
@@ -36,7 +41,12 @@ public final class PiiMasker {
     /** 마스킹 뒤 길이 상한으로 자른다 — 11자리 번호가 13자 "010-****-****"가 되며 VARCHAR(100)·AI max_length를 넘지 않게 */
     public static Result maskAndTrim(String input, int maxLength) {
         Result r = mask(input);
-        String t = r.text().length() > maxLength ? r.text().substring(0, maxLength) : r.text();
+        String t = r.text();
+        if (t.length() > maxLength) {
+            int end = maxLength;
+            if (Character.isHighSurrogate(t.charAt(end - 1))) end--;   // 이모지(서로게이트 쌍)를 반으로 자르지 않는다
+            t = t.substring(0, end);
+        }
         return new Result(t, r.count());
     }
 

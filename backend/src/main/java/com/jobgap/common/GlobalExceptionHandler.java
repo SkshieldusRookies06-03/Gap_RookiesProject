@@ -1,17 +1,22 @@
 package com.jobgap.common;
 
+import com.jobgap.security.AuditLog;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
@@ -45,7 +50,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({ConstraintViolationException.class, MethodArgumentTypeMismatchException.class,
             MissingServletRequestParameterException.class, MissingServletRequestPartException.class,
-            HttpMessageNotReadableException.class, HandlerMethodValidationException.class})
+            HttpMessageNotReadableException.class, HandlerMethodValidationException.class,
+            ServletRequestBindingException.class})
     public ResponseEntity<ApiResponse<Void>> badRequest(Exception e) {
         return respond(ErrorCode.VALIDATION_ERROR, null, null);
     }
@@ -55,9 +61,29 @@ public class GlobalExceptionHandler {
         return respond(ErrorCode.FILE_TOO_LARGE, null, null);
     }
 
-    @ExceptionHandler(AccessDeniedException.class)   // @PreAuthorize 거부
-    public ResponseEntity<ApiResponse<Void>> denied(AccessDeniedException e) {
+    @ExceptionHandler(AccessDeniedException.class)   // @PreAuthorize 거부 — 필터 단계 403(RestAccessDeniedHandler)과 같은 감사 로그(B-9)
+    public ResponseEntity<ApiResponse<Void>> denied(AccessDeniedException e, HttpServletRequest req) {
+        AuditLog.denied(req.getRemoteAddr(), req.getMethod(), req.getRequestURI());
         return respond(ErrorCode.FORBIDDEN, null, null);
+    }
+
+    /**
+     * UNIQUE 위반 — 서비스의 사전 중복 검사를 지나친 경우(동시 요청 · 마스킹 후 같아진 제목). 500이 아니라 409로.
+     * 제약 이름은 V1__schema.sql 기준.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> conflict(DataIntegrityViolationException e) {
+        String m = String.valueOf(e.getMostSpecificCause().getMessage());
+        if (m.contains("uk_users_email")) return respond(ErrorCode.DUPLICATE_EMAIL, null, null);
+        if (m.contains("uk_documents_owner_title")) return respond(ErrorCode.DUPLICATE_TITLE, null, null);
+        log.error("무결성 위반", e);
+        return respond(ErrorCode.INTERNAL_SERVER_ERROR, null, null);
+    }
+
+    /** 스트림을 Accept: application/json으로 부르는 등 협상 실패 — 클라이언트 오류이므로 500·ERROR 로그로 보내지 않는다 */
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<ApiResponse<Void>> notAcceptable(HttpMediaTypeNotAcceptableException e) {
+        return respond(ErrorCode.VALIDATION_ERROR, "Accept 헤더를 확인하세요", null);
     }
 
     @ExceptionHandler({NoResourceFoundException.class, HttpRequestMethodNotSupportedException.class})

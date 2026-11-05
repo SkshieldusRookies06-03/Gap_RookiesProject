@@ -4,12 +4,15 @@
 실물(app.py)은 같은 경로·같은 이벤트로 바뀐다. 계약이 바뀌면 이 파일도 같은 PR에서 고친다(SPEC §9).
 """
 import asyncio
+import hmac
 import json
 import os
 from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 TOKEN = os.environ.get("AI_INTERNAL_TOKEN", "dev-token")
 app = FastAPI(title="jobgap-ai-mock")
@@ -21,14 +24,32 @@ def envelope(status: int, code: str, message: str) -> dict:
     return {"success": False, "data": None, "statusCode": status, "code": code, "message": message, "timestamp": ts}
 
 
-@app.exception_handler(HTTPException)
-async def http_error(_: Request, e: HTTPException):
-    return JSONResponse(status_code=e.status_code, content=envelope(e.status_code, e.detail, e.detail))
+@app.exception_handler(StarletteHTTPException)   # 라우팅 404·405도 봉투로 (실물 app/main.py와 같게)
+async def http_error(_: Request, e: StarletteHTTPException):
+    detail = str(e.detail)
+    code = detail if detail.isupper() else {404: "NOT_FOUND", 405: "NOT_FOUND"}.get(e.status_code, "INTERNAL_SERVER_ERROR")
+    return JSONResponse(status_code=e.status_code, content=envelope(e.status_code, code, code))
+
+
+@app.exception_handler(RequestValidationError)   # ownerUuid 빠진 DELETE 등 — FastAPI 422 원형 대신 실물과 같은 400 봉투
+async def invalid(_: Request, e: RequestValidationError):
+    return JSONResponse(status_code=400, content=envelope(400, "VALIDATION_ERROR", "요청 형식을 확인하세요"))
 
 
 def guard(token: str | None):
-    if token != TOKEN:
+    if not token or not hmac.compare_digest(token.encode(), TOKEN.encode()):
         raise HTTPException(status_code=401, detail="UNAUTHORIZED")
+
+
+async def body_of(req: Request) -> dict:
+    """깨진 JSON은 평문 500이 아니라 400 봉투"""
+    try:
+        b = await req.json()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="VALIDATION_ERROR")
+    if not isinstance(b, dict):
+        raise HTTPException(status_code=400, detail="VALIDATION_ERROR")
+    return b
 
 
 @app.get("/health")
@@ -39,7 +60,7 @@ async def health():  # 내부 토큰 예외
 @app.post("/internal/ingest", status_code=201)
 async def ingest(req: Request, x_internal_token: str | None = Header(default=None, alias="X-Internal-Token")):
     guard(x_internal_token)
-    b = await req.json()
+    b = await body_of(req)
     for k in ("documentId", "ownerUuid", "docType", "title", "text"):
         if not b.get(k):
             raise HTTPException(status_code=400, detail="VALIDATION_ERROR")
@@ -64,7 +85,9 @@ def sse(event: str, data) -> str:
 @app.post("/internal/analyze/stream")
 async def analyze(req: Request, fail: int = 0, x_internal_token: str | None = Header(default=None, alias="X-Internal-Token")):
     guard(x_internal_token)
-    b = await req.json()
+    b = await body_of(req)
+    if b.get("mode") == "FOLLOWUP" and not str(b.get("question") or "").strip():
+        raise HTTPException(status_code=400, detail="VALIDATION_ERROR")
 
     async def gen():
         if fail:

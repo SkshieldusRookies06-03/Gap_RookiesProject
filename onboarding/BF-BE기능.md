@@ -101,7 +101,7 @@ rf.setConnectTimeout(props.connectTimeoutMs()); rf.setReadTimeout(props.readTime
 this.rest = RestClient.builder().baseUrl(props.baseUrl()).requestFactory(rf)
         .defaultHeader("X-Internal-Token", props.internalToken()).build();
 HttpClient http = HttpClient.create().option(ChannelOption.CONNECT_TIMEOUT_MILLIS, props.connectTimeoutMs())
-        .responseTimeout(Duration.ofSeconds(props.streamTimeoutSeconds()));
+        .responseTimeout(Duration.ofSeconds(props.streamTimeoutSeconds()));   // 유휴(읽기 사이) 시간 — 전체 상한은 아래 Flux.timeout
 this.web = WebClient.builder().baseUrl(props.baseUrl()).clientConnector(new ReactorClientHttpConnector(http))
         .defaultHeader("X-Internal-Token", props.internalToken()).build();
 // ingest/deleteDocument: try { rest.post()… .retrieve().body(IngestResult.class); }
@@ -116,8 +116,8 @@ this.web = WebClient.builder().baseUrl(props.baseUrl()).clientConnector(new Reac
 | 2 | `file.getSize() > 200 * 1024` (MockMvc는 multipart 한도를 안 건다 — 직접) | 413 `FILE_TOO_LARGE` |
 | 3 | `file.isEmpty()` | 400 `VALIDATION_ERROR` |
 | 4 | UTF-8 **엄격** 디코딩(아래) | 415 |
-| 5 | 같은 소유자·같은 제목 | 409 `DUPLICATE_TITLE` |
-| 6 | (T-028) `PiiMasker.mask(text)` · 제목도 | — |
+| 5 | (T-028) `PiiMasker.mask(text)` · 제목은 `maskAndTrim(title, 100)` | — |
+| 6 | 같은 소유자·같은 제목 — **마스킹된 제목으로** 검사(UNIQUE가 마스킹된 값에 걸린다 · SPEC §1 "검증 → 마스킹 → 저장") | 409 `DUPLICATE_TITLE` |
 | 7 | 저장(TransactionTemplate · 커밋) → `aiClient.ingest(...)` → 예외면 행 삭제(TransactionTemplate) 후 503 재던짐 | 503 `AI_UNAVAILABLE` |
 
 ```java
@@ -153,21 +153,27 @@ tx.executeWithoutResult(s -> {
 5. `aiClient.analyze(me.uuid(), postingId, resumeId, postingTitle, mode, question, history)` → 아래 중계.
 ```java
 StringBuilder answer = new StringBuilder(); AtomicReference<String> sources = new AtomicReference<>("[]");
-Flux<ServerSentEvent<String>> relay = aiClient.analyze(...)
+AtomicBoolean finished = new AtomicBoolean(false);                 // done 또는 error를 보냈는가
+Flux<ServerSentEvent<String>> relay = aiClient.analyze(...)        // AiClient 안에서 .timeout(Duration.ofSeconds(290)) — 전체 상한
     .concatMap(ev -> switch (String.valueOf(ev.event())) {
         case "token" -> { answer.append(json.readValue(ev.data(), String.class)); yield Mono.just(ev); } // data는 그대로 흘림
         case "sources" -> { sources.set(ev.data()); yield Mono.just(ev); }
         case "done" -> Mono.fromCallable(() -> saveAssistant(analysisId, answer.toString(), sources.get())) // 새 짧은 트랜잭션
                 .subscribeOn(Schedulers.boundedElastic())
+                .doOnNext(id -> finished.set(true))
                 .map(id -> ServerSentEvent.<String>builder().event("done").data("{\"messageId\":\"" + id + "\"}").build());
-        default -> Mono.just(ev);                                    // error 등은 그대로 — 저장 안 함
+        case "error" -> { finished.set(true); yield Mono.just(ev); }   // 그대로 흘림 — 저장 안 함
+        default -> Mono.just(ev);
     })
-    .onErrorResume(e -> Mono.just(ServerSentEvent.<String>builder().event("error").data(aiUnavailableJson()).build()));
+    .onErrorResume(e -> { finished.set(true); return Mono.just(errorEvent()); })   // 연결 실패·타임아웃(TimeoutException)
+    // AI가 done·error 없이 스트림을 닫으면(EOF) 화면이 "생성 중"에 멈춘다 — error로 마감(SPEC §4.3 "장애 = error로 끝난다")
+    .concatWith(Mono.defer(() -> finished.get() ? Mono.empty() : Mono.just(errorEvent())));
 return isNew ? Flux.concat(Mono.just(analysisEvent(analysisId)), relay) : relay;  // analysis 이벤트가 맨 앞
 ```
-   - `json.readValue` 예외는 checked — 람다 밖 헬퍼로 감싼다. `aiUnavailableJson()` = `objectMapper.writeValueAsString(ApiResponse.error(ErrorCode.AI_UNAVAILABLE))`.
+   - `json.readValue` 예외는 checked — 람다 밖 헬퍼로 감싼다. `errorEvent()` = `event("error")` + data `objectMapper.writeValueAsString(ApiResponse.error(ErrorCode.AI_UNAVAILABLE))`.
    - 끊김(중단 버튼)은 `done`이 오지 않으니 저장되지 않는다 — 별도 `doOnCancel` 불필요(넣으면 로그만).
-   - WebClient: `post().uri("/internal/analyze/stream").bodyValue(body).retrieve().bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})`. **RestClient로 받으면 끝까지 버퍼링**.
+   - WebClient: `post().uri("/internal/analyze/stream").bodyValue(body).retrieve().bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})`
+     `.timeout(Duration.ofSeconds(props.streamTimeoutSeconds()))` — `responseTimeout`은 토큰이 계속 오면 끝나지 않으므로 전체 상한은 이것(290s < async 300s). **RestClient로 받으면 끝까지 버퍼링**.
    - AI 요청 본문 키는 SPEC §6.2 그대로: ownerUuid·postingId·resumeId·postingTitle·mode(REPORT|FOLLOWUP)·question(REPORT면 "")·history[{role,content}].
 6. `list(AuthUser me, int page, int size)`: `@Transactional(readOnly = true)` · 최신순 · `lastStatus` = 마지막 메시지 role이 ASSISTANT면 DONE 아니면 INCOMPLETE(N+1 감수 — 50건 상한).
 7. `messages(AuthUser me, Long analysisId, int page, int size)`: 오래된 순 · sources는 DB 문자열 그대로(`@JsonRawValue`).
@@ -177,8 +183,11 @@ return isNew ? Flux.concat(Mono.just(analysisEvent(analysisId)), relay) : relay;
 ### T-026 [S-01] 소유 검증 (D3 · 선행 T-014·T-025 · 기술 리드 재현 뒤)
 - 방어만 담은 커밋. 두 서비스에 한 헬퍼 패턴:
 ```java
+// owner는 LAZY다 — 삭제는 이 헬퍼를 트랜잭션 밖(AI 호출 전)에서 부르므로 open-in-view=false에서 getOwner().getUuid()가
+// LazyInitializationException(→ 500)이 난다. owner를 함께 읽는 @Query로 가져온다:
+//   @Query("select d from Document d join fetch d.owner where d.id = :id") Optional<Document> findWithOwner(@Param("id") Long id);
 private Document ownedDocument(AuthUser me, Long id) {
-    Document d = documentRepository.findById(id).orElseThrow(() -> new BusinessException(ErrorCode.DOCUMENT_NOT_FOUND));
+    Document d = documentRepository.findWithOwner(id).orElseThrow(() -> new BusinessException(ErrorCode.DOCUMENT_NOT_FOUND));
     if (!d.getOwner().getUuid().equals(me.uuid()) && !me.isAdmin()) {
         AuditLog.forbidden(me.uuid(), "document", id);
         throw new BusinessException(ErrorCode.FORBIDDEN);

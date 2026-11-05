@@ -58,8 +58,12 @@ public class SecurityConfig {
     /** 운영은 nginx 같은 출처라 CORS가 필요 없다 — 로컬 dev(5173 → 8080)용 Origin만 환경변수로. `*` 금지(B-7). */
     @Bean
     CorsConfigurationSource corsConfigurationSource(@Value("${app.cors.allowed-origins}") String origins) {
+        List<String> allowed = Arrays.stream(origins.split(",")).map(String::trim).filter(o -> !o.isEmpty()).toList();
+        if (allowed.stream().anyMatch(o -> o.contains("*"))) {   // 설정 실수를 기동 시점에 막는다 — 와일드카드는 B-7 위반
+            throw new IllegalStateException("CORS_ALLOWED_ORIGINS에 '*'를 쓸 수 없습니다 (점검서 B-7) — Origin을 하나씩 적으세요");
+        }
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).filter(o -> !o.isEmpty()).toList());
+        c.setAllowedOrigins(allowed);
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         c.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         c.setAllowCredentials(false);

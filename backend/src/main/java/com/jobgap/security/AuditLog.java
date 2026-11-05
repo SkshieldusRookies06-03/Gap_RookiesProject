@@ -16,6 +16,11 @@ public final class AuditLog {
         audit.warn("403 owner-mismatch actor={} resource={} id={}", actorUuid, resource, id);
     }
 
+    /** 메서드 단계(@PreAuthorize) 403 — 필터 단계는 RestAccessDeniedHandler가 같은 모양으로 남긴다 */
+    public static void denied(String ip, String method, String uri) {
+        audit.warn("403 ip={} uri={} {}", ip, method, uri);
+    }
+
     public static void locked(String email) {
         audit.warn("LOCK account={}", PiiMasker.maskEmail(email));
     }

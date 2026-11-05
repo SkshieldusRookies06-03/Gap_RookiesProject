@@ -182,7 +182,7 @@ JSON: camelCase · id는 문자열(`"12"`) · 시각은 ISO 8601 `+09:00`.
 새 분석   {"postingId":"12","resumeId":"15"}                          ← question 없음 = 기본 리포트 프롬프트
 후속 질문 {"analysisId":"7","question":"부족한 것 중 뭐부터 공부해?"}   ← analysisId가 있으면 question 필수(1~1000자)
 ```
-시작 전 검증(실패하면 스트림을 열지 않고 JSON 봉투): id 형식 400 → 소유 403 → 존재 404(`DOCUMENT_NOT_FOUND`·`ANALYSIS_NOT_FOUND`) → 종류 400 `DOCUMENT_TYPE_MISMATCH` · 질문 길이 400.
+시작 전 검증(실패하면 스트림을 열지 않고 JSON 봉투): 형식 400(id 형식 · 질문 1000자 초과) → 소유 403 → 존재 404(`DOCUMENT_NOT_FOUND`·`ANALYSIS_NOT_FOUND`) → 업무 규칙 400(종류 `DOCUMENT_TYPE_MISMATCH` · 후속 질문 빈 값 `VALIDATION_ERROR`).
 
 | 이벤트 | data | 언제 |
 |---|---|---|

@@ -18,8 +18,15 @@ const BY_CODE = {
   ACCOUNT_LOCKED: '로그인 5회 실패로 잠겼습니다. 잠시 후 다시 시도해 주세요',
   UNAUTHORIZED: '다시 로그인해 주세요',
   INVALID_REFRESH_TOKEN: '다시 로그인해 주세요',
+  ABORTED: '요청을 취소했습니다',
 };
+// 423의 서버 message에서 해제 시각(HH:MM[:SS])만 뽑는다 — 문구 전체는 쓰지 않는다(F-7) · SPEC §4.4 "해제 시각 표시"
+const UNLOCK_TIME = /(\d{1,2}:\d{2}(?::\d{2})?)/;
 export function messageFor(error) {
+  if (error?.code === 'ACCOUNT_LOCKED') {
+    const t = typeof error.message === 'string' ? error.message.match(UNLOCK_TIME)?.[1] : null;
+    if (t) return `로그인 5회 실패로 잠겼습니다. ${t}에 해제됩니다`;
+  }
   return BY_CODE[error?.code] ?? '잠시 후 다시 시도해 주세요';
 }
 
@@ -32,6 +39,6 @@ export default function ErrorMessage({ error, onRetry = null }) {
   );
 }
 ErrorMessage.propTypes = {
-  error: PropTypes.shape({ code: PropTypes.string }),
+  error: PropTypes.shape({ code: PropTypes.string, message: PropTypes.string }),
   onRetry: PropTypes.func,
 };

@@ -53,7 +53,7 @@ http.createServer(async (req, res) => {
     const fields = [];
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.email ?? '')) fields.push({ field: 'email', message: '이메일 형식이 아닙니다' });
     if ((b.password ?? '').length < 8 || b.password.length > 64) fields.push({ field: 'password', message: '8~64자' });
-    if (!b.name || b.name.length > 20) fields.push({ field: 'name', message: '1~20자' });
+    if (!String(b.name ?? '').trim() || b.name.length > 20) fields.push({ field: 'name', message: '1~20자' });
     if (fields.length) return send(res, 400, err(400, 'VALIDATION_ERROR', '입력값을 확인하세요', fields));
     if (b.email === ME.email) return send(res, 409, err(409, 'DUPLICATE_EMAIL', '이미 가입된 이메일입니다'));
     return send(res, 201, ok({ uuid: crypto.randomUUID(), email: b.email, name: b.name }, '회원가입이 완료되었습니다'));
@@ -90,13 +90,17 @@ http.createServer(async (req, res) => {
   }
   let mm;
   if ((mm = path.match(/^\/api\/documents\/([^/]+)$/))) {
-    if (mm[1] === '99') return send(res, 403, err(403, 'FORBIDDEN', '접근 권한이 없습니다'));          // 소유 → 존재 → 입력 순서
+    // SPEC §4 공통 순서: 형식(400) → 소유(403) → 존재(404) → 업무 규칙
+    let b = null;
+    if (m === 'PUT') {
+      b = json(body); if (!b) return badJson(res);
+      if (!String(b.title ?? '').trim() || b.title.length > 100) return send(res, 400, err(400, 'VALIDATION_ERROR', '제목은 1~100자', [{ field: 'title', message: '1~100자' }]));
+    }
+    if (mm[1] === '99') return send(res, 403, err(403, 'FORBIDDEN', '접근 권한이 없습니다'));
     const d = docs.find(x => x.id === mm[1]);
     if (!d) return send(res, 404, err(404, 'DOCUMENT_NOT_FOUND', '문서를 찾을 수 없습니다'));
     if (m === 'GET') return send(res, 200, ok(d));
     if (m === 'PUT') {
-      const b = json(body); if (!b) return badJson(res);
-      if (!b.title || b.title.length > 100) return send(res, 400, err(400, 'VALIDATION_ERROR', '제목은 1~100자', [{ field: 'title', message: '1~100자' }]));
       if (docs.some(x => x !== d && x.title === b.title)) return send(res, 409, err(409, 'DUPLICATE_TITLE', '같은 제목의 문서가 있습니다'));
       d.title = b.title; return send(res, 200, ok(summary(d), '제목이 수정되었습니다'));
     }
@@ -120,18 +124,19 @@ http.createServer(async (req, res) => {
   // ── analyses ──
   if (m === 'GET' && path === '/api/analyses') { const pp = pageParams(u.searchParams); if (!pp) return send(res, 400, err(400, 'VALIDATION_ERROR', 'page/size')); return send(res, 200, ok(page(analyses.map(analysisView), ...pp))); }
   if ((mm = path.match(/^\/api\/analyses\/([^/]+)\/messages$/)) && m === 'GET') {
+    const pp = pageParams(u.searchParams); if (!pp) return send(res, 400, err(400, 'VALIDATION_ERROR', 'page/size'));   // 형식 먼저
     if (mm[1] === '99') return send(res, 403, err(403, 'FORBIDDEN', '접근 권한이 없습니다'));
     if (!messages[mm[1]]) return send(res, 404, err(404, 'ANALYSIS_NOT_FOUND', '분석을 찾을 수 없습니다'));
-    const pp = pageParams(u.searchParams); if (!pp) return send(res, 400, err(400, 'VALIDATION_ERROR', 'page/size'));
     return send(res, 200, ok(page(messages[mm[1]], ...pp)));
   }
   if (m === 'POST' && path === '/api/analyses/stream') {
     const b = json(body); if (!b) return badJson(res);
-    // 검증 순서: 소유(403) → 존재(404) → 입력(400)
+    // 검증 순서(SPEC §4 공통): 형식(질문 길이 400) → 소유(403) → 존재(404) → 업무 규칙(후속 질문 필수 · 종류 일치 400)
+    if (String(b.question ?? '').length > 1000) return send(res, 400, err(400, 'VALIDATION_ERROR', '질문은 1~1000자', [{ field: 'question', message: '1~1000자' }]));
     if ([b.postingId, b.resumeId, b.analysisId].includes('99')) return send(res, 403, err(403, 'FORBIDDEN', '접근 권한이 없습니다'));
     if (b.analysisId && !messages[b.analysisId]) return send(res, 404, err(404, 'ANALYSIS_NOT_FOUND', '분석을 찾을 수 없습니다'));
     if (!b.analysisId && [b.postingId, b.resumeId].some(id => !docs.find(d => d.id === id))) return send(res, 404, err(404, 'DOCUMENT_NOT_FOUND', '문서를 찾을 수 없습니다'));
-    if (b.analysisId && (!String(b.question ?? '').trim() || String(b.question).length > 1000)) return send(res, 400, err(400, 'VALIDATION_ERROR', '질문은 1~1000자', [{ field: 'question', message: '1~1000자' }]));
+    if (b.analysisId && !String(b.question ?? '').trim()) return send(res, 400, err(400, 'VALIDATION_ERROR', '질문은 1~1000자', [{ field: 'question', message: '1~1000자' }]));
     if (!b.analysisId && (docs.find(d => d.id === b.postingId).type !== 'JOB_POSTING' || docs.find(d => d.id === b.resumeId).type !== 'RESUME')) return send(res, 400, err(400, 'DOCUMENT_TYPE_MISMATCH', '공고와 이력서를 각각 골라 주세요'));
     res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', ...CORS });
     const ev = (e, d) => res.write(`event: ${e}\ndata: ${JSON.stringify(d)}\n\n`);
@@ -149,8 +154,9 @@ http.createServer(async (req, res) => {
       if (closed) return clearInterval(t);
       if (i < toks.length) return ev('token', toks[i++]);
       clearInterval(t);
-      ev('sources', [{ type: 'doc', documentId: '12', docType: 'JOB_POSTING', chunk: '우대: Kubernetes, AWS', score: 0.82 }, { type: 'web', url: 'https://example.com/news', title: '기업 기술 블로그' }]);
-      const mid = String(++seq); messages[id].push({ id: mid, role: 'ASSISTANT', content: toks.join(''), sources: [], createdAt: now() });   // 완주했을 때만 저장
+      const sources = [{ type: 'doc', documentId: '12', docType: 'JOB_POSTING', chunk: '우대: Kubernetes, AWS', score: 0.82 }, { type: 'web', url: 'https://example.com/news', title: '기업 기술 블로그' }];
+      ev('sources', sources);
+      const mid = String(++seq); messages[id].push({ id: mid, role: 'ASSISTANT', content: toks.join(''), sources, createdAt: now() });   // 재진입(hydrate) 때 출처 칩이 남게 저장   // 완주했을 때만 저장
       ev('done', { messageId: mid }); res.end();
     }, 150);
     return;

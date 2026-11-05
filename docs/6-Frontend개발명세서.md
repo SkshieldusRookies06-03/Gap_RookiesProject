@@ -60,7 +60,7 @@ frontend/src/
 | `Layout` | 보호 화면 전부(내 문서 · 분석 · 분석 기록) | `children`(필수) — 상단 내비 · 사용자 이름 · 로그아웃 |
 | `LoadingSpinner` | 내 문서 · 분석(“생성 중…”) · 분석 기록 | `label`(기본 "불러오는 중…") · `role="status"` |
 | `EmptyState` | 내 문서 · 분석 · 분석 기록 | `message`(필수) · `action` |
-| `ErrorMessage` | 전 화면 | `error`({code}) · `onRetry` — `messageFor(error)`로 코드별 사용자 문구(서버 message를 그대로 내지 않는다 · F-7) |
+| `ErrorMessage` | 전 화면 | `error`({code, message}) · `onRetry` — `messageFor(error)`로 코드별 사용자 문구(서버 message를 그대로 내지 않는다 · F-7 · 예외: 423은 message에서 해제 시각 `HH:MM[:SS]`만 뽑아 붙인다 — SPEC §4.4) |
 
 ### 5.2 채팅 컴포넌트
 
@@ -68,8 +68,10 @@ frontend/src/
 ```
 AnalysisPage                    state: useChatStream() → {messages, streaming, error, analysisId}
 ├── DocumentPicker              props: postings[], resumes[], onStart({postingId, resumeId}), disabled=streaming
-├── MessageList                 props: messages[] (USER/ASSISTANT · content는 텍스트 렌더 white-space: pre-wrap)
-│   └── SourceChips             props: sources[] (type doc → 문서 제목 · web → 새 탭 링크 rel="noopener noreferrer")
+├── MessageList                 props: messages[] (USER는 텍스트 white-space: pre-wrap)
+│   ├── ReportText              props: content — ASSISTANT 응답. 제목·표·목록만 React 요소로 만들고 나머지는 텍스트(SPEC §5 · 기술 리드 T-054)
+│   └── SourceChips             props: sources[] (type doc → 문서 제목 · web → 새 탭 링크 rel="noopener noreferrer" ·
+│                                 url이 http:/https:가 아니면 링크 대신 텍스트 — javascript: 차단, dev엔 CSP가 없다)
 ├── LoadingSpinner "생성 중…" + Button "중단"(stop)   — streaming일 때
 ├── ErrorMessage                props: error · onRetry
 └── FollowUpForm                props: onSubmit(question) · disabled=streaming · 1~1000자
@@ -110,7 +112,7 @@ Access는 메모리에만, Refresh만 localStorage(`partialize`) — 새로고�
 ## 8. 주요 기능
 
 - **반응형**: 브레이크포인트 768px · 1280px(`tokens.css`에 값 · `@media`에 같은 숫자) · 뷰포트 390·768·1280에서 분석 화면 확인
-  <!-- TODO(D5·FE-분석): 캡처 3장 경로 — docs/images/analysis-390.png · analysis-768.png · analysis-1280.png -->
+  <!-- TODO(D5·FE-분석): 캡처 3장 경로 — docs/img/analysis-390.png · analysis-768.png · analysis-1280.png -->
 - **업로드**: 파일 선택(드래그앤드롭 선택) · 형식(.md/.txt)·크기(200KB) 안내와 클라이언트 검증 — 서버 검증이 정본(F-6) · 409·413·415는 `ErrorMessage` 문구
 - **스트리밍 렌더링**: `streamPost` → `res.body.getReader()` + `TextDecoder({stream:true})` → `createSseParser`로 프레임 → `token`을 마지막 ASSISTANT 메시지에 누적 · `sources`는 문서/웹 칩으로 구분 · `done`이면 생성 중 해제 · `error`면 `ErrorMessage` + 재시도 · 중단 버튼은 `AbortController`(부분 답변은 화면에만, 서버 저장 없음). AI 응답은 **텍스트로 렌더**(`dangerouslySetInnerHTML` 금지 — F-1).
 - **로딩**: 목록 첫 렌더부터 `LoadingSpinner` · 스트리밍 중 "생성 중…" + 중단 버튼

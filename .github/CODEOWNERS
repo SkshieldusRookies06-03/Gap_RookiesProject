@@ -10,6 +10,11 @@
 /frontend/src/pages/analysis/SourceChips*      @TECHLEAD
 /frontend/src/hooks/useChatStream*             @FE_ANALYSIS
 /frontend/src/stores/chatStore*                @FE_ANALYSIS
+# 판정 테스트·테스트 공용 설정은 기술 리드(SPEC §10 "기술 리드 작성 · 구현자 수정 금지") — 레인 줄보다 아래에 둬야 이긴다
+/frontend/src/api/*.test.js                    @TECHLEAD
+/frontend/src/hooks/useChatStream.test.jsx     @TECHLEAD
+/frontend/src/pages/DocumentsPage.test.jsx     @TECHLEAD
+/frontend/src/test/                            @TECHLEAD
 
 /backend/                                      @BE_FEATURE
 /backend/src/main/java/com/jobgap/auth/        @TEAMLEAD
@@ -17,8 +22,11 @@
 /backend/src/test/java/com/jobgap/auth/        @TEAMLEAD
 /backend/src/main/java/com/jobgap/security/    @TECHLEAD
 /backend/src/main/java/com/jobgap/common/      @TECHLEAD
+/backend/src/test/java/com/jobgap/acceptance/  @TECHLEAD
+/backend/src/test/java/com/jobgap/security/    @TECHLEAD
 
 /ai-module/                                    @AI
+/ai-module/tests/                              @TECHLEAD
 
 **/Dockerfile                                  @DEVOPS
 **/.dockerignore                               @DEVOPS

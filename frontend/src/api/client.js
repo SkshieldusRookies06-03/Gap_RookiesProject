@@ -55,27 +55,58 @@ async function doRefresh() {
   return refreshing;
 }
 
+const PUBLIC_PATHS = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
+
+/** refresh 실패면 세션을 비우고 그 에러를 던진다 (6번 명세 §7 — refresh 실패 = 로그인으로) */
+async function refreshOrClear() {
+  try { await doRefresh(); } catch (e) { useAuthStore.getState().clear(); throw e; }
+}
+
+/**
+ * 새로고침 직후엔 Access(메모리)가 없고 Refresh(localStorage)만 있다 — 토큰 없이 보내면 401 UNAUTHORIZED로 세션이 지워지므로
+ * 먼저 refresh 1회로 Access를 복구한다 (6번 명세 §6 "새로고침 후에도 로그인 유지").
+ */
+async function ensureAccess(path) {
+  if (PUBLIC_PATHS.includes(path)) return;
+  const { accessToken, refreshToken } = useAuthStore.getState();
+  if (!accessToken && refreshToken) await refreshOrClear();
+}
+
+/** fetch 예외 → ApiError. 사용자가 끊은 중단(ABORTED)과 타임아웃·연결 실패(NETWORK_ERROR)를 가른다 */
+function networkError(e, userSignal, timedOut) {
+  if (userSignal?.aborted && !timedOut) return new ApiError({ status: 0, code: 'ABORTED', message: '요청을 취소했습니다' });
+  if (e?.name === 'AbortError') return new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '요청 시간이 초과되었습니다' });
+  return new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '서버에 연결할 수 없습니다' });
+}
+
 async function send(method, path, { body, form, signal, retried = false, timeout = TIMEOUT_MS } = {}) {
+  if (!retried) await ensureAccess(path);
   const headers = {};
   const token = useAuthStore.getState().accessToken;
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeout);
-  if (signal) signal.addEventListener('abort', () => ctrl.abort());
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, timeout);
+  const onAbort = () => ctrl.abort();
+  if (signal) {
+    if (signal.aborted) ctrl.abort();
+    else signal.addEventListener('abort', onAbort, { once: true });
+  }
   let res;
   try {
     res = await fetch(`${BASE}${path}`, { method, headers, body: form ?? (body !== undefined ? JSON.stringify(body) : undefined), signal: ctrl.signal });
   } catch (e) {
-    throw new ApiError({ status: 0, code: 'NETWORK_ERROR', message: e.name === 'AbortError' ? '요청 시간이 초과되었습니다' : '서버에 연결할 수 없습니다' });
+    throw networkError(e, signal, timedOut);
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', onAbort);
   }
   try {
     return await parse(res);
   } catch (e) {
-    if (e.code === 'TOKEN_EXPIRED' && !retried && path !== '/api/auth/login') {
-      try { await doRefresh(); } catch (re) { useAuthStore.getState().clear(); throw re; }
+    if (e.code === 'TOKEN_EXPIRED' && !retried && !PUBLIC_PATHS.includes(path)) {
+      await refreshOrClear();
       return send(method, path, { body, form, signal, retried: true, timeout });
     }
     if (e.status === 401 && path !== '/api/auth/login') useAuthStore.getState().clear();
@@ -96,22 +127,29 @@ export const api = {
  * 시작 전 검증 실패(403/404/400)는 JSON 봉투라 여기서 ApiError로 바꾼다. TOKEN_EXPIRED면 refresh 1회 후 재시도.
  */
 export async function streamPost(path, body, signal, retried = false) {
+  if (!retried) await ensureAccess(path);
   const token = useAuthStore.getState().accessToken;
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify(body),
-    signal,
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (e) {
+    throw networkError(e, signal, false);
+  }
   if ((res.headers.get('content-type') || '').includes('text/event-stream')) return res;
   try {
     await parse(res);
     throw new ApiError({ status: res.status, code: 'NOT_A_STREAM', message: '스트림 응답이 아닙니다' });
   } catch (e) {
     if (e.code === 'TOKEN_EXPIRED' && !retried) {
-      await doRefresh();
+      await refreshOrClear();
       return streamPost(path, body, signal, true);
     }
+    if (e.status === 401) useAuthStore.getState().clear();   // send()와 같은 규칙 (6번 명세 §7)
     throw e;
   }
 }

@@ -6,9 +6,13 @@
  */
 export function createSseParser(onEvent) {
   let buffer = '';
+  let carryCR = false;   // 조각이 \r에서 끊기면 다음 조각의 \n과 합쳐 한 줄바꿈으로 본다
   return {
     feed(text) {
-      buffer += text.replace(/\r\n/g, '\n');
+      let raw = (carryCR ? '\r' : '') + text;
+      carryCR = raw.endsWith('\r');
+      if (carryCR) raw = raw.slice(0, -1);
+      buffer += raw.replace(/\r\n?/g, '\n');   // CRLF·단독 CR 모두 LF로 (SSE 규격)
       let idx;
       while ((idx = buffer.indexOf('\n\n')) >= 0) {
         const frame = buffer.slice(0, idx);

@@ -43,8 +43,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:?.env에 JWT_SECRET(32바이트+) 필요}
       AI_BASE_URL: http://ai-service:8000
       AI_INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN:?.env에 AI_INTERNAL_TOKEN 필요}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      ACTUATOR_EXPOSURE: ${ACTUATOR_EXPOSURE}
+      # 기본값을 compose에 둔다 — .env에서 빠지면 빈 문자열이 들어가 Spring 기본값이 무시되고(health 미노출 → unhealthy) frontend가 못 뜬다
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      ACTUATOR_EXPOSURE: ${ACTUATOR_EXPOSURE:-health,info}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}   # 데모 시드 재적용: seed
     depends_on:
       database: { condition: service_healthy }

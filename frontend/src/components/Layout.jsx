@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../routes.js';
 import { useAuthStore } from '../stores/authStore.js';
+import { useChatStore } from '../stores/chatStore.js';
 import { api } from '../api/client.js';
 import styles from './Layout.module.css';
 
@@ -13,6 +14,7 @@ export default function Layout({ children }) {
   const logout = async () => {
     try { await api.post('/api/auth/logout'); } catch { /* 이미 만료여도 로컬은 비운다 */ }
     clear();
+    useChatStore.getState().reset();   // 같은 탭에서 다른 계정으로 로그인해도 이전 분석이 남지 않게
     navigate(ROUTES.LOGIN);
   };
   return (
