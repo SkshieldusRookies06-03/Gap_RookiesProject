@@ -141,7 +141,7 @@ List<Analysis> findAllUsing(@Param("docId") Long docId);
 - 발급: `JwtProvider.createAccessToken(uuid, role)` — subject = uuid · claim role · HS256 명시 · 15분
 - 검증: `JwtAuthenticationFilter`가 `Bearer` → `JwtProvider.parse()` → 만료면 `TOKEN_EXPIRED`, 서명·형식 오류면 `UNAUTHORIZED`(EntryPoint가 봉투로) · 필터는 보안 체인 안에서만 돈다(서블릿 자동 등록 해제)
 - Refresh: `JwtProvider.newRefreshToken()`(랜덤 32바이트) → DB에는 `JwtProvider.sha256()`만 · 재발급 시 교체 · 로그아웃 시 삭제
-- 역할 + 소유: 컨트롤러 `@PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")` + 서비스 "본인 또는 ADMIN"(`AuthUser.isAdmin()`) — 실패 시 `AuditLog.forbidden(…)` 후 403
+- 역할 + 소유: 컨트롤러 `@PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")` + 서비스에서 본인 소유만 허용(ADMIN 예외 없음) — 실패 시 `AuditLog.forbidden(…)` 후 403
 
 ### 5.2 공격 방어
 
