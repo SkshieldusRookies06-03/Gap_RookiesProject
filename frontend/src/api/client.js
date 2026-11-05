@@ -1,7 +1,7 @@
 import { useAuthStore } from '../stores/authStore.js';
 
 /**
- * 모든 HTTP 호출은 여기를 지난다 (오너: 팀장 · CLAUDE.md 규약 2). SPEC §1 응답 봉투 · §4.4 에러.
+ * 모든 HTTP 호출은 여기를 지난다 (오너: FE-화면 · CLAUDE.md 규약 2). SPEC §1 응답 봉투 · §4.4 에러.
  * - 성공 봉투를 벗겨 data만 돌려준다 · success:false면 ApiError(code·message·status·fields)로 reject
  * - TOKEN_EXPIRED(401)만 refresh 1회 후 재시도. 동시 401은 refresh 한 번:
  *   탭 안 = 진행 중 Promise 공유 · 탭 사이 = navigator.locks 안에서 localStorage를 다시 읽고 이미 바뀌었으면 그 값을 쓴다

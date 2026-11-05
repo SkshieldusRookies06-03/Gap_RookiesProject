@@ -1,18 +1,18 @@
 # JobGap CODEOWNERS — 한 줄 한 오너 · 넓은 경로 → 좁은 경로 (마지막 일치가 이긴다)
 # D1: 아래 핸들 7개를 실제 GitHub 아이디로 바꾼다 (SPEC §8 레인 표와 같은 사람)
-#   @TEAMLEAD 팀장 · @TECHLEAD 기술리드·보안 · @BE_AUTH · @BE_FEATURE · @AI · @FE_ANALYSIS · @DEVOPS
+#   @TEAMLEAD 팀장(BE-인증 레인 겸 운영) · @TECHLEAD 기술리드·보안 · @FE_SCREENS FE-화면 · @BE_FEATURE · @AI · @FE_ANALYSIS · @DEVOPS
 
 *                                              @TECHLEAD
 
-/frontend/                                     @TEAMLEAD
+/frontend/                                     @FE_SCREENS
 /frontend/src/pages/analysis/                  @FE_ANALYSIS
 /frontend/src/hooks/useChatStream*             @FE_ANALYSIS
 /frontend/src/stores/chatStore*                @FE_ANALYSIS
 
 /backend/                                      @BE_FEATURE
-/backend/src/main/java/com/jobgap/auth/        @BE_AUTH
-/backend/src/main/java/com/jobgap/user/        @BE_AUTH
-/backend/src/test/java/com/jobgap/auth/        @BE_AUTH
+/backend/src/main/java/com/jobgap/auth/        @TEAMLEAD
+/backend/src/main/java/com/jobgap/user/        @TEAMLEAD
+/backend/src/test/java/com/jobgap/auth/        @TEAMLEAD
 /backend/src/main/java/com/jobgap/security/    @TECHLEAD
 /backend/src/main/java/com/jobgap/common/      @TECHLEAD
 
@@ -40,7 +40,7 @@
 /docs/2-*                                      @DEVOPS
 /docs/3-*                                      @BE_FEATURE
 /docs/4-*                                      @BE_FEATURE
-/docs/5-*                                      @BE_AUTH
+/docs/5-*                                      @TEAMLEAD
 /docs/6-*                                      @FE_ANALYSIS
 /docs/7-*                                      @AI
 /docs/8-*                                      @DEVOPS

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSseParser, decodeData } from './sse.js';
 
-describe('[기술 리드 · 팀장 T-009] SSE 파서 — SPEC §4.3', () => {
+describe('[기술 리드 · FE-화면 T-009] SSE 파서 — SPEC §4.3', () => {
   const collect = (chunks) => {
     const out = [];
     const p = createSseParser((e, d) => out.push([e, d]));

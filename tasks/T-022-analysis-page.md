@@ -20,7 +20,7 @@ useChatStream과 분석 화면(선택 → 스트리밍 → 중단)을 완성한�
 - 수정 허용: `frontend/src/hooks/useChatStream.js` · `frontend/src/stores/chatStore.js` · `frontend/src/pages/analysis/`
 - 판정 테스트(`backend/src/test/**/acceptance/` · `ai-module/tests/` · 기술 리드가 커밋한 `*.test.jsx`)는 고치지 않는다 — 틀려 보이면 기술 리드에게
 - commit·push는 사람이 한다 · 커밋 메시지 `type(범위): 요약 [T-022]`
-- 참고: api/ 는 팀장 파일 — 바꿀 게 있으면 팀장에게.
+- 참고: api/ 는 FE-화면 파일 — 바꿀 게 있으면 FE-화면에게.
 
 ## [확인 명령]
 ```bash

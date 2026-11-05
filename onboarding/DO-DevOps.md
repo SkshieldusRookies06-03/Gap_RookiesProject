@@ -168,7 +168,7 @@ kubectl create secret generic app-secret --from-env-file=.env
 |---|---|---|---|
 | BE-인증·BE-기능 | 실물 백엔드 · `/actuator/health` 200 | DB 컨테이너(dev 바인드 3306 — `./mvnw test`용) | D1 · D3 |
 | AI | 실물 ai 서버 · requirements 변경 알림 | ai Dockerfile · compose env(`LLM_PROVIDER=openai`·`CHROMA_DIR`) | D2 · D3 |
-| 팀장·FE-분석 | 빌드되는 프론트 | nginx 설정(SPA fallback · 스트림 location) | D3 |
+| FE-화면·FE-분석 | 빌드되는 프론트 | nginx 설정(SPA fallback · 스트림 location) | D3 |
 | 기술 리드 | 정적 검사 RED 목록 · 원장 I-행 | 외부 포트·비root 캡처 · Secrets 이름 목록 | D4~D5 |
 | 전원 | — | EC2 URL · 장애 시 `docker compose logs` 출력 | D5 |
 

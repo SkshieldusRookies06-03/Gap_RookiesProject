@@ -205,7 +205,7 @@ AI 컨테이너 정지 상태로 업로드·삭제(503 봉투)·스트림(event:
 | 받음 | BE-인증 | `User`·`UserRepository.findByUuid` | D2 오전 |
 | 받음 | AI | 실물 `/internal/*`(목은 D1부터 `mock_app.py`) | D2 저녁~D3 |
 | 받음 | 기술 리드 | S-01 재현 캡처(그 뒤 T-026 머지) · T-028 PiiMasker 연결 1줄(내 파일 — 리뷰는 내가) | D3 |
-| 줌 | 팀장·FE-분석 | `/api/documents/**`·`/api/analyses/**` 실물(목과 같은 모양) | D2·D3 |
+| 줌 | FE-화면·FE-분석 | `/api/documents/**`·`/api/analyses/**` 실물(목과 같은 모양) | D2·D3 |
 | 줌 | BE-인증 | `DocumentRepository`·`AiClient`(SeedIngestRunner) | D3 |
 | 공유 | application.yml | 내 블록 `spring.datasource`·`jpa`·`flyway`·`servlet.multipart`·`mvc.async`·`app.ai` · 다른 블록은 그 오너 | 상시 |
 

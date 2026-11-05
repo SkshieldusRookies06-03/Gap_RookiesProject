@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/authStore.js';
 import { api } from '../api/client.js';
 import styles from './Layout.module.css';
 
-/** 공통 레이아웃 (오너: 팀장) — 상단 내비 + 본문 */
+/** 공통 레이아웃 (오너: FE-화면) — 상단 내비 + 본문 */
 export default function Layout({ children }) {
   const user = useAuthStore((s) => s.user);
   const clear = useAuthStore((s) => s.clear);

@@ -5,7 +5,7 @@ import { API, fail, ok } from '../test/handlers.js';
 import { api, ApiError } from './client.js';
 import { useAuthStore } from '../stores/authStore.js';
 
-describe('[기술 리드 · 팀장 T-009] api/client — 봉투·에러·refresh (SPEC §1 · §4.4)', () => {
+describe('[기술 리드 · FE-화면 T-009] api/client — 봉투·에러·refresh (SPEC §1 · §4.4)', () => {
   it('성공 봉투를 벗겨 data만 돌려준다', async () => {
     server.use(http.get(`${API}/api/x`, () => HttpResponse.json(ok({ a: 1 }))));
     await expect(api.get('/api/x')).resolves.toEqual({ a: 1 });

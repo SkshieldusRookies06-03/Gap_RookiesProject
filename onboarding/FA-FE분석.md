@@ -38,7 +38,7 @@
 | `pages/analysis/FollowUpForm.jsx` | 만들 것 — 후속 질문 입력 | T-030 |
 | `pages/analysis/Analysis.module.css` | 만들 것 — 레이아웃·반응형 | T-022 |
 
-읽기만 하는 것(팀장 파일 — 고치지 않는다): `api/client.js`(`streamPost`·`api`·`ApiError`) · `api/sse.js`(`createSseParser`·`decodeData`) ·
+읽기만 하는 것(FE-화면 파일 — 고치지 않는다): `api/client.js`(`streamPost`·`api`·`ApiError`) · `api/sse.js`(`createSseParser`·`decodeData`) ·
 `components/`(`LoadingSpinner`·`EmptyState`·`ErrorMessage`·`messageFor`·`Button`) · `routes.js`(`ROUTES`).
 
 ## 3. 티켓별 구현 명세
@@ -119,7 +119,7 @@ AnalysisPage                         (useParams().id · useNavigate · useChatSt
 ```
 모든 컴포넌트에 `PropTypes`(R-FE01 · 공용 규칙).
 
-DocumentPicker — 쓰는 API (팀장의 `api.get`)
+DocumentPicker — 쓰는 API (FE-화면의 `api.get`)
 
 | 호출 | 응답 필드 | 화면 |
 |---|---|---|
@@ -145,7 +145,7 @@ DocumentPicker — 쓰는 API (팀장의 `api.get`)
 | 후속 질문 | `start({analysisId, question})` | USER + ASSISTANT 추가 | 빈 질문은 버튼 `disabled`(서버 400 왕복 줄이기) · 1000자 `maxLength` |
 | 재시도 | 마지막 요청 그대로 `start` | 실패한 빈 말풍선은 이미 제거됨 | — |
 
-`DOCUMENT_TYPE_MISMATCH`·`VALIDATION_ERROR` 문구는 `ErrorMessage`(팀장 파일)의 `BY_CODE`에 아직 없다 → 팀장에게 추가 요청(내가 고치지 않는다).
+`DOCUMENT_TYPE_MISMATCH`·`VALIDATION_ERROR` 문구는 `ErrorMessage`(FE-화면 파일)의 `BY_CODE`에 아직 없다 → FE-화면에게 추가 요청(내가 고치지 않는다).
 
 URL 교체 — 새 분석이 끝나면 `/analyses/new` → `/analyses/7` (새로고침·기록 재진입이 같은 화면이 되게)
 ```js
@@ -219,7 +219,7 @@ SourceChips.propTypes = { sources: PropTypes.arrayOf(PropTypes.shape({ type: Pro
 
 ### 3.5 D4~D5 (BOARD)
 
-- **T-039 (D4)**: 스트림 `error` 이벤트 UI 확인(목 `?fail=1` 경로는 목 서버 쿼리라 화면에서는 AI 컨테이너를 멈춰 재현) · 에러 문구 누락을 팀장에게 목록으로 ·
+- **T-039 (D4)**: 스트림 `error` 이벤트 UI 확인(목 `?fail=1` 경로는 목 서버 쿼리라 화면에서는 AI 컨테이너를 멈춰 재현) · 에러 문구 누락을 FE-화면에게 목록으로 ·
   기술 리드의 XSS 재현 보조(F-1): 질문·문서 제목에 `<img src=x onerror=alert(1)>` → 글자로 보이는 캡처.
 - **T-043 (D5)**: 분석 화면 390·768·1280 캡처 3장(브라우저 개발자도구 기기 모드 · 리포트가 흘러나온 상태) → `docs/6` §8 · 6번 문서 내 절.
 
@@ -227,8 +227,8 @@ SourceChips.propTypes = { sources: PropTypes.arrayOf(PropTypes.shape({ type: Pro
 
 | 무엇 | 누구에게서/에게 | 언제 |
 |---|---|---|
-| `streamPost`·`createSseParser`·`decodeData`·`api`·`components/`·`ROUTES` | 팀장 → 나 | D1 — **`api/`는 내가 고치지 않는다.** 필요하면 팀장 티켓으로 |
-| `ErrorMessage` 문구 추가(`DOCUMENT_TYPE_MISMATCH`·`VALIDATION_ERROR`) | 나 → 팀장(요청) | D2 |
+| `streamPost`·`createSseParser`·`decodeData`·`api`·`components/`·`ROUTES` | FE-화면 → 나 | D1 — **`api/`는 내가 고치지 않는다.** 필요하면 FE-화면 티켓으로 |
+| `ErrorMessage` 문구 추가(`DOCUMENT_TYPE_MISMATCH`·`VALIDATION_ERROR`) | 나 → FE-화면(요청) | D2 |
 | 목 스트림(`mock/server.mjs`) | 기술 리드 → 나 | D1 |
 | 실 스트림(`/api/analyses/stream`) | BE-기능 → 나 | D3 — 목과 이벤트가 같으면 코드 변경 0 |
 | nginx 스트림 설정(buffering off) | DevOps → 나 | D3 E2E |
@@ -264,8 +264,8 @@ SourceChips.propTypes = { sources: PropTypes.arrayOf(PropTypes.shape({ type: Pro
 
 | 문서·절 | 정본 |
 |---|---|
-| `docs/6-Frontend개발명세서.md` 파일 오너(리뷰) · 내 절: §4 주요 페이지(분석) · §5.2 채팅 컴포넌트 · §5.3 커스텀 Hook(`useChatStream`·`useUpload` 표 — useUpload 행은 팀장 절) · §8 주요 기능(스트리밍·반응형 캡처) · §9 프론트엔드 보안(F-1 텍스트 렌더·URL 스킴) | 이 문서 §3 · 코드 |
-| §5.1 · §6 · §7은 팀장 절(팀장 커밋 · 내가 리뷰) | — |
+| `docs/6-Frontend개발명세서.md` 파일 오너(리뷰) · 내 절: §4 주요 페이지(분석) · §5.2 채팅 컴포넌트 · §5.3 커스텀 Hook(`useChatStream`·`useUpload` 표 — useUpload 행은 FE-화면 절) · §8 주요 기능(스트리밍·반응형 캡처) · §9 프론트엔드 보안(F-1 텍스트 렌더·URL 스킴) | 이 문서 §3 · 코드 |
+| §5.1 · §6 · §7은 FE-화면 절(FE-화면 커밋 · 내가 리뷰) | — |
 
 ## 8. 코딩 에이전트에 맡길 때 (예: T-022)
 

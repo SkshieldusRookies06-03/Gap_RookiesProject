@@ -6,10 +6,10 @@ import { server } from '../test/server.js';
 import { API, fail, ok, page, sampleDocs } from '../test/handlers.js';
 import DocumentsPage from './DocumentsPage.jsx';
 
-// 판정 테스트 — 기술 리드 작성 · 팀장(T-021)이 green으로 만든다 · 이 파일은 고치지 않는다
+// 판정 테스트 — 기술 리드 작성 · FE-화면(T-021)이 green으로 만든다 · 이 파일은 고치지 않는다
 const renderPage = () => render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
 
-describe('[팀장 T-021] 내 문서 화면 — 상태 넷 (SPEC §5)', () => {
+describe('[FE-화면 T-021] 내 문서 화면 — 상태 넷 (SPEC §5)', () => {
   it('로딩 — 응답 전에는 role=status', async () => {
     server.use(http.get(`${API}/api/documents`, async () => { await new Promise((r) => setTimeout(r, 200)); return HttpResponse.json(ok(page([]))); }));
     renderPage();
