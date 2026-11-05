@@ -13,9 +13,9 @@
 
    | 레인 | 게이트 |
    |---|---|
-   | 백엔드(팀장·BE-기능) | `./mvnw test -Dtest=<내 판정 테스트>` + `node seams/check-api.mjs <base>` |
+   | 백엔드(팀장·BE-기능) | `./mvnw test -Dtest=<내 판정 테스트>` + `BoundaryAcceptanceTest`에서 이름에 내 티켓 번호가 붙은 것 + `node seams/check-api.mjs <base>` |
    | 프론트(FE-화면·FE-분석) | `npm run build && npm test` + `seams/smoke.md` 내 줄 |
-   | AI | `pytest -q` + `node seams/check-ai.mjs <base>` |
+   | AI | `pytest -q`(`test_contract`·`test_failure`·`test_rag_contract`) + `node seams/check-ai.mjs <base>` |
    | DevOps | `docker compose config -q && node scripts/check-sec-deploy.mjs` |
    | 전원 | `node scripts/check-sec-deploy.mjs` 무출력 · `node seams/check-scope.mjs <내 티켓>` 무출력 |
 3. **정한 것은 문서로, 내 파트 밖은 손대지 않는다** — 구두 합의는 무효
