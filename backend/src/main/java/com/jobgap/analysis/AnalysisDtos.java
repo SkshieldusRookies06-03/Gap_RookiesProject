@@ -1,6 +1,7 @@
 package com.jobgap.analysis;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 
@@ -9,7 +10,9 @@ public final class AnalysisDtos {
     private AnalysisDtos() {}
 
     /** 새 분석 = postingId+resumeId(question 없음) · 후속 = analysisId+question(필수) — 조합 검증은 서비스에서 400 */
-    public record StreamRequest(String postingId, String resumeId, String analysisId,
+    public record StreamRequest(@Pattern(regexp = "\\d{1,18}", message = "id 형식") String postingId,
+                                @Pattern(regexp = "\\d{1,18}", message = "id 형식") String resumeId,
+                                @Pattern(regexp = "\\d{1,18}", message = "id 형식") String analysisId,
                                 @Size(max = 1000, message = "질문은 1000자 이하입니다") String question) {}
 
     public record AnalysisSummary(String id, String title, String postingTitle, String resumeTitle,

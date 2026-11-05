@@ -193,7 +193,7 @@ kubectl create secret generic app-secret --from-env-file=.env
 | AI가 OpenAI에 연결 실패 | ai-service를 internal 망에 넣음 | `app` 망은 일반 bridge(`internal` 없음) |
 | 업로드가 HTML 413 | nginx 기본 1MB·설정 누락 | `client_max_body_size 1m`(Spring 요청 1MB와 짝) |
 | 스트림이 끝에 한꺼번에 | nginx 버퍼링 | 스트림 location `proxy_buffering off` · `proxy_read_timeout 300s` |
-| 30초쯤 스트림이 끊김 | 타임아웃 불일치 | nginx 300s = Spring `mvc.async.request-timeout` 300s |
+| 30초쯤 스트림이 끊김 | 타임아웃 불일치 | nginx 310s > Spring async 300s > WebClient 290s |
 | 시각이 9시간 밀림 | DB·컨테이너 시간대 | DB `--default-time-zone=+09:00` · `TZ=Asia/Seoul` |
 | EC2에서 빌드 중 멈춤 | 메모리 1GB | 인스턴스 상향 또는 GHA 이미지 pull |
 | `check-sec-deploy` I-3 RED | dev가 아닌 파일에 ports · `127.0.0.1:` 빠짐 | 운영 compose는 frontend만 · dev는 127.0.0.1 |

@@ -31,10 +31,10 @@
 | 로그인 보호 | **존재하는 계정만** 실패 5회 → 15분 잠금 · **423 `ACCOUNT_LOCKED`** · 성공 시 카운트 0 · 없는 이메일도 같은 401 문구 · 실패 카운트는 401을 던져도 **커밋돼야 한다**(`@Transactional(noRollbackFor = BusinessException.class)` 또는 카운트 저장을 별도 트랜잭션) |
 | 업로드 | `.md`·`.txt`만 — **판정은 확장자** · MIME은 `text/markdown`·`text/x-markdown`·`text/plain`·`application/octet-stream`·빈 값 허용(브라우저마다 다르다), 그 밖이면 415 · **UTF-8만**(엄격 디코딩 실패 415) · 빈 파일 400 · **파일 최대 200KB — 서비스가 `file.getSize()`로 직접 검사**(설정 `max-file-size=200KB`는 실서버 2차 방어선 · MockMvc는 이 설정을 적용하지 않는다) · 요청 최대 1MB(`max-request-size=1MB`) = nginx `client_max_body_size 1m` → 200KB~1MB는 봉투 413, 1MB 초과만 nginx가 막는다 · 파일 원본은 저장하지 않고 **마스킹한 본문 텍스트만** DB와 AI로 간다(ADR-04) |
 | 업로드 순서 | 검증 → 마스킹 → DB 저장(트랜잭션 끝) → AI ingest(트랜잭션 밖) → 실패하면 그 행을 지우고 503 `AI_UNAVAILABLE` |
-| 질문 · 제목 | 질문 `@NotBlank @Size(max=1000)` · 문서 제목 `@NotBlank @Size(max=100)` · **질문·제목도 `PiiMasker`를 거친다** |
+| 질문 · 제목 | 질문 `@NotBlank @Size(max=1000)` · 문서 제목 `@NotBlank @Size(max=100)` · **질문·제목도 `PiiMasker`를 거친다 — `PiiMasker.maskAndTrim(값, 100/1000)`**(마스킹하면 길어질 수 있다) |
 | 헬스 | backend `GET /actuator/health`(permitAll · `/actuator/**` 나머지 ADMIN) · ai `GET /health`(내부 토큰 예외) |
-| AI 호출 | 단건 `RestClient`(connect 3s · read 30s) · 스트림 `WebClient`(response 300s) · 단건 실패 → 503 `AI_UNAVAILABLE` · **스트림 엔드포인트는 시작 전 검증이 끝난 뒤에는 상태코드를 바꾸지 않는다 — AI 연결 실패·타임아웃·중간 장애 전부 `event: error`** |
-| SSE 설정 | `spring.mvc.async.request-timeout=300s` = nginx `proxy_read_timeout 300s` · 스트림 location `proxy_buffering off` · `dispatcherTypeMatchers(ASYNC, ERROR).permitAll()` |
+| AI 호출 | 단건 `RestClient`(connect 3s · read 30s) · 스트림 `WebClient`(response 290s) · 단건 실패 → 503 `AI_UNAVAILABLE` · **스트림 엔드포인트는 시작 전 검증이 끝난 뒤에는 상태코드를 바꾸지 않는다 — AI 연결 실패·타임아웃·중간 장애 전부 `event: error`** |
+| SSE 설정 | 타임아웃 사슬 **WebClient 290s < `spring.mvc.async.request-timeout=300s` < nginx `proxy_read_timeout 310s`**(WebClient가 먼저 끊겨야 `event: error`를 보낼 수 있다) · 스트림 location `proxy_buffering off` · `dispatcherTypeMatchers(ASYNC, ERROR).permitAll()` |
 | 분기 기준값 | 후속 질문의 grade: 검색 최고 relevance score **< 0.45** 이면 Tavily(D4 골든셋으로 1회 조정 · 바꾸면 이 칸만) |
 | 후속 질문 문맥 | 같은 분석의 이전 메시지 최근 **6개**를 history로 보낸다(이번 질문은 `question`에만 · history에 넣지 않는다) |
 | 커밋 | `type(범위): 요약 [T-###]` · 보안 수정 `fix(security): [S-0N] 무엇 · 행 [T-###]` · 브랜치 `feature/<레인>-<T-###>` → PR → main |

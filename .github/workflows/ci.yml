@@ -21,9 +21,9 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "17", cache: maven }
       - name: 1단계 — 컴파일 + 컨텍스트 기동 (필수)
-        run: ./mvnw -B test -Dtest='JobgapApplicationTests,PiiMaskerTest'
+        run: mvn -B test -Dtest='JobgapApplicationTests,PiiMaskerTest'   # 러너에 Maven 설치돼 있음 — mvnw 없이도 돈다
       - name: 2단계 — 판정 테스트 현황 (D5까지 red 허용)
-        run: ./mvnw -B test
+        run: mvn -B test
         continue-on-error: true
 
   frontend:

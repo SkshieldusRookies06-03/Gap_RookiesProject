@@ -10,7 +10,7 @@ SPEC.md §4.3 중계 규칙 · §6.2 — 이 절을 지시서(에이전트 프�
 
 ## [수용 기준]
 - [ ] `AnalysisAcceptanceTest` ①③④⑤ green (②⑥은 403 단언이 섞여 있어 T-026 뒤에 green)
-- [ ] WebClient `bodyToFlux(ServerSentEvent)` · responseTimeout 300s · `onErrorResume` → error 봉투
+- [ ] WebClient `bodyToFlux(ServerSentEvent)` · responseTimeout 290s(사슬: 290 < async 300 < nginx 310) · `onErrorResume` → error 봉투
 - [ ] 새 분석이면 `analysis` 이벤트 먼저 · AI의 done은 가로채 ASSISTANT 저장 후 `done{messageId}` · 끊김·error면 저장 안 함
 - [ ] 질문 저장(짧은 트랜잭션) → 스트림(밖) → 답변 저장(새 트랜잭션) · history = 이전 메시지 최근 6개
 - [ ] 스킬 P3-3 curl 스트림 검사: 토큰이 시간 간격을 두고

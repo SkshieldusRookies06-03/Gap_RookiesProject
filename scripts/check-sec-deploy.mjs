@@ -55,8 +55,12 @@ for (const f of files) if (CFG.test(f) && !isExample(f)) read(f).split('\n').for
   const key = m[1]; let v = m[3].trim().replace(/[,;]$/, '').replace(/^["']|["']$/g, '').trim();
   if (notSecretName(key)) return; // accessTokenExpiration · token-header · jwt-secret-length …
   const dflt = v.match(/^\$\{[A-Za-z0-9_.-]+:([^}]*)\}$/);
+  // ${VAR:?메시지}·${VAR?메시지} = 필수 변수(값 없으면 기동 거부) — 기본값이 아니다 · ${VAR:-기본값}은 compose 기본값
+  if (dflt && /^\?/.test(dflt[1])) return;
+  if (dflt) dflt[1] = dflt[1].replace(/^-/, '');
   if (dflt) { if (dflt[1].trim().length >= 3) RED('I-1', `${f}:${i + 1}`, `비밀값 기본값 리터럴 '${key}'`, '${VAR} 만 쓰고 기본값을 비운다 — 기본값도 커밋된 비밀이다'); return; }
   if (!v || /^[$#{]/.test(v) || v.length < 3) return;
+  if (/\s/.test(v) || /[^\x00-\x7F]/.test(v)) return;   // 공백·한글이 든 값은 문구다(비밀값은 공백 없는 ASCII) — 에러 메시지 맵 오탐 방지
   if (/^(true|false|null|none|undefined|required|optional|\d+)$/i.test(v)) return;
   if (/^(Bearer|ROLE_|getenv|os\.|process\.|System\.|env\(|secrets\.|settings\.|config\.)/.test(v) || /\(/.test(v)) return; // 코드 호출
   if (/\.(java|kt|py|m?js|jsx|tsx?)$/.test(f) && !/^["'`]/.test(m[3].trim())) return; // 코드 파일은 따옴표 리터럴만 비밀값 — 따옴표 없는 값은 식(token = res?.data ?? null)이다

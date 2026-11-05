@@ -1,4 +1,5 @@
-# 테스트 전용 — 실 MariaDB(로컬: docker compose -f docker-compose.dev.yml up -d db · CI: services.db)
+# 테스트 전용 — 실 MariaDB. 로컬: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
+#   (.env의 DB_USER/DB_PASSWORD가 jobgap/jobgap이 아니면 TEST_DB_USER·TEST_DB_PASSWORD를 맞춘다) · CI: services.db
 spring:
   datasource:
     url: ${TEST_DB_URL:jdbc:mariadb://127.0.0.1:3306/jobgap}

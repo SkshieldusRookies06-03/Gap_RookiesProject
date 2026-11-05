@@ -9,6 +9,7 @@ import { useAuthStore } from '../stores/authStore.js';
  */
 export const BASE = import.meta.env.VITE_API_URL ?? '';
 const TIMEOUT_MS = 10000;
+const SLOW_TIMEOUT_MS = 35000;   // 업로드·삭제는 AI 적재·삭제를 기다린다(AI read 30s) — 10초면 서버는 커밋했는데 화면은 실패로 보인다
 
 export class ApiError extends Error {
   constructor({ status, code, message, fields }) {
@@ -54,13 +55,13 @@ async function doRefresh() {
   return refreshing;
 }
 
-async function send(method, path, { body, form, signal, retried = false } = {}) {
+async function send(method, path, { body, form, signal, retried = false, timeout = TIMEOUT_MS } = {}) {
   const headers = {};
   const token = useAuthStore.getState().accessToken;
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeout);
   if (signal) signal.addEventListener('abort', () => ctrl.abort());
   let res;
   try {
@@ -75,7 +76,7 @@ async function send(method, path, { body, form, signal, retried = false } = {}) 
   } catch (e) {
     if (e.code === 'TOKEN_EXPIRED' && !retried && path !== '/api/auth/login') {
       try { await doRefresh(); } catch (re) { useAuthStore.getState().clear(); throw re; }
-      return send(method, path, { body, form, signal, retried: true });
+      return send(method, path, { body, form, signal, retried: true, timeout });
     }
     if (e.status === 401 && path !== '/api/auth/login') useAuthStore.getState().clear();
     throw e;
@@ -86,8 +87,8 @@ export const api = {
   get: (path, opts) => send('GET', path, opts),
   post: (path, body, opts) => send('POST', path, { ...opts, body }),
   put: (path, body, opts) => send('PUT', path, { ...opts, body }),
-  del: (path, opts) => send('DELETE', path, opts),
-  upload: (path, formData, opts) => send('POST', path, { ...opts, form: formData }),
+  del: (path, opts) => send('DELETE', path, { timeout: SLOW_TIMEOUT_MS, ...opts }),
+  upload: (path, formData, opts) => send('POST', path, { timeout: SLOW_TIMEOUT_MS, ...opts, form: formData }),
 };
 
 /**
