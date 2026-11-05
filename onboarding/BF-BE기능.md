@@ -277,7 +277,7 @@ AI 컨테이너 정지 상태로 업로드·삭제(503 봉투)·스트림(event:
 | D3 | [T-055](../tasks/T-055-delete-order.md) | 문서 삭제 순서: AI DELETE → 그 문서를 쓴 분석 → 문서 · AI 실패면 503이고 DB 그대로 | T-024 |
 | D3 | [T-025](../tasks/T-025-stream-relay.md) | 분석 스트림 중계 | T-006 · T-013 · T-019 |
 | D3 | [T-056](../tasks/T-056-analysis-list.md) | 분석 목록(lastStatus 파생)·메시지 페이징 | T-025 |
-| D3 | [T-026](../tasks/T-026-s01-ownership.md) | `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]` | T-014 · T-025 · 기술 리드 재현 |
+| D3 | [T-026](../tasks/T-026-s01-ownership.md) | `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]` | T-014 · T-025 · T-062(FE-분석 재현) |
 | D4 | [T-038](../tasks/T-038-be-500-check.md) | 500 경로 점검(삭제 중 AI 실패 · 스트림 중 AI 다운) · N+1 확인 | T-025 |
 | D5 | [T-045](../tasks/T-045-docs34.md) | 3번·4번 문서 실물 대조 | T-056 |
 

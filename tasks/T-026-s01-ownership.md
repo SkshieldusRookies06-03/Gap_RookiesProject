@@ -1,6 +1,6 @@
 # T-026 — `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]`
 
-**담당:** BE-기능 · **브랜치:** `feature/be-feature-T-026` · **예상:** D3 · **선행:** T-014 · T-025 · 기술 리드 재현
+**담당:** BE-기능 · **브랜치:** `feature/be-feature-T-026` · **예상:** D3 · **선행:** T-014 · T-025 · T-062(FE-분석 재현)
 
 ## [배경]
 SPEC.md §7 S-01 · ADR-06 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대로 붙여 넣는다(링크만 주지 않는다).
@@ -9,7 +9,7 @@ SPEC.md §7 S-01 · ADR-06 — 이 절 본문을 지시서(에이전트 프롬�
 `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]` — 방어만 담은 커밋 하나.
 
 ## [수용 기준]
-- [ ] 기술 리드의 조치 전 재현 캡처 **뒤에** 머지
+- [ ] FE-분석의 조치 전 재현(T-062) 캡처 **뒤에** 머지
 - [ ] 소유(403) → 존재(404) → 업무 규칙(400) · `AuditLog.forbidden(...)`
 - [ ] `DocumentAcceptanceTest` ② · `AnalysisAcceptanceTest` ② ⑥ green · IDOR 회귀 테스트 1
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력

@@ -17,7 +17,7 @@ SPEC.md §7 S-03 · ADR-04 — 이 절 본문을 지시서(에이전트 프롬�
 - [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다
 
 ## [제약]
-- 수정 허용: `backend/src/main/java/com/jobgap/security/` · `security/` · `backend/src/main/java/com/jobgap/document/DocumentService.java` · `backend/src/main/java/com/jobgap/analysis/AnalysisService.java`
+- 수정 허용: `backend/src/main/java/com/jobgap/security/` · `security/evidence/S-03/` · `security/evidence/B-9-audit.txt` · `backend/src/main/java/com/jobgap/document/DocumentService.java` · `backend/src/main/java/com/jobgap/analysis/AnalysisService.java`
 - 판정 테스트(`backend/src/test/**/acceptance/` · `ai-module/tests/` · 기술 리드가 커밋한 `*.test.jsx`)·게이트(`seams/`·`scripts/`)는 고치지 않는다
 - commit·push는 사람이 한다 · 커밋 `type(범위): 요약 [T-028]` · 전면 재작성 금지
 - 참고: BF 파일은 호출 1줄씩만 — BF 리뷰

@@ -16,7 +16,7 @@ EC2 배포 · 외부 포트 캡처(I 행 증거).
 - [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다
 
 ## [제약]
-- 수정 허용: `deploy/` · `security/evidence/`
+- 수정 허용: `deploy/` · `security/evidence/I-*`
 - 판정 테스트(`backend/src/test/**/acceptance/` · `ai-module/tests/` · 기술 리드가 커밋한 `*.test.jsx`)·게이트(`seams/`·`scripts/`)는 고치지 않는다
 - commit·push는 사람이 한다 · 커밋 `type(범위): 요약 [T-042]` · 전면 재작성 금지
 

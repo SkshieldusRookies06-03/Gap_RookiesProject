@@ -48,10 +48,11 @@
 | [T-055](T-055-delete-order.md) | BF | 문서 삭제 순서: AI DELETE → 그 문서를 쓴 분석 → 문서 · AI 실패면 503이고 DB 그대로. | T-024 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
 | [T-025](T-025-stream-relay.md) | BF | 분석 스트림 중계 — 새 분석·후속 질문 · done 가로채 저장. | T-006 · T-013 · T-019 | `cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest` |
 | [T-056](T-056-analysis-list.md) | BF | 분석 목록(lastStatus 파생)·메시지 페이징. | T-025 | `cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest` |
-| [T-026](T-026-s01-ownership.md) | BF | `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]` — 방어만 담은 커밋 하나. | T-014 · T-025 · 기술 리드 재현 | `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,AnalysisAcceptanceTest'` |
+| [T-026](T-026-s01-ownership.md) | BF | `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]` — 방어만 담은 커밋 하나. | T-014 · T-025 · T-062(FE-분석 재현) | `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,AnalysisAcceptanceTest'` |
 | [T-027](T-027-s02-lock-seed.md) | LD | `fix(security): [S-02] 로그인 5회 잠금 · B-5 [T-027]` + SeedIngestRunner. | T-015 · 기술 리드 재현 | `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` |
 | [T-028](T-028-s03-masking.md) | TL | `fix(security): [S-03] 업로드·제목·질문 PiiMasker 연결 · A-3 [T-028]` + 감사 로그 캡처. | T-017 · T-024 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
 | [T-029](T-029-langgraph-branch.md) | AI | LangGraph 분기(grade → Tavily)와 FOLLOWUP 검색. | T-019 | `cd ai-module && pytest -q` |
+| [T-062](T-062-s01-reproduce.md) | FA | S-01 IDOR 재현 — 조치 전 커밋에서 kim 토큰으로 lee 문서·분석을 열어 200을 캡처하고, T-026 머지 뒤 같은 요청 403으로 재확인한다. | T-014(머지·소유 검증 없음) · T-015 | `curl -s localhost:8080/api/documents/3 -H "Authorization: Bearer $T"` |
 | [T-030](T-030-followup-ui.md) | FA | 후속 질문·기록 재진입(hydrate)·분석 화면 상태 테스트. | T-022 | `cd frontend && npm test` |
 | [T-031](T-031-analyses-page.md) | FS | 분석 기록 화면. | T-009 | `cd frontend && npm test` |
 | [T-032](T-032-compose-e2e.md) | DO | compose 전체 기동 = 1차 통합 E2E. | T-023 · T-024 · T-025 | `docker compose up -d --build && OTHER_DOC_ID=3 OTHER_ANALYSIS_ID=1 node seams/check-api.mjs http://localhost` |
@@ -61,12 +62,13 @@
 
 | T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| [T-034](T-034-dynamic-check.md) | TL | 동적 점검일: 원장 B·A·I 행 · Burp(S-01·S-02 재확인) · SBOM. F 행은 FE-분석(T-039). | T-026 · T-027 · T-028 | `node scripts/check-rubric-p3.mjs | grep R-SE` |
+| [T-034](T-034-dynamic-check.md) | TL | 동적 점검일: 원장 취합 · B-2~7·B-9·B-12~14·A·I 행 · S-02 Burp · SBOM. FE-분석 몫(F 행·B-1·8·10·11·S-01)은 `security/rows/FA.md`에서 합친다. | T-026 · T-027 · T-028 | `node scripts/check-rubric-p3.mjs | grep R-SE` |
 | [T-035](T-035-golden-eval.md) | AI | 골든셋 세 조건 평가 → `eval/result.md`. | T-029 · T-011 | `cd ai-module && LLM_PROVIDER=openai python eval/run_eval.py` |
 | [T-036](T-036-a2-injection.md) | AI | 프롬프트 인젝션 재현 → 자료 구분자 조치(발견이면 `fix(security): [S-04]`). | T-029 | `cd ai-module && pytest -q` |
 | [T-037](T-037-edge-400.md) | LD | 400·415 경계 정리 — 500이나 봉투 아닌 응답 제거. | T-015 | `cd backend && ./mvnw test` |
 | [T-038](T-038-be-500-check.md) | BF | 500 경로 점검(삭제 중 AI 실패 · 스트림 중 AI 다운) · N+1 확인. | T-025 | `docker compose stop ai-service && OTHER_DOC_ID=3 OTHER_ANALYSIS_ID=1 node seams/check-api.mjs http://localhost` |
-| [T-039](T-039-fe-security-check.md) | FA | 스트림 error UI + 원장 F-1~F-7 점검·증거·9번 F절 초안. | T-022 · T-054 | `cd frontend && npm test` |
+| [T-039](T-039-fe-security-check.md) | FA | 스트림 error UI + 프론트 보안 점검 F-1~F-7(증거·기록). | T-022 · T-054 | `cd frontend && npm test` |
+| [T-063](T-063-be-static-check.md) | FA | 백엔드 정적·입력 점검 B-1·B-8·B-10·B-11 — 실행한 명령과 결과를 기록한다. | T-026 · T-037 | `grep -rn '" *+ *[a-z]' backend/src/main --include=*Repository.java | wc -l` |
 | [T-040](T-040-scope-cut.md) | LD | 아침 ⓪ 빈칸 세기 → 자르기 결정 · README 실행 절차. | T-033 | `node scripts/check-rubric-p3.mjs` |
 | [T-059](T-059-fe-common-check.md) | FS | 공용 컴포넌트 재사용·PropTypes·에러 문구 점검. | T-021 · T-031 | `cd frontend && npm test && npm run build` |
 | [T-041](T-041-build-push.md) | DO | 빌드·푸시 워크플로 3개. | T-023 | `(GitHub Actions 화면)` |

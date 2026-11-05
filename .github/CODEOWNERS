@@ -6,6 +6,8 @@
 
 /frontend/                                     @FE_SCREENS
 /frontend/src/pages/analysis/                  @FE_ANALYSIS
+/frontend/src/pages/analysis/ReportText*       @TECHLEAD
+/frontend/src/pages/analysis/SourceChips*      @TECHLEAD
 /frontend/src/hooks/useChatStream*             @FE_ANALYSIS
 /frontend/src/stores/chatStore*                @FE_ANALYSIS
 
@@ -32,6 +34,7 @@
 /mock/                                         @TECHLEAD
 /scripts/                                      @TECHLEAD
 /security/                                     @TECHLEAD
+/security/rows/FA.md                           @FE_ANALYSIS
 /.github/CODEOWNERS                            @TECHLEAD
 
 /README.md                                     @TEAMLEAD

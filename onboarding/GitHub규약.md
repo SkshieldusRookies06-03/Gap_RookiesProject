@@ -9,7 +9,7 @@
 | `main` | 통합·배포 기준 | **보호** — 직접 푸시 금지 · PR만 · 승인 1 · Code Owners 리뷰 필수 · CI 1단계 green 필수 |
 | `feature/<레인>-<T-0XX>` | 티켓 하나 | 티켓 하나 = 브랜치 하나 = PR 하나 · 레인: `lead` `techlead` `be-feature` `ai` `fe-screens` `fe-analysis` `devops` |
 | `spike/<이름>` | D1 스파이크 | 머지하지 않는다 — 결과는 `docs/spikes/*.md`로 따로 PR |
-| `demo/S-0N` | 보안 재현(방어 해제) | 머지하지 않는다 — 기술 리드만 |
+| `demo/S-0N` | 보안 재현(방어 해제) | 머지하지 않는다 — 기술 리드 · FE-분석(S-01)만 |
 
 ```bash
 git switch main && git pull

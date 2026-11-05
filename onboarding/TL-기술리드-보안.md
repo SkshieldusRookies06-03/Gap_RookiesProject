@@ -62,18 +62,11 @@
 ### T-017 (D2) — PiiMasker 고정
 - 완성본 + 테스트 green 확인만. **업로드에 연결하지 않는다** — S-03의 "조치 전" 상태가 이력에 있어야 한다
 
-### S-01 · S-02 재현 (D3 · 조치 커밋보다 먼저)
-조치 전 커밋 = T-014(BF 문서 API · 소유 검증 없음) · T-015(BA 인증 · 잠금 없음)가 머지된 시점.
-```bash
-# S-01 IDOR — 시드: kim(문서 1·2) · lee(문서 3·4, 분석 1)
-T=$(curl -s -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' \
-  -d '{"email":"kim@example.com","password":"Passw0rd!"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).data.accessToken')
-curl -s localhost:8080/api/documents/3 -H "Authorization: Bearer $T" | tee security/evidence/S-01/before.json   # 200이면 발견
-git rev-parse --short HEAD > security/evidence/S-01/before-commit.txt
-```
-- Burp: Proxy로 `GET /api/documents/1`(내 것) 잡기 → Repeater → id를 3으로 → 200 화면 캡처 `S-01/burp-before.png`
+### S-02 재현 (D3 · 조치 커밋보다 먼저) — S-01은 FE-분석(T-062)
+조치 전 커밋 = T-015(BA 인증 · 잠금 없음)가 머지된 시점.
 - S-02: Burp Intruder · `POST /api/auth/login` · password 위치 페이로드 10개 · 결과 표(전부 401, 잠금 없음) 캡처 `S-02/intruder-before.png`
-- 재현 끝났다고 채널에 → BF가 T-026, BA가 T-027 머지 → **같은 요청으로 재확인**: `after.json`(403 봉투) · `intruder-after.png`(6번째부터 423) · 감사 로그 줄 `audit.log`
+- 재현 끝났다고 채널에 → BA가 T-027 머지 → **같은 요청으로 재확인**: `intruder-after.png`(6번째부터 423) · 감사 로그 줄
+- S-01은 FE-분석이 onboarding/FA §9.1 명령으로 재현한다. 나는 `before.json`이 200인지·T-026이 그 뒤에 머지됐는지만 확인
 
 ### T-028 (D3) — S-03 마스킹 연결 + 감사 로그
 1. 재현(조치 전): `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` → 가짜 연락처 든 이력서 업로드 →
@@ -96,13 +89,12 @@ String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스�
 
 | 행 묶음 | 방법(점검 방법 칸에 그대로) | 증거 |
 |---|---|---|
-| B-1 | `grep -rn '"\s*+' backend/src/main --include=*Repository.java` 0건 · `sort=title' OR '1'='1` → 400 | `B-1.txt` |
-| B-2 · B-5 | S-01 · S-02 (위) | `S-01/` · `S-02/` |
-| B-3 · B-4 · F-2 · F-3 | 만료·위조 토큰 401(SecurityAcceptanceTest 출력) · DB `refresh_token_hash` 64자 · 재발급 후 이전 refresh 401 · DevTools localStorage 캡처 · 비로그인 `/documents` → `/login` | `B-3.txt` 등 |
+| B-1 · B-8 · B-10 · B-11 | **FE-분석(T-063)** — `security/rows/FA.md`에서 옮긴다 | `B-*.txt` |
+| B-2 · B-5 | S-01(FE-분석 T-062) · S-02(나) | `S-01/` · `S-02/` |
+| B-3 · B-4 | 만료·위조 토큰 401(SecurityAcceptanceTest 출력) · DB `refresh_token_hash` 64자 · 재발급 후 이전 refresh 401 (F-2·F-3은 FE-분석) | `B-3.txt` 등 |
 | B-6 | 쿠키 인증 0 (`grep -rn Cookie backend/src/main` 0) + 사유 문장 | — |
-| B-7 · B-8 · I-1 · I-3 · I-4 | `node scripts/check-sec-deploy.mjs` 무출력 · 500 유발(잘못된 JSON 본문) 응답에 스택 없음 | `sec-deploy.txt` |
+| B-7 · I-1 · I-3 · I-4 | `node scripts/check-sec-deploy.mjs` 무출력 · | `sec-deploy.txt` |
 | B-9 | 감사 로그 4줄 | `B-9-audit.txt` |
-| B-10 · F-6 | 200KB+1 파일(nginx 경유 413 봉투) · `.exe`·`.html`·`a.md.exe` → 415 | `B-10.txt` |
 | B-11 | 필드별 400 `fields[]` | — |
 | B-12 | `SELECT LEFT(password_hash,4) FROM users` → `$2a$` | — |
 | B-13 | `cd backend && ./mvnw org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom && cp target/bom.json ../security/evidence/bom.json` — High 이상이면 `발견` → 버전 올림 커밋도 `fix(security):` | `bom.json` |
@@ -130,9 +122,9 @@ String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스�
 | 상대 | 받는 것 | 주는 것 | 언제 |
 |---|---|---|---|
 | BE-인증 | 골격 커밋(컴파일) · T-027 잠금 | JwtProvider·PasswordEncoder·감사 리스너 · S-02 재현 | D1 · D3 |
-| BE-기능 | T-014 머지(조치 전) · T-026 | PageRequests·ErrorCode · S-01 재현 · S-03 연결 리뷰 요청 | D2~D3 |
+| BE-기능 | T-014 머지(조치 전) · T-026 | PageRequests·ErrorCode · S-03 연결 리뷰 요청 | D2~D3 |
 | AI | A-2 결과(T-036) | check-ai · AI 판정 테스트 | D4 |
-| FE-분석 | F-1~F-7 점검·증거(D4) · 9번 F절 초안 | `ReportText`·`SourceChips`(D2) · 판정 테스트 | D2·D4 |
+| FE-분석 | S-01 재현(D3) · F-1~F-7 · B-1·8·10·11 → `security/rows/FA.md`(D4) | `ReportText`·`SourceChips`(D2) · 판정 테스트 | D2·D4 |
 | FE-화면 | F-1 재현 대상 화면(내 문서 제목) | 판정 테스트 · ErrorMessage 문구 표(§4.4) | D3~D4 |
 | DevOps | 외부 포트 캡처(T-042) · CSP 헤더 | I-행 점검 방법 · `check-sec-deploy` | D4~D5 |
 | 팀장 | 동결 승인 · 자르기 결정 | 게이트 결과(D3·D5) · 보안 시연 5분 | D1·D3·D5 |
@@ -145,8 +137,8 @@ String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스�
 |---|---|---|---|
 | D1 | T-001 커밋 · 팀원 환경 확인 | BE 첫 컴파일 대응 · 목 서버 시연 | **SPEC 동결** |
 | D2 | T-016 관측 | T-017 · 리뷰 | `check-sec-deploy` 1회 |
-| D3 | S-01·S-02 재현(조치 전) | T-028 · S-01/S-02 재확인 | T-033 rubric |
-| D4 | 동적 점검(자동 행) | 동적 점검(Burp·컨테이너) | 원장 31행 · 9번 초안 |
+| D3 | S-02 재현(조치 전) · S-01 재현 확인(FE-분석) | T-028 · S-02 재확인 | T-033 rubric |
+| D4 | 동적 점검(자동 행) | 동적 점검(Burp·컨테이너) | `rows/FA.md` 옮기기 · 원장 31행 · 9번 초안 |
 | D5 | CI 2단계 필수로 | EC2 외부 포트 재확인(DevOps와) | T-048 · 동결 |
 | D6 | 시연 리허설 | 제출 게이트 | — |
 
@@ -193,7 +185,7 @@ String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스�
 | D2 | [T-054](../tasks/T-054-safe-render.md) | 분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`(완성본)를 FE-분석에 넘긴다 | T-009 |
 | D3 | [T-028](../tasks/T-028-s03-masking.md) | `fix(security): [S-03] 업로드·제목·질문 PiiMasker 연결 · A-3 [T-028]` + 감사 로그 캡처 | T-017 · T-024 |
 | D3 | [T-033](../tasks/T-033-rubric-d3.md) | 저녁 평가표 게이트 → MISS를 D4~D5 티켓으로 배정 | T-032 |
-| D4 | [T-034](../tasks/T-034-dynamic-check.md) | 동적 점검일: 원장 B·A·I 행 · Burp(S-01·S-02 재확인) · SBOM. F 행은 FE-분석(T-039) | T-026 · T-027 · T-028 |
+| D4 | [T-034](../tasks/T-034-dynamic-check.md) | 동적 점검일: 원장 취합 · B-2~7·B-9·B-12~14·A·I 행 · S-02 Burp · SBOM. FE-분석 몫(F 행·B-1·8·10·11·S-01)은 `security/rows/FA.md`에서 합친다 | T-026 · T-027 · T-028 |
 | D5 | [T-048](../tasks/T-048-gates-docs9.md) | 게이트 무출력 · 9번 본문 | T-034 |
 | D6 | [T-051](../tasks/T-051-demo-gate.md) | 보안 시연 리허설(Burp 순서 고정) · 제출 D-1 게이트 | T-048 |
 

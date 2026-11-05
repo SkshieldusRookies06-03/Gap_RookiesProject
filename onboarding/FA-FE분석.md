@@ -2,7 +2,7 @@
 
 > 정본은 `SPEC.md` §4.3(스트림·이벤트) · §5(화면). 이 문서는 "어떻게"까지 내려간 실행 명세다 — SPEC과 다르면 SPEC이 이긴다.
 > 지시서: `tasks/T-010·T-022·T-030-*.md` · 일정: `tasks/BOARD.md`(T-039·T-043 포함).
-> **보안 분담**: 원장 F-1~F-7 점검·기록과 9번 F절 초안은 내 몫(§9). 응답 렌더 컴포넌트(`ReportText`·`SourceChips`)는 기술 리드 몫 — 나는 import해서 쓴다.
+> **보안 분담**: S-01 재현 · F-1~F-7 · B-1·8·10·11 점검·기록(`security/rows/FA.md`)은 내 몫(§9). 원장·9번 취합은 기술 리드. 응답 렌더 컴포넌트(`ReportText`·`SourceChips`)는 기술 리드 몫 — 나는 import해서 쓴다.
 
 ## 0. 판정 테스트
 
@@ -275,11 +275,35 @@ req는 {postingId, resumeId} 또는 {analysisId, question} — 이 객체를 그
 끝나면 실행한 명령과 테스트 출력을 그대로 붙여라. commit은 하지 마라.
 ```
 
-## 9. 보안 — 프론트 점검 행 F-1~F-7 (D4 동적 점검일 · 기술 리드와 분담)
+## 9. 보안 — 기술 리드와 나눠 맡는 몫 (D3 재현 · D4 점검)
 
-방어 코드(응답 렌더 `ReportText`·`SourceChips`, CSP)는 기술 리드·DevOps가 쓰고, **점검·증거·기록은 내가** 한다(쓴 사람과 확인하는 사람을 나눈다).
-원장 `security/LEDGER.md`의 F 행 점검 방법·결과·증거 칸을 내가 채우고, 9번 보안점검서 F절(프론트 점검표) 초안을 내 커밋으로 넣는다. 기술 리드가 취합한다.
+방어 코드(`ReportText`·`SourceChips`, CSP, 소유 검증)는 다른 사람이 쓰고, **재현·점검·증거·기록은 내가** 한다(쓴 사람과 확인하는 사람을 나눈다).
+기록은 **`security/rows/FA.md` 한 파일에만** 쓴다. 원장(`security/LEDGER.md`)·9번 보안점검서는 기술 리드가 내 파일을 옮겨 적는다 — 둘이 같은 파일을 고치면 충돌난다.
 결과 칸은 `발견`·`미발견`·`해당 없음(사유)`·`미조치(→ §7)` 중 하나 — 점검 방법 칸에는 **실제로 한 것**을 적는다.
+
+| 내 몫 | 티켓 | 날 |
+|---|---|---|
+| S-01 IDOR 재현(조치 전) → T-026 머지 뒤 재확인 | T-062 | D3 |
+| F-1~F-7 프론트 점검 | T-039 | D4 |
+| B-1 · B-8 · B-10 · B-11 백엔드 정적·입력 점검 | T-063 | D4 |
+| 기술 리드에 남는 것 | 원장 취합 · S-02 · S-03 · 나머지 B·A·I 행 · 9번 최종 | — |
+
+### 9.1 S-01 재현 (T-062 · D3 · **T-026 머지 전에**)
+조치 전 = T-014(문서 API · 소유 검증 없음)가 머지되고 T-026은 아직인 시점. 백엔드를 띄운다(`./mvnw spring-boot:run` 또는 compose).
+```bash
+# 시드: kim(문서 1·2) · lee(문서 3·4, 분석 1)
+T=$(curl -s -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"kim@example.com","password":"Passw0rd!"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).data.accessToken')
+mkdir -p security/evidence/S-01
+curl -s localhost:8080/api/documents/3 -H "Authorization: Bearer $T" | tee security/evidence/S-01/before.json   # 200이면 발견
+curl -s localhost:8080/api/analyses/1/messages -H "Authorization: Bearer $T" >> security/evidence/S-01/before.json
+git rev-parse --short HEAD > security/evidence/S-01/before-commit.txt
+```
+- Burp: Proxy로 `GET /api/documents/1`(내 것) 잡기 → Repeater → id를 3으로 → 200 화면 캡처 `S-01/burp-before.png`
+- 채널에 **"S-01 재현 완료"** → BE-기능이 T-026 머지 → `git pull` 후 같은 두 요청 → `after.json`(403 봉투) · `burp-after.png` · 백엔드 로그의 AUDIT 줄 `audit.log`
+- 이미 T-026이 머지돼 버렸으면: `git switch -c demo/S-01 $(cat security/evidence/S-01/before-commit.txt)` 에서 재현하고 rows/FA.md에 "방어 해제 브랜치에서 재현"이라고 그대로 쓴다(머지하지 않는다)
+
+### 9.2 F-1~F-7 (T-039 · D4)
 
 | 행 | 점검 방법 | 증거 파일(`security/evidence/`) |
 |---|---|---|
@@ -287,11 +311,22 @@ req는 {postingId, resumeId} 또는 {analysisId, question} — 이 객체를 그
 | F-2 토큰 저장 | DevTools → Application → localStorage `jobgap-auth`에 refreshToken만, accessToken 없음 | `F-2.png` |
 | F-3 라우트·변조 토큰 | 비로그인으로 `/documents` 직접 접근 → `/login` · localStorage refresh를 임의 값으로 → 다음 요청 후 로그인 화면 | `F-3.txt` |
 | F-4 번들 키 | `npm run build && grep -rn "sk-\|tvly-\|OPENAI" dist` 0줄 · `VITE_*`는 `VITE_API_URL` 하나 | `F-4.txt` |
-| F-5 의존성 | `npm audit --json > ../security/evidence/npm-audit.json` · High 이상이면 `발견` → 버전 올림 커밋 `fix(security): [S-0N] …` | `npm-audit.json` |
+| F-5 의존성 | `npm audit --json > ../security/evidence/npm-audit.json` · High 이상이면 `발견` → 기술 리드에게(버전 올림은 `fix(security)` 커밋) | `npm-audit.json` |
 | F-6 입력 검증 | 업로드 `.exe`·300KB → 화면에서 먼저 안내(서버 415/413도 확인) · 질문 1001자 | `F-6.txt` |
 | F-7 에러 처리 | 500·503 응답일 때 화면 문구가 `ErrorMessage`의 사용자 문구(서버 message·스택 아님) | `F-7.png` |
 
-커밋: `docs(security): 프론트 점검 F-1~F-7 증거 [T-039]`
+### 9.3 B-1 · B-8 · B-10 · B-11 (T-063 · D4 · 백엔드 띄우고 `$T`는 9.1 명령)
+
+| 행 | 점검 방법 | 증거 |
+|---|---|---|
+| B-1 SQL Injection | `grep -rnE '"\s*\+' backend/src/main --include=*Repository.java` 0줄 · `curl -s "localhost:8080/api/documents?sort=title%27%20OR%20%271%27=%271" -H "Authorization: Bearer $T"` → 400 봉투 | `B-1.txt` |
+| B-8 예외 노출 | 깨진 JSON 본문 `curl -s -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{'` → 응답에 `Exception`·`at com.` 없음 | `B-8.txt` |
+| B-10 업로드 | compose(`http://localhost`, nginx 경유)로 300KB `.md` → 413 · `a.exe` · `a.html` · `a.md.exe` → 415 | `B-10.txt` |
+| B-11 입력 검증 | 가입에 이메일 형식 틀림·비밀번호 3자 → 400 + `fields[]`에 필드별 항목 | `B-11.txt` |
+
+### 9.4 rows/FA.md 쓰는 법
+행마다 원장과 같은 칸(점검 방법 · 결과 · 재확인 · 증거)을 채운다. 다 쓰면 기술 리드에게 "rows/FA.md 완료" — 기술 리드가 T-034에서 원장으로 옮긴다.
+커밋: `docs(security): S-01 재현 증거 [T-062]` · `docs(security): 프론트 점검 F-1~F-7 [T-039]` · `docs(security): B-1·8·10·11 점검 [T-063]` — 방어 코드는 내 커밋에 넣지 않는다.
 
 ## 10. 내 티켓 전체 (최신 · `tasks/` 생성본 — 위 절과 번호가 다르면 이 표가 이긴다)
 
@@ -299,8 +334,10 @@ req는 {postingId, resumeId} 또는 {analysisId, question} — 이 객체를 그
 |---|---|---|---|
 | D1 | [T-010](../tasks/T-010-analysis-wire.md) | 분석 화면 와이어(종이 1장)를 SPEC §4.3과 대조하고, 목 스트림을 직접 읽어 본다 | T-009 |
 | D2 | [T-022](../tasks/T-022-chat-stream.md) | useChatStream과 분석 화면 기본(선택 → 스트리밍 → 중단) | T-010 · T-054 |
+| D3 | [T-062](../tasks/T-062-s01-reproduce.md) | S-01 IDOR 재현 | T-014(머지·소유 검증 없음) · T-015 |
 | D3 | [T-030](../tasks/T-030-followup-ui.md) | 후속 질문·기록 재진입(hydrate)·분석 화면 상태 테스트 | T-022 |
-| D4 | [T-039](../tasks/T-039-fe-security-check.md) | 스트림 error UI + 원장 F-1~F-7 점검·증거·9번 F절 초안 | T-022 · T-054 |
+| D4 | [T-039](../tasks/T-039-fe-security-check.md) | 스트림 error UI + 프론트 보안 점검 F-1~F-7(증거·기록) | T-022 · T-054 |
+| D4 | [T-063](../tasks/T-063-be-static-check.md) | 백엔드 정적·입력 점검 B-1·B-8·B-10·B-11 | T-026 · T-037 |
 | D5 | [T-043](../tasks/T-043-responsive-docs6.md) | 반응형 캡처 3장 + 6번 문서 내 절 | T-030 |
 
 매일 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md` · 화면 눈 검사: `seams/smoke.md` · 하루 끝 3줄: `worklog/<내이름>/D#.md`
