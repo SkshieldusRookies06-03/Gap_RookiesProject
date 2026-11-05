@@ -1,0 +1,10 @@
+# 로컬 디버깅 전용 — 127.0.0.1에만 바인드(외부 노출 아님). 둘째 seam 검사·BE 테스트·IDE 실행에 쓴다.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database          ← BE ./mvnw test 용 DB만
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up                      ← 전체 + 포트 열기
+services:
+  database:
+    ports: ["127.0.0.1:3306:3306"]
+  backend:
+    ports: ["127.0.0.1:8080:8080"]
+  ai-service:
+    ports: ["127.0.0.1:8000:8000"]

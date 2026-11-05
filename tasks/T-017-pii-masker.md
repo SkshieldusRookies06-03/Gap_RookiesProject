@@ -1,0 +1,25 @@
+# T-017 — PiiMasker를 단위 테스트로 고정한다
+
+**담당:** 기술 리드·보안 · **브랜치:** `feature/techlead-T-017` · **예상:** D2 · **선행:** T-005
+
+## [배경]
+SPEC.md §6.5 · ADR-04 — 이 절을 지시서(에이전트 프롬프트)에 붙여 넣는다.
+
+## [목표]
+PiiMasker를 단위 테스트로 고정한다 — 업로드 연결은 D3(T-028)에서 `fix(security): [S-03]`로.
+
+## [수용 기준]
+- [ ] `PiiMaskerTest` green
+- [ ] 연결하지 않은 상태로 둔다(조치 전 상태 확보)
+- [ ] `node scripts/check-sec-deploy.mjs` 무출력
+- [ ] `node seams/check-scope.mjs T-017` 무출력
+
+## [제약]
+- 수정 허용: `backend/src/main/java/com/jobgap/security/PiiMasker.java` · `backend/src/test/java/com/jobgap/security/`
+- 판정 테스트(`backend/src/test/**/acceptance/` · `ai-module/tests/` · 기술 리드가 커밋한 `*.test.jsx`)는 고치지 않는다 — 틀려 보이면 기술 리드에게
+- commit·push는 사람이 한다 · 커밋 메시지 `type(범위): 요약 [T-017]`
+
+## [확인 명령]
+```bash
+cd backend && ./mvnw test -Dtest=PiiMaskerTest
+```

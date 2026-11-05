@@ -1,0 +1,11 @@
+# 테스트 전용 — 실 MariaDB(로컬: docker compose -f docker-compose.dev.yml up -d db · CI: services.db)
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:mariadb://127.0.0.1:3306/jobgap}
+    username: ${TEST_DB_USER:jobgap}
+    password: ${TEST_DB_PASSWORD:jobgap}
+app:
+  jwt:
+    secret: test-only-secret-0123456789abcdef0123456789abcdef
+  ai:
+    internal-token: test-internal-token      # base-url은 AcceptanceSupport가 MockWebServer 주소로 덮는다

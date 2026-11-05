@@ -1,0 +1,23 @@
+/* 색·간격·브레이크포인트 토큰 한 곳 (오너: 팀장) — 컴포넌트 CSS에 색·간격 리터럴 금지 (ADR-07)
+   브레이크포인트: CSS 변수는 @media에 못 쓰므로 값만 여기 적고 @media에는 같은 숫자를 쓴다 — 768px · 1280px */
+:root {
+  --color-bg: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-text: #1d1d1f;
+  --color-muted: #6b6b70;
+  --color-primary: #2f5bea;
+  --color-primary-text: #ffffff;
+  --color-danger: #c62828;
+  --color-border: #e2e2e5;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius: 8px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 20px;
+  --content-max: 1120px;
+}

@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+target/
+__pycache__/
+.venv/
+*.log
+.idea/
+.vscode/
+ai-module/vector-data/

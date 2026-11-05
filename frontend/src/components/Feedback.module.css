@@ -1,0 +1,2 @@
+.box { padding: var(--space-6); text-align: center; color: var(--color-muted); }
+.error { color: var(--color-danger); }
