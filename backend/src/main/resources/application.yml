@@ -20,10 +20,11 @@ spring:
   servlet.multipart:
     max-file-size: 200KB        # SPEC §1 업로드 — nginx client_max_body_size 1m 과 짝
     max-request-size: 1MB
-  mvc.async.request-timeout: 300s   # SSE 중계 — nginx proxy_read_timeout 300s 와 같은 값
+  mvc.async.request-timeout: 300s   # SSE 중계 — 사슬: WebClient 290s < 이 값 < nginx 310s (먼저 끊기는 쪽이 event: error를 낼 수 있게)
 
 server:
   port: 8080
+  forward-headers-strategy: native   # nginx의 X-Forwarded-* → 실제 IP·스킴(감사 로그 IP · CORS 판정)
   error:
     include-stacktrace: never
     include-message: never
@@ -45,7 +46,7 @@ app:
     internal-token: ${AI_INTERNAL_TOKEN:}
     connect-timeout-ms: 3000
     read-timeout-ms: 30000
-    stream-timeout-seconds: 300
+    stream-timeout-seconds: 290
     history-size: 6
 
 logging.level.com.jobgap: INFO

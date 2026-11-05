@@ -33,6 +33,13 @@ public final class PiiMasker {
         return new Result(s, count[0]);
     }
 
+    /** 마스킹 뒤 길이 상한으로 자른다 — 11자리 번호가 13자 "010-****-****"가 되며 VARCHAR(100)·AI max_length를 넘지 않게 */
+    public static Result maskAndTrim(String input, int maxLength) {
+        Result r = mask(input);
+        String t = r.text().length() > maxLength ? r.text().substring(0, maxLength) : r.text();
+        return new Result(t, r.count());
+    }
+
     /** a***@x.com 형식 — 로그·화면 공용 */
     public static String maskEmail(String email) {
         if (email == null) return "";

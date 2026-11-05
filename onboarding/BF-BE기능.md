@@ -61,7 +61,7 @@ FastAPI 목(`cd ai-module && AI_INTERNAL_TOKEN=dev-token uvicorn mock_app:app --
 
 ### T-013 엔티티·리포지토리 (D2 · 선행 T-012 · BE-인증의 `User`)
 공통: `@Table(name)` · 전 필드 `@Column(name, nullable, length)` · to-one 전부 `@ManyToOne(fetch = FetchType.LAZY)` + `@JoinColumn(name = "…_id")` ·
-날짜 `OffsetDateTime`(`@PrePersist`로 now) · enum은 `@Enumerated(EnumType.STRING)` · 본문 `columnDefinition = "MEDIUMTEXT"`.
+날짜 `OffsetDateTime`(`@PrePersist`로 now) · enum은 `@Enumerated(EnumType.STRING)` **+ `columnDefinition = "VARCHAR(20)"`**(Hibernate 6.2+는 MariaDB에서 enum을 native `enum(...)`으로 기대해 `validate`가 깨진다) · 본문 `columnDefinition = "MEDIUMTEXT"` · `sources`는 `columnDefinition = "TEXT"`(없으면 varchar(255)로 기대해 validate 실패).
 
 | 엔티티 | 필드 → 컬럼 |
 |---|---|
@@ -225,7 +225,7 @@ AI 컨테이너 정지 상태로 업로드·삭제(503 봉투)·스트림(event:
 | 증상 | 원인 | 해결 |
 |---|---|---|
 | 스트림이 한꺼번에 도착 | RestClient로 받음 / nginx buffering | WebClient `bodyToFlux` · nginx는 DevOps(이미 off) |
-| 30초에 끊김 | async 타임아웃 | application.yml 300s(있음) |
+| 30초에 끊김 | async 타임아웃 | application.yml 300s(있음) · WebClient는 290s로 그보다 짧게 |
 | 스트림 끝에 401·AccessDenied | ASYNC 재진입 인가 | SecurityConfig에 있음 — 지웠는지 |
 | ① 토큰에 따옴표 두 겹 | data를 다시 JSON 인코딩 | AI data를 그대로 흘리고, 저장용만 디코드 |
 | ① done에 messageId 없음 | AI done을 그대로 흘림 | §T-025 concatMap |
@@ -235,6 +235,7 @@ AI 컨테이너 정지 상태로 업로드·삭제(503 봉투)·스트림(event:
 | ⑦ 500 FK | 분석이 문서를 참조 | 분석 먼저 삭제 |
 | 업로드 .md가 415(브라우저) | MIME가 octet-stream | MIME 허용 목록에 octet-stream·빈 값 |
 | validate 실패 content | MEDIUMTEXT 매핑 | `columnDefinition = "MEDIUMTEXT"` |
+| validate 실패 doc_type·sources | enum은 native enum, TEXT는 varchar(255)로 기대 | `columnDefinition = "VARCHAR(20)"` · `"TEXT"` |
 | LazyInitializationException | open-in-view=false | DTO 변환을 트랜잭션 안에서 |
 
 ## 7. 내가 쓰는 문서 절

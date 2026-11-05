@@ -47,7 +47,7 @@
 
 | T | 레인 | 할 일 | 수정 허용 | 확인 |
 |---|---|---|---|---|
-| T-024 | BF | AI 클라이언트(RestClient connect 3s·read 30s · WebClient 300s · `onErrorResume` → `AI_UNAVAILABLE`) · 업로드 순서(§1: 저장 → 트랜잭션 끝 → ingest → 실패 시 삭제) · 삭제 순서 §6.4 | — | AI 끈 상태 업로드 503 봉투 캡처 |
+| T-024 | BF | AI 클라이언트(RestClient connect 3s·read 30s · WebClient 290s · `onErrorResume` → `AI_UNAVAILABLE`) · 업로드 순서(§1: 저장 → 트랜잭션 끝 → ingest → 실패 시 삭제) · 삭제 순서 §6.4 | — | AI 끈 상태 업로드 503 봉투 캡처 |
 | T-025 | BF | analyses/stream 중계(§4.3 중계 규칙 · done 가로채 저장 후 messageId) · 목록(lastStatus 파생)·메시지 페이징 | — | 스트림 검사 + check-api 스트림 행 |
 | T-026 | BF | `fix(security): [S-01] 소유 검증 · B-2` — 문서·분석 서비스 + **IDOR 403 회귀 테스트** (TL이 조치 전 커밋에서 먼저 재현) | — | check-api 403 행 green |
 | T-027 | LD | `fix(security): [S-02] 로그인 5회 잠금 · B-5`(`lockedUntil` · 존재 계정만) + 잠금 테스트 · `SeedIngestRunner`(프로파일 seed · 전 문서 delete→ingest · BF의 AI 클라이언트 사용) | `backend/.../seed/`(BF 리뷰) | 6회째 423 · seed 기동 후 시드 문서로 분석 스트림 |

@@ -75,8 +75,8 @@ git rev-parse --short HEAD > security/evidence/S-01/before-commit.txt
 2. 조치 — 수정 허용: `DocumentService`(업로드 본문·제목) · `AnalysisService`(질문) 호출 한 줄씩:
 ```java
 var masked = PiiMasker.mask(text);            // 업로드: 디코딩 직후, 저장·ingest 전
-// BF가 만든 Document 생성 코드에 원문 대신 넘긴다: 제목 PiiMasker.mask(title).text() · 본문 masked.text() · 개수 masked.count()
-String question = PiiMasker.mask(req.question()).text();   // 스트림: USER 저장·AI 전송 전
+// BF가 만든 Document 생성 코드에 원문 대신 넘긴다: 제목 PiiMasker.maskAndTrim(title, 100).text() · 본문 masked.text() · 개수 masked.count()
+String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스트림: USER 저장·AI 전송 전
 ```
 3. 커밋: `fix(security): [S-03] 업로드·제목·질문 PiiMasker 연결 · A-3 [T-028]` · BF 리뷰
 4. 재확인: 같은 업로드 → `maskedCount: 2` · `S-03/after.json` · `DocumentAcceptanceTest` ③ green
