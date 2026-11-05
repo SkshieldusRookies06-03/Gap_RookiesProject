@@ -2,6 +2,7 @@
 
 > 정본은 `SPEC.md` §4.3(스트림·이벤트) · §5(화면). 이 문서는 "어떻게"까지 내려간 실행 명세다 — SPEC과 다르면 SPEC이 이긴다.
 > 지시서: `tasks/T-010·T-022·T-030-*.md` · 일정: `tasks/BOARD.md`(T-039·T-043 포함).
+> **보안 분담**: 원장 F-1~F-7 점검·기록과 9번 F절 초안은 내 몫(§9). 응답 렌더 컴포넌트(`ReportText`·`SourceChips`)는 기술 리드 몫 — 나는 import해서 쓴다.
 
 ## 0. 판정 테스트
 
@@ -184,21 +185,11 @@ useEffect(() => {
 | 에러 | `ErrorMessage` (403·404) + `Link to={ROUTES.ANALYSES}` "기록으로" |
 | 정상 | `MessageList` + `FollowUpForm` |
 
-출처 칩 — 웹 URL은 LLM·검색 결과에서 오므로 스킴을 검사한다(`javascript:` 링크 = F-1)
+리포트 본문·출처 칩은 **기술 리드 컴포넌트를 import해서 쓴다**(T-054 · 고치지 않는다 — 필요한 게 있으면 기술 리드에게):
 ```jsx
-const SAFE = /^https?:\/\//i;
-export default function SourceChips({ sources }) {
-  if (!sources?.length) return null;
-  return (
-    <ul className={styles.chips}>
-      {sources.map((s, i) => s.type === 'web' && SAFE.test(s.url ?? '')
-        ? <li key={i}><a href={s.url} target="_blank" rel="noopener noreferrer">웹 · {s.title}</a></li>
-        : <li key={i} title={s.chunk}>{s.docType === 'JOB_POSTING' ? '공고' : '이력서'} · {(s.chunk ?? '').slice(0, 24)}…</li>)}
-    </ul>
-  );
-}
-SourceChips.propTypes = { sources: PropTypes.arrayOf(PropTypes.shape({ type: PropTypes.oneOf(['doc', 'web']).isRequired,
-  docType: PropTypes.string, chunk: PropTypes.string, url: PropTypes.string, title: PropTypes.string })) };
+import ReportText from './ReportText.jsx';      // 마크다운 일부(제목·표·목록)를 HTML 없이 그린다 — F-1 방어선
+import SourceChips from './SourceChips.jsx';    // doc/web 구분 · 웹은 http(s)만 링크 · noopener
+<ReportText text={m.content} />  <SourceChips sources={m.sources} />
 ```
 (`type: 'web'`인데 URL이 http/https가 아니면 doc 분기로 떨어지지 않게 별도 텍스트로 보여도 된다 — 링크로만 만들지 않으면 된다.)
 
@@ -283,3 +274,33 @@ req는 {postingId, resumeId} 또는 {analysisId, question} — 이 객체를 그
 고치지 말 것: src/hooks/useChatStream.test.jsx · src/api/ · src/components/ · src/test/.
 끝나면 실행한 명령과 테스트 출력을 그대로 붙여라. commit은 하지 마라.
 ```
+
+## 9. 보안 — 프론트 점검 행 F-1~F-7 (D4 동적 점검일 · 기술 리드와 분담)
+
+방어 코드(응답 렌더 `ReportText`·`SourceChips`, CSP)는 기술 리드·DevOps가 쓰고, **점검·증거·기록은 내가** 한다(쓴 사람과 확인하는 사람을 나눈다).
+원장 `security/LEDGER.md`의 F 행 점검 방법·결과·증거 칸을 내가 채우고, 9번 보안점검서 F절(프론트 점검표) 초안을 내 커밋으로 넣는다. 기술 리드가 취합한다.
+결과 칸은 `발견`·`미발견`·`해당 없음(사유)`·`미조치(→ §7)` 중 하나 — 점검 방법 칸에는 **실제로 한 것**을 적는다.
+
+| 행 | 점검 방법 | 증거 파일(`security/evidence/`) |
+|---|---|---|
+| F-1 XSS | 문서 제목·질문·(목 응답)에 `<img src=x onerror=alert(1)>`·`<script>` 입력 → 글자로 보이고 alert 없음 · 출처 웹 링크 `javascript:` 가 링크가 아님 · `curl -sI http://localhost/ \| grep -i content-security` | `F-1.png` · `F-1-csp.txt` |
+| F-2 토큰 저장 | DevTools → Application → localStorage `jobgap-auth`에 refreshToken만, accessToken 없음 | `F-2.png` |
+| F-3 라우트·변조 토큰 | 비로그인으로 `/documents` 직접 접근 → `/login` · localStorage refresh를 임의 값으로 → 다음 요청 후 로그인 화면 | `F-3.txt` |
+| F-4 번들 키 | `npm run build && grep -rn "sk-\|tvly-\|OPENAI" dist` 0줄 · `VITE_*`는 `VITE_API_URL` 하나 | `F-4.txt` |
+| F-5 의존성 | `npm audit --json > ../security/evidence/npm-audit.json` · High 이상이면 `발견` → 버전 올림 커밋 `fix(security): [S-0N] …` | `npm-audit.json` |
+| F-6 입력 검증 | 업로드 `.exe`·300KB → 화면에서 먼저 안내(서버 415/413도 확인) · 질문 1001자 | `F-6.txt` |
+| F-7 에러 처리 | 500·503 응답일 때 화면 문구가 `ErrorMessage`의 사용자 문구(서버 message·스택 아님) | `F-7.png` |
+
+커밋: `docs(security): 프론트 점검 F-1~F-7 증거 [T-039]`
+
+## 10. 내 티켓 전체 (최신 · `tasks/` 생성본 — 위 절과 번호가 다르면 이 표가 이긴다)
+
+| 날 | 티켓 | 할 일 | 선행 |
+|---|---|---|---|
+| D1 | [T-010](../tasks/T-010-analysis-wire.md) | 분석 화면 와이어(종이 1장)를 SPEC §4.3과 대조하고, 목 스트림을 직접 읽어 본다 | T-009 |
+| D2 | [T-022](../tasks/T-022-chat-stream.md) | useChatStream과 분석 화면 기본(선택 → 스트리밍 → 중단) | T-010 · T-054 |
+| D3 | [T-030](../tasks/T-030-followup-ui.md) | 후속 질문·기록 재진입(hydrate)·분석 화면 상태 테스트 | T-022 |
+| D4 | [T-039](../tasks/T-039-fe-security-check.md) | 스트림 error UI + 원장 F-1~F-7 점검·증거·9번 F절 초안 | T-022 · T-054 |
+| D5 | [T-043](../tasks/T-043-responsive-docs6.md) | 반응형 캡처 3장 + 6번 문서 내 절 | T-030 |
+
+매일 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md` · 화면 눈 검사: `seams/smoke.md` · 하루 끝 3줄: `worklog/<내이름>/D#.md`

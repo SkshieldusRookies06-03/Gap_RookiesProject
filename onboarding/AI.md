@@ -248,3 +248,18 @@ web = [{"type": "web", "url": r["url"], "title": r["title"]} for r in res["resul
 [확인 명령] cd ai-module && pytest -q
 [출력] 바꾼 파일 diff 와 pytest 출력 그대로(산문 금지)
 ```
+
+## 10. 내 티켓 전체 (최신 · `tasks/` 생성본 — 위 절과 번호가 다르면 이 표가 이긴다)
+
+| 날 | 티켓 | 할 일 | 선행 |
+|---|---|---|---|
+| D1 | [T-007](../tasks/T-007-spike-llm.md) | 스파이크①: OpenAI 응답 1 + 임베딩 1 · mock_app 실행 확인 · 의존성 고정 | — |
+| D1 | [T-011](../tasks/T-011-golden-data.md) | 골든셋 데이터: 공고 10 + 가짜 이력서 3 + 문항 10(그중 3개는 기업 최신 정보) | — |
+| D2 | [T-018](../tasks/T-018-ai-ingest.md) | vectorstore ingest·delete를 Chroma로 구현한다 | T-007 |
+| D2 | [T-019](../tasks/T-019-ai-report-stream.md) | REPORT 단일 경로(load → generate) 스트림 | T-018 |
+| D3 | [T-029](../tasks/T-029-langgraph-branch.md) | LangGraph 분기(grade → Tavily)와 FOLLOWUP 검색 | T-019 |
+| D4 | [T-035](../tasks/T-035-golden-eval.md) | 골든셋 세 조건 평가 → `eval/result.md` | T-029 · T-011 |
+| D4 | [T-036](../tasks/T-036-a2-injection.md) | 프롬프트 인젝션 재현 → 자료 구분자 조치(발견이면 `fix(security): [S-04]`) | T-029 |
+| D5 | [T-046](../tasks/T-046-docs7.md) | 7번 AI 명세 | T-035 |
+
+매일 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md` · 화면 눈 검사: `seams/smoke.md` · 하루 끝 3줄: `worklog/<내이름>/D#.md`

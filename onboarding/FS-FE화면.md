@@ -258,3 +258,19 @@ useUpload는 { upload, uploading, error }를 반환하고 .md/.txt·200KB·빈 �
 고치지 말 것: src/pages/DocumentsPage.test.jsx · src/api/ · src/test/ · 다른 화면. 색·간격은 styles/tokens.css 변수만.
 끝나면 실행한 명령과 출력(테스트 결과)을 그대로 붙여라. commit은 하지 마라.
 ```
+
+## 10. 내 티켓 전체 (최신 · `tasks/` 생성본 — 위 절과 번호가 다르면 이 표가 이긴다)
+
+150줄 규칙으로 쪼갠 것: T-021 → T-021(목록·상태 넷) + **T-057**(업로드·수정·삭제) · 새 **T-059**(공용 컴포넌트 점검) · **T-060**(6번 내 절)
+
+| 날 | 티켓 | 할 일 | 선행 |
+|---|---|---|---|
+| D1 | [T-009](../tasks/T-009-frontend-skeleton.md) | 프론트 골격을 받아 빌드·공용 테스트·목 연결을 확인한다 | T-001 |
+| D2 | [T-020](../tasks/T-020-login-pages.md) | 로그인·회원가입 화면과 보호 라우트 | T-009 |
+| D2 | [T-021](../tasks/T-021-documents-list.md) | 내 문서 목록 | T-009 |
+| D2 | [T-057](../tasks/T-057-documents-write.md) | 업로드(useUpload)·제목 수정·삭제 확인 | T-021 |
+| D3 | [T-031](../tasks/T-031-analyses-page.md) | 분석 기록 화면 | T-009 |
+| D4 | [T-059](../tasks/T-059-fe-common-check.md) | 공용 컴포넌트 재사용·PropTypes·에러 문구 점검 | T-021 · T-031 |
+| D5 | [T-060](../tasks/T-060-docs6-common.md) | 6번 문서 내 절(§5.1 공통 컴포넌트·§6 상태·§7 API 연동) | T-059 |
+
+매일 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md` · 화면 눈 검사: `seams/smoke.md` · 하루 끝 3줄: `worklog/<내이름>/D#.md`

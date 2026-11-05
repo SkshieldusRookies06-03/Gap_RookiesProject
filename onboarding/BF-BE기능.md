@@ -262,3 +262,23 @@ AI 컨테이너 정지 상태로 업로드·삭제(503 봉투)·스트림(event:
        acceptance/·security/·common/·Controller 시그니처 수정 금지 · 소유 검증은 넣지 않는다(T-026) · 커밋하지 말 것
 [확인 명령] cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest
 ```
+
+## 10. 내 티켓 전체 (최신 · `tasks/` 생성본 — 위 절과 번호가 다르면 이 표가 이긴다)
+
+150줄 규칙으로 쪼갠 것: T-014 → T-014(목록·상세·수정·단순 삭제) + **T-055**(삭제 순서) · T-025 → T-025(스트림 중계) + **T-056**(목록·메시지 페이징)
+
+| 날 | 티켓 | 할 일 | 선행 |
+|---|---|---|---|
+| D1 | [T-006](../tasks/T-006-spike-sse.md) | 스파이크②: FastAPI 토큰 3개 → Spring WebClient 중계 → curl에 시간 간격을 두고 보인다 | — |
+| D2 | [T-012](../tasks/T-012-flyway.md) | Flyway V1·V2를 빈 DB에서 적용하고 시드 시각 오프셋을 관측한다 | T-004 |
+| D2 | [T-013](../tasks/T-013-entities.md) | Document·Analysis·AnalysisMessage 엔티티와 리포지토리 3개 | T-012 · T-015(User) |
+| D2 | [T-014](../tasks/T-014-document-read-api.md) | 문서 목록·상세·제목 수정·삭제(단순 삭제) | T-013 |
+| D3 | [T-024](../tasks/T-024-ai-client-upload.md) | AiClient 단건(ingest·delete)과 업로드 흐름 | T-014 · T-018 |
+| D3 | [T-055](../tasks/T-055-delete-order.md) | 문서 삭제 순서: AI DELETE → 그 문서를 쓴 분석 → 문서 · AI 실패면 503이고 DB 그대로 | T-024 |
+| D3 | [T-025](../tasks/T-025-stream-relay.md) | 분석 스트림 중계 | T-006 · T-013 · T-019 |
+| D3 | [T-056](../tasks/T-056-analysis-list.md) | 분석 목록(lastStatus 파생)·메시지 페이징 | T-025 |
+| D3 | [T-026](../tasks/T-026-s01-ownership.md) | `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]` | T-014 · T-025 · 기술 리드 재현 |
+| D4 | [T-038](../tasks/T-038-be-500-check.md) | 500 경로 점검(삭제 중 AI 실패 · 스트림 중 AI 다운) · N+1 확인 | T-025 |
+| D5 | [T-045](../tasks/T-045-docs34.md) | 3번·4번 문서 실물 대조 | T-056 |
+
+매일 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md` · 화면 눈 검사: `seams/smoke.md` · 하루 끝 3줄: `worklog/<내이름>/D#.md`

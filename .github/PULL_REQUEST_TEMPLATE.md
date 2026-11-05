@@ -1,12 +1,19 @@
+<!-- 제목: type(범위): 요약 [T-0XX] — onboarding/GitHub규약.md -->
 ## 티켓
-T-###  (작업 브랜치: feature/backend · feature/frontend · feature/ai · feature/security · feature/infra / 대상: dev, 배포 PR은 dev → main)
+T-0XX — `tasks/T-0XX-*.md` · 브랜치 `feature/<레인>-T-0XX`
 
 ## 바꾼 것 (한 줄)
 
-## 확인 명령 결과 (붙여넣기 · 산문 금지)
+## 확인 명령 출력 (붙여넣기 · 산문 금지)
+```
+(티켓의 [확인 명령] 출력)
+```
 
 ## 체크
-- [ ] 내 레인 파일만 고쳤다 (CODEOWNERS)
-- [ ] 계약(SPEC §4·§6)을 바꿨다면 SPEC·mock·seams를 같은 PR에서 고쳤다
-- [ ] 보안 방어 코드는 `fix(security): [S-0N]` 커밋으로 분리했다
+- [ ] 판정 테스트·게이트 green (위 출력)
+- [ ] `node seams/check-scope.mjs T-0XX` 무출력 — 내 레인 파일만
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
+- [ ] 본 코드 diff 150줄 이하 (`git diff --stat origin/main`)
+- [ ] 계약(SPEC §4·§6)을 바꿨다면 SPEC·mock·seams를 같은 PR에서
+- [ ] 보안 방어 코드는 `fix(security): [S-0N]` 커밋으로 분리
+- [ ] 화면 작업이면 `seams/smoke.md` 통과한 줄 번호: 

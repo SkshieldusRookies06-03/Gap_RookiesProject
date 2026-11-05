@@ -1,7 +1,7 @@
 # 레인 상세 명세 — 기술 리드·보안 (ydh)
 
 > 정본은 `SPEC.md`. 이 문서는 "어떻게"다 — 다르면 SPEC이 이긴다. 티켓 원문은 `tasks/T-###-*.md`, 일정은 `tasks/BOARD.md`.
-> 이 레인은 **계약의 주인 + 보안 레인**이다. 남의 기능 코드를 대신 짜지 않는다(예외: S-03 연결 호출 1줄 × 2 — BE-기능 리뷰).
+> 이 레인은 **계약의 주인 + 보안 레인**이다. FE-분석과 분담: 원장 F-1~F-7 점검·기록은 FE-분석, 분석 화면의 응답 안전 렌더(`ReportText`·`SourceChips` · T-054)는 나. 남의 기능 코드를 대신 짜지 않는다(예외: S-03 연결 호출 1줄 × 2 — BE-기능 리뷰).
 
 ## 0. 판정 테스트 표
 
@@ -45,6 +45,12 @@
 1. 커밋 후 `node seams/check-scope.mjs --owners` 무출력 · `node mock/server.mjs` + `node seams/check-api.mjs http://localhost:8080` 20줄 green
 2. BE-인증의 골격 커밋 직후 `./mvnw test -Dtest='JobgapApplicationTests,PiiMaskerTest,SecurityAcceptanceTest'` — **처음 컴파일되는 순간**. 에러는 내 패키지면 내가, 남의 골격이면 그 레인과 같이 본다
 3. D1 저녁 동결 회의(팀장 진행 · 10분): SPEC §2·§4·§6 낭독 → 질문 → 팀장 승인 → SPEC 머리에 `동결 v1 · 2026-11-05`
+
+### T-054 (D2) — 응답 안전 렌더 컴포넌트 (FE-분석과 분담 · 완성본)
+- `frontend/src/pages/analysis/ReportText.jsx` — 리포트 마크다운 일부(제목·표·목록·문단)를 HTML 없이 React 요소로 · `parseBlocks()` 내보냄
+- `frontend/src/pages/analysis/SourceChips.jsx` — doc/web 칩 · 웹은 `safeUrl()`로 http(s)만 링크 · `rel="noopener noreferrer"`
+- 테스트 `ReportText.test.jsx` 4개 green(작성 완료) · FE-분석에게 import 방법 공유 → FE-분석이 화면에 끼운다
+- 커밋: `feat(fe): 응답 안전 렌더 ReportText·SourceChips — F-1 방어 [T-054]`
 
 ### T-016 (D2) — 보안 설정 관측
 - 실서버(`./mvnw spring-boot:run` + `.env` 값)에서 관측하고 SPEC §1 표 옆에 결과 한 줄씩:
@@ -99,11 +105,9 @@ String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스�
 | B-10 · F-6 | 200KB+1 파일(nginx 경유 413 봉투) · `.exe`·`.html`·`a.md.exe` → 415 | `B-10.txt` |
 | B-11 | 필드별 400 `fields[]` | — |
 | B-12 | `SELECT LEFT(password_hash,4) FROM users` → `$2a$` | — |
-| B-13 · F-5 | `cd backend && ./mvnw org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom && cp target/bom.json ../security/evidence/bom.json` · `cd frontend && npm audit --json > ../security/evidence/npm-audit.json` — High 이상이면 `발견` → 버전 올림 커밋도 `fix(security):` | 두 파일 |
+| B-13 | `cd backend && ./mvnw org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom && cp target/bom.json ../security/evidence/bom.json` — High 이상이면 `발견` → 버전 올림 커밋도 `fix(security):` | `bom.json` |
 | B-14 · I-5 | 해당 없음(직렬화 값을 받는 경로 없음 · K8s 미적용 — 적용하면 DevOps와 재점검) | — |
-| F-1 | 제목·질문에 `<img src=x onerror=alert(1)>` → 텍스트로 보임 + `curl -I http://localhost/` CSP | `F-1.png` |
-| F-4 | `grep -rn "sk-\|tvly-" frontend/dist` 0 · `VITE_*`는 `VITE_API_URL` 하나 | — |
-| F-7 | 500 응답 화면에 서버 메시지 대신 "잠시 후 다시 시도" | — |
+| F-1~F-7 | **FE-분석이 점검·기록**(onboarding/FA-FE분석.md §9) — 나는 원장에 옮겨 취합 · F-5 npm audit도 FE-분석 | FE-분석의 `F-*` |
 | A-1 | dev 아닌 compose에서 호스트 `curl -m 3 localhost:8000` 실패 · 토큰 없는 내부 호출 401(check-ai) | `A-1.txt` |
 | A-2 | AI 레인 T-036 결과를 옮긴다 | — |
 | A-3 | S-03 + check-ai owner 필터 행 green | `S-03/` |
@@ -128,7 +132,8 @@ String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스�
 | BE-인증 | 골격 커밋(컴파일) · T-027 잠금 | JwtProvider·PasswordEncoder·감사 리스너 · S-02 재현 | D1 · D3 |
 | BE-기능 | T-014 머지(조치 전) · T-026 | PageRequests·ErrorCode · S-01 재현 · S-03 연결 리뷰 요청 | D2~D3 |
 | AI | A-2 결과(T-036) | check-ai · AI 판정 테스트 | D4 |
-| 프론트 둘 | F-1 확인 | 판정 테스트 · ErrorMessage 문구 표(§4.4) | D3~D4 |
+| FE-분석 | F-1~F-7 점검·증거(D4) · 9번 F절 초안 | `ReportText`·`SourceChips`(D2) · 판정 테스트 | D2·D4 |
+| FE-화면 | F-1 재현 대상 화면(내 문서 제목) | 판정 테스트 · ErrorMessage 문구 표(§4.4) | D3~D4 |
 | DevOps | 외부 포트 캡처(T-042) · CSP 헤더 | I-행 점검 방법 · `check-sec-deploy` | D4~D5 |
 | 팀장 | 동결 승인 · 자르기 결정 | 게이트 결과(D3·D5) · 보안 시연 5분 | D1·D3·D5 |
 
@@ -174,3 +179,22 @@ String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스�
        판정 테스트 수정 금지 · commit 금지
 [확인 명령] cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,AnalysisAcceptanceTest,PiiMaskerTest'
 ```
+
+## 10. 내 티켓 전체 (최신 · `tasks/` 생성본 — 위 절과 번호가 다르면 이 표가 이긴다)
+
+150줄 규칙으로 쪼갠 것: 새 **T-054**(응답 안전 렌더)
+
+| 날 | 티켓 | 할 일 | 선행 |
+|---|---|---|---|
+| D1 | [T-001](../tasks/T-001-spec-gates.md) | 설계 정본·목 서버 둘·seam 검사·판정 테스트·원장·역할 문서를 리포에 둔다 | — |
+| D1 | [T-005](../tasks/T-005-first-compile.md) | 공통·보안 패키지와 판정 테스트가 첫 컴파일에서 깨지지 않게 대응한다 | T-004 |
+| D2 | [T-016](../tasks/T-016-security-observe.md) | 보안 설정을 실서버에서 관측하고 5번 명세 5.2(CSRF 사유)를 쓴다 | T-005 |
+| D2 | [T-017](../tasks/T-017-pii-masker.md) | PiiMasker를 단위 테스트로 고정한다 | T-005 |
+| D2 | [T-054](../tasks/T-054-safe-render.md) | 분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`(완성본)를 FE-분석에 넘긴다 | T-009 |
+| D3 | [T-028](../tasks/T-028-s03-masking.md) | `fix(security): [S-03] 업로드·제목·질문 PiiMasker 연결 · A-3 [T-028]` + 감사 로그 캡처 | T-017 · T-024 |
+| D3 | [T-033](../tasks/T-033-rubric-d3.md) | 저녁 평가표 게이트 → MISS를 D4~D5 티켓으로 배정 | T-032 |
+| D4 | [T-034](../tasks/T-034-dynamic-check.md) | 동적 점검일: 원장 B·A·I 행 · Burp(S-01·S-02 재확인) · SBOM. F 행은 FE-분석(T-039) | T-026 · T-027 · T-028 |
+| D5 | [T-048](../tasks/T-048-gates-docs9.md) | 게이트 무출력 · 9번 본문 | T-034 |
+| D6 | [T-051](../tasks/T-051-demo-gate.md) | 보안 시연 리허설(Burp 순서 고정) · 제출 D-1 게이트 | T-048 |
+
+매일 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md` · 화면 눈 검사: `seams/smoke.md` · 하루 끝 3줄: `worklog/<내이름>/D#.md`

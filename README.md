@@ -1,7 +1,9 @@
 # JobGap — 취업 갭 분석 리포트
 
 채용공고와 내 이력서를 올리면 요구 기술과 보유 기술의 차이를 근거와 함께 리포트로 스트리밍하고, 후속 질문을 이어 가는 서비스.
-SK쉴더스 루키즈 6기 3차 미니 프로젝트 · 정본은 [SPEC.md](SPEC.md) · 일정·티켓은 [tasks/BOARD.md](tasks/BOARD.md).
+SK쉴더스 루키즈 6기 3차 미니 프로젝트 · 정본은 [SPEC.md](SPEC.md) · 일정·티켓은 [tasks/BOARD.md](tasks/BOARD.md) · 날짜×레인은 [tasks/ROADMAP.md](tasks/ROADMAP.md).
+
+**처음 왔으면**: [onboarding/README.md](onboarding/README.md)(팀원용 한 장) → `onboarding/<내 레인>.md` → [onboarding/GitHub규약.md](onboarding/GitHub규약.md).
 
 ## 지금 바로 (D1 · 목 서버)
 ```bash
@@ -27,10 +29,10 @@ cd ai-module && pytest -q                     # 키 없이 돈다
 ## 팀
 | 레인 | 이름 |
 |---|---|
-| 팀장 (BE-인증) | 김영서 |
-| BE-기능 | 정예빈 |
-| FE-화면 | 이영후 |
-| FE-분석 | 채수림 |
-| AI | 구본영 |
-| 기술 리드·보안 | 윤동호 |
-| DevOps | 황인찬 |
+| 팀장 (BE-인증) | |
+| 기술 리드·보안 | |
+| FE-화면 | |
+| BE-기능 | |
+| AI | |
+| FE-분석 | |
+| DevOps | |

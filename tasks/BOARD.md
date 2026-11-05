@@ -1,95 +1,102 @@
-# 티켓 보드 — 7레인 × 6일 (정본: SPEC.md · 일정 골격: 스킬 P3-6)
+# 티켓 보드 — 7레인 × 6일 (생성 파일 — 손으로 고치지 말고 생성기 표를 고친다)
 
-> 코드 티켓의 지시서(수용 기준·수정 허용·확인 명령)는 `tasks/T-###-*.md` · D1 커밋 순서는 `tasks/D1-SETUP.md` · 레인별 요약은 `onboarding/`.
+> 정본: SPEC.md · 지시서: `tasks/T-###-*.md` · 날짜×레인 표: `tasks/ROADMAP.md` · 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md`
 
-규칙
-- 브랜치 운영의 정본은 SPEC §1 Git 브랜치·병합 운영 규칙. **feature/* → dev → main**.
-- 브랜치 `feature/<분야>` · 커밋 `type(범위): 요약 [T-###]` · PR 리뷰 = 부오너(SPEC §8), 계약·보안 파일은 기술 리드 · "완료" = 확인 명령 green.
-- **수정 허용** 칸이 비어 있으면 자기 레인 경로(CODEOWNERS)만 고친다. 다른 레인 파일이 필요하면 그 오너에게 티켓을 넘긴다.
-- 문서 9종: 파일 오너가 아닌 사람이 쓰는 절(예: 2번 6절 = 기술 리드)은 **그 절을 쓴 사람이 커밋**하고 파일 오너가 리뷰한다(개인 평가 70% = git).
-- 전원 매일 1커밋 이상(R-IN01). 하루 티켓이 끝나면 그날 칸의 "여유 시 지정 작업"을 한다.
+레인: **LD** 팀장(BE-인증) · **TL** 기술 리드·보안 · **BF** BE-기능 · **AI** AI · **FS** FE-화면 · **FA** FE-분석 · **DO** DevOps
 
-레인 약칭: **LD** 팀장(BE-인증 레인 겸 운영) · **FS** FE-화면 · **TL** 기술 리드·보안 · **BF** BE-기능 · **AI** · **FA** FE-분석 · **DO** DevOps
+## D1 (11/5 목 — 설계 동결 · 목 둘 · 스파이크 셋 · 골격 확인)
 
-## D1 (11/5 목) — 설계 동결 · 목 둘 · 스파이크 셋 · 골격
-
-| T | 레인 | 할 일 | 수정 허용(레인 밖) | 확인 |
+| T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| T-001 | TL | SPEC · CODEOWNERS · CLAUDE.md · 원장 · 목 서버 둘 · seam 검사 · scripts 커밋 | — | `node seams/check-api.mjs http://localhost:8080` green(목) |
-| T-002 | LD | 팀원 GitHub 아이디 → CODEOWNERS · main 보호(PR 1승인) · README 팀 표 · 1번 계획서 초안 | CODEOWNERS 핸들 줄 | main 직접 푸시가 막힌다 |
-| T-003 | LD | **D1 저녁 SPEC 승인 = 동결 v1**(§2·§4·§6 낭독 10분) | SPEC 머리 한 줄 | "동결 v1 · 날짜" |
-| T-004 | LD | Spring 골격 — initializr: Web · Security · Data JPA · Validation · Actuator · **Reactive Web(WebClient)** · **MariaDB Driver** · **Flyway** + pom에 `flyway-mysql` 직접 추가 · Maven · JDK 17 · 패키지 `com.jobgap` | backend/ 전체(골격만) | `./mvnw spring-boot:run` + `SELECT VERSION()` = MariaDB |
-| T-005 | TL | `common/`(ApiResponse 봉투 · `ErrorCode` enum = SPEC §4.4 · `@RestControllerAdvice` · `include-stacktrace: never`) · `security/JwtProvider`(subject=uuid · HS256) · CORS(환경변수 Origin) — **T-004 직후** | — | 없는 경로 404 봉투 |
-| T-006 | BF | 스파이크②: FastAPI 토큰 3개 → Spring `WebClient` 중계 → `curl -N`에 시간 간격 | — | 터미널 캡처 1장 |
-| T-007 | AI | 스파이크①: OpenAI 응답 1 + 임베딩 1 · `mock_app.py` 실행 확인 · requirements.txt 버전 고정 | — | `MOCK=1 node seams/check-ai.mjs` green |
-| T-008 | DO | 스파이크③: EC2 + Docker + nginx Hello 외부 접속 · 인스턴스 타입 결정(1GB 금지) · temurin curl 유무 확인 | — | 외부 `curl -I http://<EC2>/` 200 |
-| T-009 | FS | Vite React 골격 · `routes.js` · `api/client.js`(봉투 벗기기 · `TOKEN_EXPIRED`만 refresh · **`streamPost()` export**) · 공용 Button·Layout·LoadingSpinner(`PropTypes`) · `styles/tokens.css`(브레이크포인트 768·1280) | — | 목으로 로그인 화면이 뜬다 |
-| T-010 | FA | 분석 화면 와이어(종이 1장) → SPEC §4.3 대조 · `useChatStream` 뼈대(`streamPost` + `getReader()`) | — | 목 스트림 토큰이 콘솔에 순서대로 |
-| T-011 | 전원(오너 AI) | 골든셋 공고 10개 + **가짜** 이력서 3개 → `ai-module/eval/data/` · 문항 10개(그중 3개는 기업 최신 정보) + 정답 | ai-module/eval/data/ | 파일 13개 + `questions.md` |
+| [T-001](T-001-spec-gates.md) | TL | 설계 정본·목 서버 둘·seam 검사·판정 테스트·원장·역할 문서를 리포에 둔다. | — | `node seams/check-scope.mjs --owners && node scripts/check-sec-deploy.mjs` |
+| [T-002](T-002-repo-settings.md) | LD | GitHub 리포 설정과 팀 핸들을 확정한다. | T-001 | `(GitHub Settings 화면 캡처를 PR 설명에)` |
+| [T-003](T-003-spec-freeze.md) | LD | D1 저녁 SPEC 동결 회의를 열고 v1을 승인한다. | T-001 | `git log -1 --format=%s -- SPEC.md` |
+| [T-004](T-004-spring-skeleton.md) | LD | Maven wrapper를 넣고 백엔드를 처음 컴파일·기동한다. | T-001 | `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database` |
+| [T-005](T-005-first-compile.md) | TL | 공통·보안 패키지와 판정 테스트가 첫 컴파일에서 깨지지 않게 대응한다. | T-004 | `cd backend && ./mvnw test -Dtest='SecurityAcceptanceTest,PiiMaskerTest'` |
+| [T-006](T-006-spike-sse.md) | BF | 스파이크②: FastAPI 토큰 3개 → Spring WebClient 중계 → curl에 시간 간격을 두고 보인다. | — | `curl -sN -X POST localhost:8080/<스파이크 경로>` |
+| [T-007](T-007-spike-llm.md) | AI | 스파이크①: OpenAI 응답 1 + 임베딩 1 · mock_app 실행 확인 · 의존성 고정. | — | `cd ai-module && pip install -r requirements.txt && pytest -q -k 'health or require_token'` |
+| [T-008](T-008-spike-ec2.md) | DO | 스파이크③: EC2 + Docker + nginx Hello 외부 접속 · 인스턴스 타입 결정. | — | `curl -I http://<EC2>/` |
+| [T-009](T-009-frontend-skeleton.md) | FS | 프론트 골격을 받아 빌드·공용 테스트·목 연결을 확인한다. | T-001 | `cd frontend && npm ci && npm run build && npx vitest run src/api` |
+| [T-010](T-010-analysis-wire.md) | FA | 분석 화면 와이어(종이 1장)를 SPEC §4.3과 대조하고, 목 스트림을 직접 읽어 본다. | T-009 | `(사진·콘솔 캡처를 PR 설명에)` |
+| [T-011](T-011-golden-data.md) | AI | 골든셋 데이터: 공고 10 + 가짜 이력서 3 + 문항 10(그중 3개는 기업 최신 정보). | — | `ls ai-module/eval/data/postings | wc -l` |
 
-## D2 (11/6 금) — 모듈 단독 동작 · 방어는 별도 커밋
+## D2 (11/6 금 — 모듈 단독 동작 · 방어는 별도 커밋)
 
-| T | 레인 | 할 일 | 수정 허용 | 확인 |
+| T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| T-012 | BF | Flyway `V1__schema.sql`(테이블 4 · UNIQUE 3 · FK RESTRICT) · `V2__seed.sql`(SPEC §2 시드: kim·lee 각 공고1·이력서1 · lee의 분석1+메시지2) · `ddl-auto: validate` · `spring.jackson.time-zone` | — | 빈 DB 기동 green |
-| T-013 | BF | Document·Analysis·AnalysisMessage 엔티티(`@Table`·`@Column`·LAZY · messages만 양방향 cascade) · Repository(메서드 이름 쿼리 1 + `@Query` 1) | — | 기동 |
-| T-014 | BF | 문서 API 5 — **소유자 검증 없이 먼저**(S-01 조치 전 상태) · 정렬·type 허용 목록 · `@Transactional`은 서비스에만(조회 readOnly) | — | check-api 문서 행(403 행 제외) green |
-| T-015 | LD | User 엔티티 · register/login/refresh/logout · BCrypt · refresh SHA-256 해시·회전 · `@Valid`(`@Pattern`·`@Size`·`@NotBlank`) | — | check-api 인증·refresh 행 green |
-| T-016 | TL | SecurityConfig(`/actuator/health` permitAll **위**, `/actuator/**` ADMIN · ASYNC/ERROR permitAll · CSRF 비활성 + 사유 · CSP `default-src 'none'`) · JWT 필터 · 401 EntryPoint/403 Handler 로그 · `@PreAuthorize` 템플릿 · `ACTUATOR_EXPOSURE` | — | 토큰 없는 요청 401 봉투 |
-| T-017 | TL | `PiiMasker` + 단위 테스트(§6.5 네 종) — **연결은 D3**(S-03 조치 전 상태 확보) | — | `./mvnw test` |
-| T-018 | AI | `app.py`: ingest(Chroma · 메타 4 · 멱등) · delete · health · `Header(alias="X-Internal-Token")` · `pytest` 1(토큰 401 + owner 필터) | — | `node seams/check-ai.mjs` ingest·delete·401 green · `pytest` |
-| T-019 | AI | analyze/stream RAG 단일 경로(REPORT: load → generate) · token JSON 인코딩 | — | check-ai 스트림 행 green |
-| T-020 | FS | 로그인·가입 · authStore(persist partialize · refresh는 `navigator.locks`) · 보호 라우트 | — | 목으로 로그인 → /documents |
-| T-021 | FS | 내 문서(탭·페이징·정렬·업로드·제목 수정·삭제 · 상태 넷) · **`useUpload` 훅** | — | 목으로 클릭 경로 |
-| T-022 | FA | 분석 화면: 선택 → 스트리밍 렌더 → 중단(AbortController) · chatStore · 텍스트 렌더 · `@media` 768·1280 | — | 목으로 리포트가 흘러나온다 |
-| T-023 | DO | Dockerfile 3(backend·frontend 멀티스테이지 · backend·ai HEALTHCHECK·비root · 태그 고정) · compose(망 3 · 서비스별 env · `TZ=Asia/Seoul` · volume 2) · `docker-compose.dev.yml` | — | `docker compose config` · `node scripts/check-sec-deploy.mjs` 무출력 |
+| [T-012](T-012-flyway.md) | BF | Flyway V1·V2를 빈 DB에서 적용하고 시드 시각 오프셋을 관측한다. | T-004 | `cd backend && ./mvnw test -Dtest=JobgapApplicationTests` |
+| [T-013](T-013-entities.md) | BF | Document·Analysis·AnalysisMessage 엔티티와 리포지토리 3개. | T-012 · T-015(User) | `cd backend && ./mvnw test -Dtest=JobgapApplicationTests` |
+| [T-014](T-014-document-read-api.md) | BF | 문서 목록·상세·제목 수정·삭제(단순 삭제) — **소유 검증 없이**(S-01 조치 전 상태). | T-013 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
+| [T-015](T-015-user-register-login.md) | LD | User 엔티티·가입·로그인(+감사 이벤트 발행). **D2 오전 우선** — BE-기능 엔티티가 User를 참조한다. | T-004 | `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` |
+| [T-058](T-058-refresh-logout.md) | LD | refresh 회전(SHA-256 해시 저장)과 로그아웃. | T-015 | `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` |
+| [T-016](T-016-security-observe.md) | TL | 보안 설정을 실서버에서 관측하고 5번 명세 5.2(CSRF 사유)를 쓴다. | T-005 | `cd backend && ./mvnw test -Dtest=SecurityAcceptanceTest` |
+| [T-017](T-017-pii-masker.md) | TL | PiiMasker를 단위 테스트로 고정한다 — 업로드 연결은 T-028. | T-005 | `cd backend && ./mvnw test -Dtest=PiiMaskerTest` |
+| [T-054](T-054-safe-render.md) | TL | 분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`(완성본)를 FE-분석에 넘긴다. | T-009 | `cd frontend && npx vitest run src/pages/analysis` |
+| [T-018](T-018-ai-ingest.md) | AI | vectorstore ingest·delete를 Chroma로 구현한다. | T-007 | `cd ai-module && pytest -q` |
+| [T-019](T-019-ai-report-stream.md) | AI | REPORT 단일 경로(load → generate) 스트림. | T-018 | `cd ai-module && pytest -q` |
+| [T-020](T-020-login-pages.md) | FS | 로그인·회원가입 화면과 보호 라우트. | T-009 | `cd frontend && npm run build && npm test` |
+| [T-021](T-021-documents-list.md) | FS | 내 문서 목록 — 탭·정렬·페이지·상태 넷. | T-009 | `cd frontend && npx vitest run src/pages/DocumentsPage.test.jsx` |
+| [T-022](T-022-chat-stream.md) | FA | useChatStream과 분석 화면 기본(선택 → 스트리밍 → 중단). | T-010 · T-054 | `cd frontend && npx vitest run src/hooks` |
+| [T-023](T-023-containers.md) | DO | 컨테이너 파일을 점검하고 로컬 config를 통과시킨다. | T-008 | `docker compose config -q && node scripts/check-sec-deploy.mjs` |
+| [T-057](T-057-documents-write.md) | FS | 업로드(useUpload)·제목 수정·삭제 확인. | T-021 | `cd frontend && npm test` |
 
-## D3 (11/9 월) — 1차 통합 = 로컬 compose 전체 E2E
+## D3 (11/9 월 — 1차 통합 = 로컬 compose 전체 E2E)
 
-| T | 레인 | 할 일 | 수정 허용 | 확인 |
+| T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| T-024 | BF | AI 클라이언트(RestClient connect 3s·read 30s · WebClient 290s · `onErrorResume` → `AI_UNAVAILABLE`) · 업로드 순서(§1: 저장 → 트랜잭션 끝 → ingest → 실패 시 삭제) · 삭제 순서 §6.4 | — | AI 끈 상태 업로드 503 봉투 캡처 |
-| T-025 | BF | analyses/stream 중계(§4.3 중계 규칙 · done 가로채 저장 후 messageId) · 목록(lastStatus 파생)·메시지 페이징 | — | 스트림 검사 + check-api 스트림 행 |
-| T-026 | BF | `fix(security): [S-01] 소유 검증 · B-2` — 문서·분석 서비스 + **IDOR 403 회귀 테스트** (TL이 조치 전 커밋에서 먼저 재현) | — | check-api 403 행 green |
-| T-027 | LD | `fix(security): [S-02] 로그인 5회 잠금 · B-5`(`lockedUntil` · 존재 계정만) + 잠금 테스트 · `SeedIngestRunner`(프로파일 seed · 전 문서 delete→ingest · BF의 AI 클라이언트 사용) | `backend/.../seed/`(BF 리뷰) | 6회째 423 · seed 기동 후 시드 문서로 분석 스트림 |
-| T-028 | TL | 감사 리스너(`AuthenticationSuccessEvent`/`Failure`) · 이메일 `mask…()` · `fix(security): [S-03] PiiMasker 연결 · A-3` | DocumentService·AnalysisService 호출 1줄씩(BF 리뷰) | 상세 응답 마스킹 · `maskedCount` |
-| T-029 | AI | LangGraph: load → grade → [Tavily] → generate · FOLLOWUP은 `as_retriever` + relevance score 분기 · sources type web | — | 기업 질문에 web 출처 |
-| T-030 | FA | 후속 질문 · 출처 칩 · 분석 기록에서 재진입 · 분석 화면 상태 테스트 1(`pages/analysis/AnalysisPage.test.jsx` — 내 테스트) | — | `npm test` |
-| T-031 | FS | 분석 기록 화면(INCOMPLETE "중단됨") · 화면 상태 테스트 1 | — | `npm test` |
-| T-032 | DO | compose 전체 기동 · nginx(SPA fallback · `/api` 프록시 · 스트림 buffering off·300s · `client_max_body_size 1m` · CSP) | — | **E2E: 가입 → 업로드 → 분석 스트리밍(브라우저)** |
-| T-033 | TL | 저녁 `node scripts/check-rubric-p3.mjs` → MISS를 D4~D5 티켓으로 배정 | — | MISS 목록 |
+| [T-024](T-024-ai-client-upload.md) | BF | AiClient 단건(ingest·delete)과 업로드 흐름. | T-014 · T-018 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
+| [T-055](T-055-delete-order.md) | BF | 문서 삭제 순서: AI DELETE → 그 문서를 쓴 분석 → 문서 · AI 실패면 503이고 DB 그대로. | T-024 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
+| [T-025](T-025-stream-relay.md) | BF | 분석 스트림 중계 — 새 분석·후속 질문 · done 가로채 저장. | T-006 · T-013 · T-019 | `cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest` |
+| [T-056](T-056-analysis-list.md) | BF | 분석 목록(lastStatus 파생)·메시지 페이징. | T-025 | `cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest` |
+| [T-026](T-026-s01-ownership.md) | BF | `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]` — 방어만 담은 커밋 하나. | T-014 · T-025 · 기술 리드 재현 | `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,AnalysisAcceptanceTest'` |
+| [T-027](T-027-s02-lock-seed.md) | LD | `fix(security): [S-02] 로그인 5회 잠금 · B-5 [T-027]` + SeedIngestRunner. | T-015 · 기술 리드 재현 | `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` |
+| [T-028](T-028-s03-masking.md) | TL | `fix(security): [S-03] 업로드·제목·질문 PiiMasker 연결 · A-3 [T-028]` + 감사 로그 캡처. | T-017 · T-024 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
+| [T-029](T-029-langgraph-branch.md) | AI | LangGraph 분기(grade → Tavily)와 FOLLOWUP 검색. | T-019 | `cd ai-module && pytest -q` |
+| [T-030](T-030-followup-ui.md) | FA | 후속 질문·기록 재진입(hydrate)·분석 화면 상태 테스트. | T-022 | `cd frontend && npm test` |
+| [T-031](T-031-analyses-page.md) | FS | 분석 기록 화면. | T-009 | `cd frontend && npm test` |
+| [T-032](T-032-compose-e2e.md) | DO | compose 전체 기동 = 1차 통합 E2E. | T-023 · T-024 · T-025 | `docker compose up -d --build && OTHER_DOC_ID=3 OTHER_ANALYSIS_ID=1 node seams/check-api.mjs http://localhost` |
+| [T-033](T-033-rubric-d3.md) | TL | 저녁 평가표 게이트 → MISS를 D4~D5 티켓으로 배정. | T-032 | `node scripts/check-rubric-p3.mjs > security/evidence/rubric-D3.txt` |
 
-## D4 (11/10 화) — 동적 점검 · 중간 검증 · GHA
+## D4 (11/10 화 — 동적 점검 · 중간 검증 · GHA)
 
-| T | 레인 | 할 일 | 수정 허용 | 확인 |
+| T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| T-034 | TL | 동적 점검일: 원장 31행 · Burp(S-01·S-02) · SBOM → `security/evidence/bom.json` · npm audit | — | `check-rubric-p3` R-SE10~12 |
-| T-035 | AI | 골든셋 × 세 조건 → `ai-module/eval/result.md` · 기준값 0.45 조정(바꾸면 SPEC §1 PR) | — | 결과 표 |
-| T-036 | AI | 예비 A-2 재현 → 자료 구분자 조치(발견이면 `fix(security): [S-04]`) | — | 원장 A-2 |
-| T-037 | LD | 400 경계 정리: size=0·정수 아님·JSON 형식 오류·빈 파일·UTF-8 아님 → 봉투(§4.4) · 인증 테스트 보강 | GlobalExceptionHandler 매핑 줄(TL 리뷰) | 각 요청 400/415 봉투 |
-| T-038 | BF | 500 경로 점검(삭제 중 AI 실패 · 스트림 중 AI 다운 → event: error) · N+1 확인(`open-in-view=false`) | — | AI 중지 캡처 |
-| T-039 | FA | 스트림 error 이벤트 UI(`messageFor(error)` 사용 · 재시도 버튼) · XSS 재현 보조(F-1) | — | 화면 캡처 |
-| T-040 | LD·FS | 아침 ⓪ 빈칸 세기 · 자르기 결정(LD) · README 실행 절차(LD) · 화면 공용 컴포넌트 재사용 확인 | — | 회의 10분 |
-| T-041 | DO | GHA 3개(`docker/login-action` · `build-push-action` · `${{ github.sha }}` 태그) green | — | Actions 화면 |
+| [T-034](T-034-dynamic-check.md) | TL | 동적 점검일: 원장 B·A·I 행 · Burp(S-01·S-02 재확인) · SBOM. F 행은 FE-분석(T-039). | T-026 · T-027 · T-028 | `node scripts/check-rubric-p3.mjs | grep R-SE` |
+| [T-035](T-035-golden-eval.md) | AI | 골든셋 세 조건 평가 → `eval/result.md`. | T-029 · T-011 | `cd ai-module && LLM_PROVIDER=openai python eval/run_eval.py` |
+| [T-036](T-036-a2-injection.md) | AI | 프롬프트 인젝션 재현 → 자료 구분자 조치(발견이면 `fix(security): [S-04]`). | T-029 | `cd ai-module && pytest -q` |
+| [T-037](T-037-edge-400.md) | LD | 400·415 경계 정리 — 500이나 봉투 아닌 응답 제거. | T-015 | `cd backend && ./mvnw test` |
+| [T-038](T-038-be-500-check.md) | BF | 500 경로 점검(삭제 중 AI 실패 · 스트림 중 AI 다운) · N+1 확인. | T-025 | `docker compose stop ai-service && OTHER_DOC_ID=3 OTHER_ANALYSIS_ID=1 node seams/check-api.mjs http://localhost` |
+| [T-039](T-039-fe-security-check.md) | FA | 스트림 error UI + 원장 F-1~F-7 점검·증거·9번 F절 초안. | T-022 · T-054 | `cd frontend && npm test` |
+| [T-040](T-040-scope-cut.md) | LD | 아침 ⓪ 빈칸 세기 → 자르기 결정 · README 실행 절차. | T-033 | `node scripts/check-rubric-p3.mjs` |
+| [T-059](T-059-fe-common-check.md) | FS | 공용 컴포넌트 재사용·PropTypes·에러 문구 점검. | T-021 · T-031 | `cd frontend && npm test && npm run build` |
+| [T-041](T-041-build-push.md) | DO | 빌드·푸시 워크플로 3개. | T-023 | `(GitHub Actions 화면)` |
 
-## D5 (11/11 수) — EC2 · 2차 통합 · 저녁 기능 동결
+## D5 (11/11 수 — EC2 · 2차 통합 · 저녁 기능 동결)
 
-| T | 레인 | 할 일 | 수정 허용 | 확인 |
+| T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| T-042 | DO | EC2 배포 · 외부 80만 열림 캡처(8080·8000·3306 실패) · 8번 가이드 | — | `curl -m 3` 캡처 |
-| T-043 | FA | 반응형 캡처 3장(분석 화면 390·768·1280) · 6번 문서 | — | 6번 §8 |
-| T-044 | LD | 5번 백엔드 명세 실물 발췌(엔티티 규약 표 · CSRF 사유 문장) | — | FILL 0 |
-| T-045 | BF | 3번·4번 문서 실물 대조(DDL · 엔드포인트 12 · 에러 표) | — | FILL 0 |
-| T-046 | AI | 7번 AI 명세(LangGraph 흐름도 + 코드 · 세 조건 표) | — | FILL 0 |
-| T-047 | 전원 | EC2에서 클릭 경로 1회 · 버그 티켓 | — | — |
-| T-048 | TL | `check-rubric-p3` 무출력 · `--human` 목록 캡처 · `check-sec-deploy` 무출력 · 9번 본문 | — | 두 스크립트 exit 0 |
-| T-049 | LD | **저녁 기능 동결** · (빈칸 0이면) DO가 CD·K8s 가산 | — | — |
+| [T-042](T-042-ec2-deploy.md) | DO | EC2 배포 · 외부 포트 캡처(I 행 증거). | T-032 · T-041 | `curl -I http://<EC2>/ ; curl -m 3 http://<EC2>:8080` |
+| [T-043](T-043-responsive-docs6.md) | FA | 반응형 캡처 3장 + 6번 문서 내 절. | T-030 | `grep -c 'TODO(' docs/6-*` |
+| [T-044](T-044-docs5.md) | LD | 5번 Backend 명세 실물 발췌(인증 절). | T-058 | `grep -c 'TODO(' docs/5-*` |
+| [T-045](T-045-docs34.md) | BF | 3번·4번 문서 실물 대조. | T-056 | `grep -c 'TODO(' docs/3-* docs/4-*` |
+| [T-046](T-046-docs7.md) | AI | 7번 AI 명세 — LangGraph 흐름도·코드·세 조건 표. | T-035 | `grep -c 'TODO(' docs/7-*` |
+| [T-047](T-047-ec2-click.md) | LD | EC2에서 전원 클릭 경로 1회 → 버그 티켓. | T-042 | `(smoke.md 체크 결과를 PR 설명에)` |
+| [T-048](T-048-gates-docs9.md) | TL | 게이트 무출력 · 9번 본문. | T-034 | `node scripts/check-rubric-p3.mjs && node scripts/check-sec-deploy.mjs` |
+| [T-049](T-049-feature-freeze.md) | LD | 저녁 기능 동결 선언 · CI 2단계 필수 전환 요청. | T-047 | `—` |
+| [T-060](T-060-docs6-common.md) | FS | 6번 문서 내 절(§5.1 공통 컴포넌트·§6 상태·§7 API 연동). | T-059 | `grep -c 'TODO(' docs/6-*` |
+| [T-061](T-061-docs28.md) | DO | 8번 배포 가이드·2번 아키텍처 실물 반영. | T-042 | `grep -c 'TODO(' docs/2-* docs/8-*` |
 
-## D6 (11/12 목) — 버그픽스만 · 리허설 2회 · 제출 게이트
+## D6 (11/12 목 — 버그픽스만 · 리허설 2회 · 제출 게이트)
 
-| T | 레인 | 할 일 | 확인 |
-|---|---|---|---|
-| T-050 | LD | 발표 자료(35분 · 보안 시연 · CI/CD 흐름 · 수치는 명령 근거만) · 리허설 2회 | 타이머 |
-| T-051 | TL | 보안 시연 리허설(Burp 순서 고정) · 제출 D-1 게이트(스킬 submission-docs-p3 §3) | 게이트 9항목 |
-| T-052 | DO | 데모 시드 재적용(`SPRING_PROFILES_ACTIVE=seed`) · 발표 10분 전 헬스 · 시연 영상 백업 | 헬스 200 |
-| T-053 | 전원 | 기여 내역·회고 각자 커밋 · 발표 Q&A 자기 파트 한 줄 | `git shortlog -sn` |
+| T | 레인 | 할 일 | 선행 | 확인 |
+|---|---|---|---|---|
+| [T-050](T-050-presentation.md) | LD | 발표 35분 자료 · 리허설 2회. | T-049 | `—` |
+| [T-051](T-051-demo-gate.md) | TL | 보안 시연 리허설(Burp 순서 고정) · 제출 D-1 게이트. | T-048 | `node scripts/check-rubric-p3.mjs && node scripts/check-sec-deploy.mjs` |
+| [T-052](T-052-demo-seed.md) | DO | 데모 시드 재적용 · 발표 10분 전 헬스 · 시연 영상 백업. | T-042 | `curl -I http://<EC2>/` |
+| [T-053](T-053-retro.md) | LD | 기여 내역·회고 취합 — 각자 자기 파일은 자기 커밋. | T-050 | `git shortlog -sn --no-merges` |
+
+## 결정 기록 (자르기·일정 변경 — 팀장)
+
+| 날짜 | 결정 | 이유 |
+|---|---|---|
+|  |  |  |

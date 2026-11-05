@@ -220,3 +220,19 @@ kubectl create secret generic app-secret --from-env-file=.env
 [확인 명령] node scripts/check-sec-deploy.mjs && node scripts/check-rubric-p3.mjs | grep R-DP04
 [출력] 만든 파일 세 개 전문과 두 명령 출력 그대로(산문 금지)
 ```
+
+## 10. 내 티켓 전체 (최신 · `tasks/` 생성본 — 위 절과 번호가 다르면 이 표가 이긴다)
+
+150줄 규칙으로 쪼갠 것: 새 **T-061**(2·8번 문서)
+
+| 날 | 티켓 | 할 일 | 선행 |
+|---|---|---|---|
+| D1 | [T-008](../tasks/T-008-spike-ec2.md) | 스파이크③: EC2 + Docker + nginx Hello 외부 접속 · 인스턴스 타입 결정 | — |
+| D2 | [T-023](../tasks/T-023-containers.md) | 컨테이너 파일을 점검하고 로컬 config를 통과시킨다 | T-008 |
+| D3 | [T-032](../tasks/T-032-compose-e2e.md) | compose 전체 기동 = 1차 통합 E2E | T-023 · T-024 · T-025 |
+| D4 | [T-041](../tasks/T-041-build-push.md) | 빌드·푸시 워크플로 3개 | T-023 |
+| D5 | [T-042](../tasks/T-042-ec2-deploy.md) | EC2 배포 · 외부 포트 캡처(I 행 증거) | T-032 · T-041 |
+| D5 | [T-061](../tasks/T-061-docs28.md) | 8번 배포 가이드·2번 아키텍처 실물 반영 | T-042 |
+| D6 | [T-052](../tasks/T-052-demo-seed.md) | 데모 시드 재적용 · 발표 10분 전 헬스 · 시연 영상 백업 | T-042 |
+
+매일 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md` · 화면 눈 검사: `seams/smoke.md` · 하루 끝 3줄: `worklog/<내이름>/D#.md`

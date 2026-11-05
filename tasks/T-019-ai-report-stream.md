@@ -1,24 +1,24 @@
-# T-019 — REPORT 모드 단일 경로(load → generate) 스트림을 만든다
+# T-019 — REPORT 단일 경로(load → generate) 스트림
 
-**담당:** AI · **브랜치:** `feature/ai` · **예상:** D2 · **선행:** T-018
+**담당:** AI · **브랜치:** `feature/ai-T-019` · **예상:** D2 · **선행:** T-018
 
 ## [배경]
-SPEC.md §6.2 · ADR-08 — 이 절을 지시서(에이전트 프롬프트)에 붙여 넣는다.
+SPEC.md §6.2 · ADR-08 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대로 붙여 넣는다(링크만 주지 않는다).
 
 ## [목표]
-REPORT 모드 단일 경로(load → generate) 스트림을 만든다 — 분기는 T-029.
+REPORT 단일 경로(load → generate) 스트림.
 
 ## [수용 기준]
-- [ ] `pytest -q` 전부 green (owner 필터·삭제·장애 → event: error 포함)
-- [ ] token data는 `app.http.sse()`로(JSON 문자열)
-- [ ] system 슬롯에 지시 · 자료는 `<자료>…</자료>` 안 · 리포트 형식 SPEC §4.3
+- [ ] `pytest -q` 7 green(장애 → event: error 포함)
+- [ ] token은 `app.http.sse()` · system 슬롯 지시 · `<자료>` 구분자
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-019` 무출력
+- [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다
 
 ## [제약]
 - 수정 허용: `ai-module/app/graph.py` · `ai-module/app/vectorstore.py` · `ai-module/app/providers.py`
-- 판정 테스트(`backend/src/test/**/acceptance/` · `ai-module/tests/` · 기술 리드가 커밋한 `*.test.jsx`)는 고치지 않는다 — 틀려 보이면 기술 리드에게
-- commit·push는 사람이 한다 · 커밋 메시지 `type(범위): 요약 [T-019]`
+- 판정 테스트(`backend/src/test/**/acceptance/` · `ai-module/tests/` · 기술 리드가 커밋한 `*.test.jsx`)·게이트(`seams/`·`scripts/`)는 고치지 않는다
+- commit·push는 사람이 한다 · 커밋 `type(범위): 요약 [T-019]` · 전면 재작성 금지
 
 ## [확인 명령]
 ```bash

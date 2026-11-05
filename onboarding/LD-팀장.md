@@ -252,3 +252,25 @@ user.recordSuccess();                                         // failed=0 · loc
 | `docs/1-프로젝트계획서.md` 전부 | SPEC §0 · §8 · BOARD |
 | `README.md` 팀 표 · 실행 절차(DevOps와 함께) | compose · `.env.example` |
 | 발표 대본 `docs/07-발표자료.md` · `docs/08-qna.md` (만들 것) | 위 T-050 표 · 각 레인 원고 |
+
+## 10. 내 티켓 전체 (최신 · `tasks/` 생성본 — 위 절과 번호가 다르면 이 표가 이긴다)
+
+150줄 규칙으로 쪼갠 것: T-015 → T-015(User·가입·로그인) + **T-058**(refresh 회전·로그아웃)
+
+| 날 | 티켓 | 할 일 | 선행 |
+|---|---|---|---|
+| D1 | [T-002](../tasks/T-002-repo-settings.md) | GitHub 리포 설정과 팀 핸들을 확정한다 | T-001 |
+| D1 | [T-003](../tasks/T-003-spec-freeze.md) | D1 저녁 SPEC 동결 회의를 열고 v1을 승인한다 | T-001 |
+| D1 | [T-004](../tasks/T-004-spring-skeleton.md) | Maven wrapper를 넣고 백엔드를 처음 컴파일·기동한다 | T-001 |
+| D2 | [T-015](../tasks/T-015-user-register-login.md) | User 엔티티·가입·로그인(+감사 이벤트 발행). **D2 오전 우선** | T-004 |
+| D2 | [T-058](../tasks/T-058-refresh-logout.md) | refresh 회전(SHA-256 해시 저장)과 로그아웃 | T-015 |
+| D3 | [T-027](../tasks/T-027-s02-lock-seed.md) | `fix(security): [S-02] 로그인 5회 잠금 · B-5 [T-027]` + SeedIngestRunner | T-015 · 기술 리드 재현 |
+| D4 | [T-037](../tasks/T-037-edge-400.md) | 400·415 경계 정리 | T-015 |
+| D4 | [T-040](../tasks/T-040-scope-cut.md) | 아침 ⓪ 빈칸 세기 → 자르기 결정 · README 실행 절차 | T-033 |
+| D5 | [T-044](../tasks/T-044-docs5.md) | 5번 Backend 명세 실물 발췌(인증 절) | T-058 |
+| D5 | [T-047](../tasks/T-047-ec2-click.md) | EC2에서 전원 클릭 경로 1회 → 버그 티켓 | T-042 |
+| D5 | [T-049](../tasks/T-049-feature-freeze.md) | 저녁 기능 동결 선언 · CI 2단계 필수 전환 요청 | T-047 |
+| D6 | [T-050](../tasks/T-050-presentation.md) | 발표 35분 자료 · 리허설 2회 | T-049 |
+| D6 | [T-053](../tasks/T-053-retro.md) | 기여 내역·회고 취합 | T-050 |
+
+매일 규칙: `onboarding/README.md` · git: `onboarding/GitHub규약.md` · 화면 눈 검사: `seams/smoke.md` · 하루 끝 3줄: `worklog/<내이름>/D#.md`

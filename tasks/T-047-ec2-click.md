@@ -1,0 +1,25 @@
+# T-047 — EC2에서 전원 클릭 경로 1회 → 버그 티켓
+
+**담당:** 팀장(BE-인증) · **브랜치:** `feature/lead-T-047` · **예상:** D5 · **선행:** T-042
+
+## [배경]
+SPEC.md §5 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대로 붙여 넣는다(링크만 주지 않는다).
+
+## [목표]
+EC2에서 전원 클릭 경로 1회 → 버그 티켓.
+
+## [수용 기준]
+- [ ] `seams/smoke.md` 전 줄을 EC2 주소로 · 버그는 티켓으로
+- [ ] `node scripts/check-sec-deploy.mjs` 무출력
+- [ ] `node seams/check-scope.mjs T-047` 무출력
+- [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다
+
+## [제약]
+- 수정 허용: `tasks/`
+- 판정 테스트(`backend/src/test/**/acceptance/` · `ai-module/tests/` · 기술 리드가 커밋한 `*.test.jsx`)·게이트(`seams/`·`scripts/`)는 고치지 않는다
+- commit·push는 사람이 한다 · 커밋 `type(범위): 요약 [T-047]` · 전면 재작성 금지
+
+## [확인 명령]
+```bash
+(smoke.md 체크 결과를 PR 설명에)
+```
