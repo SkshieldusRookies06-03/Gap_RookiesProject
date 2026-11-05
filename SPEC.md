@@ -234,13 +234,13 @@ BE 문서 삭제 순서: ① 이 호출 ② 그 문서를 posting 또는 resume�
 
 | 레인 | 사람 | 맡는 것 | 문서 | 부오너 |
 |---|---|---|---|---|
-| 기술 리드·보안 | ydh | 이 SPEC · 목·seam 게이트 · `common/`(봉투·ErrorCode·Advice) · `security/`(SecurityConfig·JwtProvider·필터·401/403 핸들러·감사 리스너·PiiMasker·CORS) · 원장·재현 | 9번 · 2번 6절 · 5번 5절 | DevOps |
-| 팀장 (BE-인증 레인) | (팀장 · Spring 상) | 진행·발표·취합·동결·자르기 결정 / User · auth API · refresh 회전 · 잠금(S-02) · 인증 테스트 · 시드 적재 | 1번 · 5번 · README | BE-기능 |
-| FE-화면 | (중~상 · React) | FE 화면 4(로그인·가입·내 문서·분석 기록) · 공용 컴포넌트 · `api/`(client·streamPost) · authStore · `useUpload` | 6번 §5.1·§6·§7 | FE-분석 |
-| BE-기능 | (최상) | Document·Analysis·Message · Flyway·시드·SeedIngestRunner · 페이징/@Query · **SSE 중계** · AI 클라이언트 · 소유 검증(S-01) | 3번 · 4번 | BE-인증 · AI |
-| AI | (상) | FastAPI · RAG · LangGraph 분기 · Tavily · 골든셋 평가 · mock_app · pytest | 7번 · 3번 4절 | BE-기능 |
-| FE-분석 | (중) | 분석 화면 · `useChatStream` · chatStore · 반응형 캡처 | 6번 | FE-화면 |
-| DevOps | (중) | Dockerfile×3 · compose(망 3) · nginx · GHA · EC2 · (K8s 가산) | 8번 · 2번 | 기술 리드 |
+| 팀장 (BE-인증 레인) | 김영서 | 진행·발표·취합·동결·자르기 결정 / User · auth API · refresh 회전 · 잠금(S-02) · 인증 테스트 · 시드 적재 | 1번 · 5번 · README | BE-기능 |
+| BE-기능 | 정예빈 | Document·Analysis·Message · Flyway·시드·SeedIngestRunner · 페이징/@Query · **SSE 중계** · AI 클라이언트 · 소유 검증(S-01) | 3번 · 4번 | BE-인증 · AI |
+| FE-화면 | 이영후 | FE 화면 4(로그인·가입·내 문서·분석 기록) · 공용 컴포넌트 · `api/`(client·streamPost) · authStore · `useUpload` | 6번 §5.1·§6·§7 | FE-분석 |
+| FE-분석 | 채수림 | 분석 화면 · `useChatStream` · chatStore · 반응형 캡처 | 6번 | FE-화면 |
+| AI | 구본영 | FastAPI · RAG · LangGraph 분기 · Tavily · 골든셋 평가 · mock_app · pytest | 7번 · 3번 4절 | BE-기능 |
+| 기술 리드·보안 | 윤동호 | 이 SPEC · 목·seam 게이트 · `common/`(봉투·ErrorCode·Advice) · `security/`(SecurityConfig·JwtProvider·필터·401/403 핸들러·감사 리스너·PiiMasker·CORS) · 원장·재현 | 9번 · 2번 6절 · 5번 5절 | DevOps |
+| DevOps | 황인찬 | Dockerfile×3 · compose(망 3) · nginx · GHA · EC2 · (K8s 가산) | 8번 · 2번 | 기술 리드 |
 
 ## 9. 변경 규약
 
