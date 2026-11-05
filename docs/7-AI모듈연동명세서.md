@@ -25,7 +25,7 @@
 
 <!-- FILL ← 정본: P3-3 AI 내부 계약 · 방법: 외부 비공개 문장 + 내부 토큰 헤더 · 오너: AI -->
 
-### 4.1 질의 스트림 POST /internal/chat/stream
+### 4.1 분석 스트림 POST /internal/analyze/stream
 
 <!-- FILL ← 정본: `SPEC.md` AI 내부 계약 · 방법: 요청 JSON(ownerUuid·sessionId 포함) · SSE 이벤트 예시(token data = JSON 문자열) · 401 · 오너: AI -->
 

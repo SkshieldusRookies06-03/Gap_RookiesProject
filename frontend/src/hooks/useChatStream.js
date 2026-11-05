@@ -2,7 +2,8 @@
 // 판정 테스트: src/hooks/useChatStream.test.jsx (수정 금지 — 기술 리드 작성)
 //
 // 계약(테스트가 보는 반환값):
-//   const { messages, streaming, error, analysisId, start, stop } = useChatStream(initialAnalysisId?)
+//   const { messages, streaming, error, analysisId, start, stop, hydrate } = useChatStream(initialAnalysisId?)
+//   hydrate(messages): /analyses/:id 진입 시 GET messages 결과로 지난 대화 채우기 (테스트는 안 보지만 SPEC §5 계약)
 //   start({ postingId, resumeId })          새 분석 — 질문 없이
 //   start({ analysisId, question })         후속 질문
 //   messages: [{ role: 'USER'|'ASSISTANT', content: string, sources: [] }]  (ASSISTANT content는 토큰 누적)

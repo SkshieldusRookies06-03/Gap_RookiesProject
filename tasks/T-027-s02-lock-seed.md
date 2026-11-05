@@ -10,8 +10,9 @@ SPEC.md §7 S-02 · §2 시드 — 이 절을 지시서(에이전트 프롬프�
 
 ## [수용 기준]
 - [ ] `AuthAcceptanceTest` ⑤·(지킴) green
+- [ ] 실패 카운트가 401과 함께 롤백되지 않게 — `@Transactional(noRollbackFor = BusinessException.class)` (SPEC §1 로그인 보호)
 - [ ] 존재하는 계정만 카운트 · `locked_until` · `AuditLog.locked(email)`
-- [ ] SeedIngestRunner: 프로파일 seed로 기동하면 전 문서 delete→ingest(실패는 로그만)
+- [ ] SeedIngestRunner: 프로파일 seed로 기동하면 전 문서 delete→ingest(실패는 로그만) — `run()`은 `@Transactional(readOnly = true)`(owner 지연 로딩) · BF의 `DocumentRepository.findAll()`·`AiClient`는 **호출만**(파일 수정 금지 · 필요한 메서드가 없으면 BF에 요청)
 - [ ] seed 기동 후 시드 문서로 분석 스트림이 sources를 낸다
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-027` 무출력

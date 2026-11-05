@@ -53,7 +53,7 @@
 | T-027 | BA | `fix(security): [S-02] 로그인 5회 잠금 · B-5`(`lockedUntil` · 존재 계정만) + 잠금 테스트 · `SeedIngestRunner`(프로파일 seed · 전 문서 delete→ingest · BF의 AI 클라이언트 사용) | `backend/.../seed/`(BF 리뷰) | 6회째 423 · seed 기동 후 시드 문서로 분석 스트림 |
 | T-028 | TL | 감사 리스너(`AuthenticationSuccessEvent`/`Failure`) · 이메일 `mask…()` · `fix(security): [S-03] PiiMasker 연결 · A-3` | DocumentService·AnalysisService 호출 1줄씩(BF 리뷰) | 상세 응답 마스킹 · `maskedCount` |
 | T-029 | AI | LangGraph: load → grade → [Tavily] → generate · FOLLOWUP은 `as_retriever` + relevance score 분기 · sources type web | — | 기업 질문에 web 출처 |
-| T-030 | FA | 후속 질문 · 출처 칩 · 분석 기록에서 재진입 · `useChatStream` 테스트 1 | — | `npm test` |
+| T-030 | FA | 후속 질문 · 출처 칩 · 분석 기록에서 재진입 · 분석 화면 상태 테스트 1(`pages/analysis/AnalysisPage.test.jsx` — 내 테스트) | — | `npm test` |
 | T-031 | LD | 분석 기록 화면(INCOMPLETE "중단됨") · 화면 상태 테스트 1 | — | `npm test` |
 | T-032 | DO | compose 전체 기동 · nginx(SPA fallback · `/api` 프록시 · 스트림 buffering off·300s · `client_max_body_size 1m` · CSP) | — | **E2E: 가입 → 업로드 → 분석 스트리밍(브라우저)** |
 | T-033 | TL | 저녁 `node scripts/check-rubric-p3.mjs` → MISS를 D4~D5 티켓으로 배정 | — | MISS 목록 |
@@ -67,7 +67,7 @@
 | T-036 | AI | 예비 A-2 재현 → 자료 구분자 조치(발견이면 `fix(security): [S-04]`) | — | 원장 A-2 |
 | T-037 | BA | 400 경계 정리: size=0·정수 아님·JSON 형식 오류·빈 파일·UTF-8 아님 → 봉투(§4.4) · 인증 테스트 보강 | GlobalExceptionHandler 매핑 줄(TL 리뷰) | 각 요청 400/415 봉투 |
 | T-038 | BF | 500 경로 점검(삭제 중 AI 실패 · 스트림 중 AI 다운 → event: error) · N+1 확인(`open-in-view=false`) | — | AI 중지 캡처 |
-| T-039 | FA | 에러 문구 변환(§4.4 표) · 스트림 error 이벤트 UI · XSS 재현 보조(F-1) | — | 화면 캡처 |
+| T-039 | FA | 스트림 error 이벤트 UI(`messageFor(error)` 사용 · 재시도 버튼) · XSS 재현 보조(F-1) | — | 화면 캡처 |
 | T-040 | LD | 아침 ⓪ 빈칸 세기 · 자르기 결정 · README 실행 절차 · 화면 공용 컴포넌트 재사용 확인 | — | 회의 10분 |
 | T-041 | DO | GHA 3개(`docker/login-action` · `build-push-action` · `${{ github.sha }}` 태그) green | — | Actions 화면 |
 
@@ -90,5 +90,5 @@
 |---|---|---|---|
 | T-050 | LD | 발표 자료(35분 · 보안 시연 · CI/CD 흐름 · 수치는 명령 근거만) · 리허설 2회 | 타이머 |
 | T-051 | TL | 보안 시연 리허설(Burp 순서 고정) · 제출 D-1 게이트(스킬 submission-docs-p3 §3) | 게이트 9항목 |
-| T-052 | DO | 데모 시드 재적용(`SPRING_PROFILES_ACTIVE=prod,seed`) · 발표 10분 전 헬스 · 시연 영상 백업 | 헬스 200 |
+| T-052 | DO | 데모 시드 재적용(`SPRING_PROFILES_ACTIVE=seed`) · 발표 10분 전 헬스 · 시연 영상 백업 | 헬스 200 |
 | T-053 | 전원 | 기여 내역·회고 각자 커밋 · 발표 Q&A 자기 파트 한 줄 | `git shortlog -sn` |

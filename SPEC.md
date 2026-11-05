@@ -28,8 +28,8 @@
 | 응답 봉투 | 성공 `{"success":true,"data":…,"message":"…","timestamp":"…"}` · 목록 `data.content[]` + `data.page{number,size,totalElements,totalPages,first,last,numberOfElements}` · 에러 `{"success":false,"data":null,"statusCode":404,"code":"DOCUMENT_NOT_FOUND","message":"…","timestamp":"…","fields":[…]?}`(프론트는 `success`로만 분기) · 에러는 Accept와 무관하게 `application/json` · AI 내부 에러도 같은 봉투 |
 | 페이지 | 0-base · `@RequestParam int page, size` · `page<0`·`size<1`·정수 아님 → 400 · `size`>50은 50으로 절단 · 정렬 허용 목록(§4.2) |
 | 인증 | JWT HS256 · subject = 사용자 `uuid` · Access 15분 · Refresh 14일 · **Refresh는 SHA-256 해시로 `users.refresh_token_hash`에 저장 · 재발급 시 교체** · `Authorization: Bearer` 헤더 → CSRF 비활성(사유 문장은 스킬 P3-0.1 그대로) · Access는 메모리, Refresh만 localStorage(Zustand `persist` + `partialize`) · 동시 401은 refresh 한 번 — 탭 안은 진행 중 Promise 공유, **탭 사이는 `navigator.locks.request('jobgap-refresh', …)`** 안에서 localStorage를 다시 읽고 이미 바뀌었으면 그 값을 쓴다 |
-| 로그인 보호 | **존재하는 계정만** 실패 5회 → 15분 잠금 · **423 `ACCOUNT_LOCKED`** · 성공 시 카운트 0 · 없는 이메일도 같은 401 문구 |
-| 업로드 | `.md`·`.txt`만 · **UTF-8만**(디코딩 실패 415) · 빈 파일 400 · **파일 최대 200KB — 서비스가 `file.getSize()`로 직접 검사**(설정 `max-file-size=200KB`는 실서버 2차 방어선 · MockMvc는 이 설정을 적용하지 않는다) · 요청 최대 1MB(`max-request-size=1MB`) = nginx `client_max_body_size 1m` → 200KB~1MB는 봉투 413, 1MB 초과만 nginx가 막는다 · 파일 원본은 저장하지 않고 **마스킹한 본문 텍스트만** DB와 AI로 간다(ADR-04) |
+| 로그인 보호 | **존재하는 계정만** 실패 5회 → 15분 잠금 · **423 `ACCOUNT_LOCKED`** · 성공 시 카운트 0 · 없는 이메일도 같은 401 문구 · 실패 카운트는 401을 던져도 **커밋돼야 한다**(`@Transactional(noRollbackFor = BusinessException.class)` 또는 카운트 저장을 별도 트랜잭션) |
+| 업로드 | `.md`·`.txt`만 — **판정은 확장자** · MIME은 `text/markdown`·`text/x-markdown`·`text/plain`·`application/octet-stream`·빈 값 허용(브라우저마다 다르다), 그 밖이면 415 · **UTF-8만**(엄격 디코딩 실패 415) · 빈 파일 400 · **파일 최대 200KB — 서비스가 `file.getSize()`로 직접 검사**(설정 `max-file-size=200KB`는 실서버 2차 방어선 · MockMvc는 이 설정을 적용하지 않는다) · 요청 최대 1MB(`max-request-size=1MB`) = nginx `client_max_body_size 1m` → 200KB~1MB는 봉투 413, 1MB 초과만 nginx가 막는다 · 파일 원본은 저장하지 않고 **마스킹한 본문 텍스트만** DB와 AI로 간다(ADR-04) |
 | 업로드 순서 | 검증 → 마스킹 → DB 저장(트랜잭션 끝) → AI ingest(트랜잭션 밖) → 실패하면 그 행을 지우고 503 `AI_UNAVAILABLE` |
 | 질문 · 제목 | 질문 `@NotBlank @Size(max=1000)` · 문서 제목 `@NotBlank @Size(max=100)` · **질문·제목도 `PiiMasker`를 거친다** |
 | 헬스 | backend `GET /actuator/health`(permitAll · `/actuator/**` 나머지 ADMIN) · ai `GET /health`(내부 토큰 예외) |
@@ -61,7 +61,7 @@ AI 내부 4       POST /internal/ingest · POST /internal/analyze/stream · DELE
   **파생**한다: 마지막 메시지가 ASSISTANT면 `DONE`, USER면 `INCOMPLETE`(화면 문구 "중단됨").
 - 시드(`V2__seed.sql`): 사용자 2명(kim@example.com · lee@example.com · 비밀번호 `Passw0rd!` BCrypt) · 사용자마다 공고 1 · 이력서 1 ·
   **lee의 분석 1건 + 메시지 2개**(IDOR 검사용). 시드 문서는 DB에만 들어가므로 **`SeedIngestRunner`**(프로파일 `seed`, 기동 시
-  모든 문서를 AI에 delete→ingest — 멱등)로 벡터를 채운다. 데모 시드 재적용 = `SPRING_PROFILES_ACTIVE=prod,seed`로 1회 기동.
+  모든 문서를 AI에 delete→ingest — 멱등)로 벡터를 채운다. 데모 시드 재적용 = `SPRING_PROFILES_ACTIVE=seed`로 1회 기동.
 
 ## 3. 결정 기록 (ADR — 한 줄씩)
 
@@ -169,6 +169,9 @@ DocumentDetail  = DocumentSummary + {"content":"(마스킹된 본문 — 010-***
 
 - 모든 HTTP 호출은 `src/api/`(팀장)를 지난다. 스트림은 `api/client.js`가 내보내는 **`streamPost(path, body, signal)`**(토큰 헤더 ·
   `TOKEN_EXPIRED`면 시작 전 refresh 1회 · `Response`를 그대로 반환)를 `useChatStream`이 읽는다(`getReader()` · `data:` 뒤 공백 0~1 허용).
+- `useChatStream` 반환: `{ messages, streaming, error, analysisId, start, stop, hydrate }` — `hydrate(messages)`는 `/analyses/:id`로 들어올 때
+  GET messages 결과로 지난 대화를 채운다. 새 분석에서 `analysis` 이벤트를 받으면 `navigate(ROUTES.analysis(id), { replace: true })`로
+  URL만 바꾸고, **스트리밍 중에는 messages를 다시 불러오지 않는다**(같은 화면이 다시 렌더돼 진행 중인 답변을 덮는다).
 - 분석 화면: 공고·이력서 드롭다운 → "분석 시작" → 리포트가 흘러나옴(생성 중 표시 + **중단 버튼** = `AbortController`) → 출처 칩(문서/웹 구분) →
   하단 입력창으로 후속 질문. 응답은 **텍스트로 렌더**(`dangerouslySetInnerHTML` 금지 · 마크다운 렌더러를 쓰면 HTML 비활성).
 - 반응형: `@media` 브레이크포인트 768·1280(토큰 파일에 값) · 증거는 분석 화면 390·768·1280 캡처 3장. 공용 컴포넌트는 `PropTypes` 필수.
