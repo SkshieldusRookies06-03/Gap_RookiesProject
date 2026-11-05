@@ -1,6 +1,6 @@
 # T-016 — SecurityConfig·필터·핸들러를 실서버에서 관측하고 `SecurityAcceptanceTest`를 green으로 둔다
 
-**담당:** 기술 리드·보안 · **브랜치:** `feature/techlead-T-016` · **예상:** D2 · **선행:** T-005
+**담당:** 기술 리드·보안 · **브랜치:** `feature/security` · **예상:** D2 · **선행:** T-005
 
 ## [배경]
 SPEC.md §1 인증·헬스·SSE 행 · 스킬 P3-0.1 — 이 절을 지시서(에이전트 프롬프트)에 붙여 넣는다.

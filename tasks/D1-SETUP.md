@@ -11,7 +11,7 @@
 2. zip을 리포 밖 `../jobgap-d1/`에 풀어 둔다 — 아래 명령은 전부 이 폴더에서 **리포로 복사**한다
 3. 공유: 이 파일 · `onboarding/<내 레인>.md` · 각자 노트북에 Node 20 · JDK 17 · Python 3.11 · Docker
 
-## 1. 커밋 순서 (PR 하나씩 · 앞 PR이 main에 들어간 뒤 다음)
+## 1. 과거 초기 셋업 참고 순서 (현재는 feature/* → dev → main)
 
 | # | 누가 | 복사할 경로 (`../jobgap-d1/` → 리포) | 커밋 메시지 |
 |---|---|---|---|
@@ -27,16 +27,16 @@
 | 10 | AI | `ai-module/app/ ai-module/eval/ ai-module/mock_app.py ai-module/requirements.txt` | `chore(ai): FastAPI 골격·목 [T-007]` |
 | 11 | DevOps | `docker-compose.yml docker-compose.dev.yml .dockerignore nginx/ .github/workflows/ backend/Dockerfile backend/.dockerignore frontend/Dockerfile ai-module/Dockerfile ai-module/.dockerignore` | `chore(devops): 컨테이너·CI 골격 [T-023]` |
 
-7번과 8번 사이에는 프론트 빌드가 깨진다(App.jsx가 분석 화면을 import) — 8번을 바로 이어서 머지한다.
+(기존 팩 최초 커밋 순서에 관한 참고) 7번과 8번 사이에는 프론트 빌드가 깨진다(App.jsx가 분석 화면을 import) — 8번을 바로 이어서 머지한다. 현재는 `feature/frontend`에서 검증 후 `dev`에 PR한다.
 
 복사 예 (팀장 · BE-인증 3번):
 ```bash
-cd jobgap && git switch -c feature/be-auth-T-004
+cd jobgap && git switch dev && git pull origin dev && git switch feature/backend
 cp ../jobgap-d1/backend/pom.xml backend/ 2>/dev/null || (mkdir -p backend && cp ../jobgap-d1/backend/pom.xml backend/)
 mkdir -p backend/src/main/resources backend/src/main/java/com/jobgap
 cp ../jobgap-d1/backend/src/main/resources/application.yml backend/src/main/resources/
 cp ../jobgap-d1/backend/src/main/java/com/jobgap/JobgapApplication.java backend/src/main/java/com/jobgap/
-git add backend && git commit -m "chore(be): Spring 골격 [T-004]" && git push -u origin HEAD   # → PR
+git add backend && git commit -m "chore(be): Spring 골격 [T-004]" && git push origin feature/backend   # → dev 대상으로 PR
 ```
 
 ## 2. 오전 확인 (각자 · 결과를 채널에 한 줄)

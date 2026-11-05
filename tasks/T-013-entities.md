@@ -1,6 +1,6 @@
 # T-013 — Document·Analysis·AnalysisMessage 엔티티와 리포지토리를 만든다
 
-**담당:** BE-기능 · **브랜치:** `feature/be-feature-T-013` · **예상:** D2 · **선행:** T-012
+**담당:** BE-기능 · **브랜치:** `feature/backend` · **예상:** D2 · **선행:** T-012
 
 ## [배경]
 SPEC.md §2 · 스킬 P3-0.1 엔티티 규약 행 — 이 절을 지시서(에이전트 프롬프트)에 붙여 넣는다.

@@ -1,6 +1,6 @@
 # T-023 — Dockerfile 3·compose·dev compose·nginx·CI 팩을 커밋하고 로컬에서 config가 통과하게 한다
 
-**담당:** DevOps · **브랜치:** `feature/devops-T-023` · **예상:** D2 · **선행:** T-008
+**담당:** DevOps · **브랜치:** `feature/infra` · **예상:** D2 · **선행:** T-008
 
 ## [배경]
 SPEC.md §1 포트 · 스킬 P3-0.1 compose·Dockerfile 행 · P3-5 — 이 절을 지시서(에이전트 프롬프트)에 붙여 넣는다.

@@ -1,5 +1,5 @@
 ## 티켓
-T-###  (브랜치 feature/<레인>-<T-###>)
+T-###  (작업 브랜치: feature/backend · feature/frontend · feature/ai · feature/security · feature/infra / 대상: dev, 배포 PR은 dev → main)
 
 ## 바꾼 것 (한 줄)
 

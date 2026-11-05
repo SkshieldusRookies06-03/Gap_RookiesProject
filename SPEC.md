@@ -37,7 +37,27 @@
 | SSE 설정 | 타임아웃 사슬 **WebClient 290s < `spring.mvc.async.request-timeout=300s` < nginx `proxy_read_timeout 310s`**(WebClient가 먼저 끊겨야 `event: error`를 보낼 수 있다) · 스트림 location `proxy_buffering off` · `dispatcherTypeMatchers(ASYNC, ERROR).permitAll()` |
 | 분기 기준값 | 후속 질문의 grade: 검색 최고 relevance score **< 0.45** 이면 Tavily(D4 골든셋으로 1회 조정 · 바꾸면 이 칸만) |
 | 후속 질문 문맥 | 같은 분석의 이전 메시지 최근 **6개**를 history로 보낸다(이번 질문은 `question`에만 · history에 넣지 않는다) |
-| 커밋 | `type(범위): 요약 [T-###]` · 보안 수정 `fix(security): [S-0N] 무엇 · 행 [T-###]` · 브랜치 `feature/<레인>-<T-###>` → PR → main |
+| 커밋 | `type(범위): 요약 [T-###]` · 보안 수정 `fix(security): [S-0N] 무엇 · 행 [T-###]` · 브랜치 `feature/<분야>` → PR → dev → 통합 테스트 → PR → main |
+
+### Git 브랜치·병합 운영 규칙 (2026-11-05 팀 협의 반영)
+
+현재 GitHub에 생성된 브랜치 이름을 그대로 사용한다. 별도 개인별·티켓별 브랜치를 새로 만들지 않는다.
+
+| 브랜치 | 용도 / 담당 범위 |
+|---|---|
+| `main` | 최종 검증·배포 기준 |
+| `dev` | 기능 통합 및 통합 테스트 기준 |
+| `feature/backend` | BE-인증(팀장) + BE-기능 |
+| `feature/frontend` | FE-화면 + FE-분석 |
+| `feature/ai` | AI |
+| `feature/security` | 기술 리드·보안 |
+| `feature/infra` | DevOps·인프라 |
+
+- 작업 시작 전 자신의 분야 브랜치에 `dev` 최신 변경을 반영한다. 같은 분야 브랜치를 공유하는 담당자는 푸시 전 상호 변경 내용을 확인한다.
+- 구현·검증 후 **`feature/<분야>` → `dev` PR**을 열어 통합한다. `dev`에서 공통 테스트 및 연동을 확인한다.
+- 통합 테스트가 통과하면 **`dev` → `main` PR**을 생성해 최종 반영한다. `main`으로 기능 브랜치를 직접 병합하지 않는다.
+- 기존 커밋 메시지의 `type(범위): 요약 [T-###]` 티켓 추적 규칙은 유지한다.
+- 브랜치 생성·병합 규칙만 변경하며 기능 범위, API 계약, 티켓 담당/검증 조건은 변경하지 않는다.
 
 관측 명령(D3 전 1회 · 결과를 이 표 옆에 적는다): 페이지 음수 400 · JWT alg · 시드 시각 `+09:00` · 200KB 경계 업로드(nginx 경유) ·
 스트림 30초 초과 완주 · temurin 이미지 curl 유무(`docker run --rm eclipse-temurin:17-jre sh -c 'command -v curl wget'`).
