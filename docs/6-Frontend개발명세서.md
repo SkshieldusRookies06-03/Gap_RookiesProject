@@ -69,7 +69,7 @@ frontend/src/
 AnalysisPage                    state: useChatStream() → {messages, streaming, error, analysisId}
 ├── DocumentPicker              props: postings[], resumes[], onStart({postingId, resumeId}), disabled=streaming
 ├── MessageList                 props: messages[] (USER는 텍스트 white-space: pre-wrap)
-│   ├── ReportText              props: content — ASSISTANT 응답. 제목·표·목록만 React 요소로 만들고 나머지는 텍스트(SPEC §5 · 기술 리드 T-054)
+│   ├── ReportText              props: text — ASSISTANT 응답. 제목·표·목록만 React 요소로 만들고 나머지는 텍스트(SPEC §5 · 기술 리드 T-054)
 │   └── SourceChips             props: sources[] (type doc → 문서 제목 · web → 새 탭 링크 rel="noopener noreferrer" ·
 │                                 url이 http:/https:가 아니면 링크 대신 텍스트 — javascript: 차단, dev엔 CSP가 없다)
 ├── LoadingSpinner "생성 중…" + Button "중단"(stop)   — streaming일 때

@@ -261,6 +261,7 @@ BE 문서 삭제 순서: ① 이 호출 ② 그 문서를 posting 또는 resume�
 | 판정 테스트 BE | `backend/src/test/java/com/jobgap/acceptance/` (실 MariaDB + MockMvc + MockWebServer가 AI 흉내) | 기술 리드 작성 · 구현자 수정 금지 |
 | 판정 테스트 FE | `frontend/src/api/*.test.js` · `src/hooks/useChatStream.test.jsx` · `src/pages/DocumentsPage.test.jsx` (Vitest + MSW) | 기술 리드 작성 |
 | 판정 테스트 AI | `ai-module/tests/` (키 없이 — `LLM_PROVIDER=fake`) | 기술 리드 작성 |
+| 회귀 테스트(리뷰 결함 고정 · CI 1단계 필수) | BE `security/PiiMaskerEdgeTest` · `security/CorsConfigTest` · `common/GlobalExceptionHandlerTest`(DB 없음) / FE `src/api/session.test.js` · `src/components/ErrorMessage.test.jsx` / AI `tests/test_hardening.py`(실물·목 같은 규칙) | 기술 리드 작성 |
 | 티켓 · 역할 · D1 순서 | `tasks/T-###-*.md` · `tasks/BOARD.md` · `onboarding/` · `tasks/D1-SETUP.md` | 팀장 |
 | 실행 환경 | `docker-compose*.yml` · `**/Dockerfile` · `nginx/default.conf` · `.github/workflows/ci.yml` | DevOps |
 | 보안 원장 · 증거 | `security/LEDGER.md` · `security/evidence/S-0N/` | 기술 리드 |

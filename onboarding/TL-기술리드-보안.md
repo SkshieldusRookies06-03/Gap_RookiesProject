@@ -49,7 +49,7 @@
 ### T-054 (D2) — 응답 안전 렌더 컴포넌트 (FE-분석과 분담 · 완성본)
 - `frontend/src/pages/analysis/ReportText.jsx` — 리포트 마크다운 일부(제목·표·목록·문단)를 HTML 없이 React 요소로 · `parseBlocks()` 내보냄
 - `frontend/src/pages/analysis/SourceChips.jsx` — doc/web 칩 · 웹은 `safeUrl()`로 http(s)만 링크 · `rel="noopener noreferrer"`
-- 테스트 `ReportText.test.jsx` 4개 green(작성 완료) · FE-분석에게 import 방법 공유 → FE-분석이 화면에 끼운다
+- 판정 테스트 `src/pages/analysis/ReportText.test.jsx` 4개(작성 완료 · 컴포넌트가 없어 지금은 red → 구현하면 green · 변이 4종을 잡는지 확인함) · FE-분석에게 import 방법 공유 → FE-분석이 화면에 끼운다
 - 커밋: `feat(fe): 응답 안전 렌더 ReportText·SourceChips — F-1 방어 [T-054]`
 
 ### T-016 (D2) — 보안 설정 관측
