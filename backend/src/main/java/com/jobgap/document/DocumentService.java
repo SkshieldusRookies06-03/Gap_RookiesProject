@@ -1,6 +1,7 @@
 package com.jobgap.document;
 
 import com.jobgap.ai.AiClient;
+import com.jobgap.analysis.AnalysisRepository;
 import com.jobgap.auth.User;
 import com.jobgap.auth.UserRepository;
 import com.jobgap.common.BusinessException;
@@ -45,11 +46,14 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
     private final AiClient aiClient;
+    private final AnalysisRepository analysisRepository;
 
-    public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, AiClient aiClient) {
+    public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, AiClient aiClient,
+                           AnalysisRepository analysisRepository) {
         this.documentRepository = documentRepository;
         this.userRepository = userRepository;
         this.aiClient = aiClient;
+        this.analysisRepository = analysisRepository;
     }
 
     public PageResponse<DocumentSummary> list(AuthUser me, DocumentType type, int page, int size, String sort) {
@@ -146,9 +150,16 @@ public class DocumentService {
         return toSummary(d);
     }
 
+    /**
+     * SPEC §6.4 삭제 순서: ① AI DELETE(벡터) → ② 그 문서를 posting·resume로 쓴 Analysis(메시지는 cascade·orphanRemoval) → ③ Document.
+     * ①이 실패하면 AiClient가 503 AI_UNAVAILABLE을 던지고, 아직 DB에 쓴 게 없으니 그대로 남는다.
+     * ②를 빼먹으면 fk_analyses_posting/resume 위반으로 500이 된다.
+     */
     @Transactional
     public void delete(AuthUser me, Long id) {
-        findOwned(me, id);   // [S-01] 소유 검증은 삭제 구현(T-055) 전에도 먼저 막는다
-        throw new UnsupportedOperationException("T-014/T-055 미구현");
+        Document d = findOwned(me, id);
+        aiClient.deleteDocument(String.valueOf(id), me.uuid());
+        analysisRepository.deleteAll(analysisRepository.findByPostingIdOrResumeId(id, id));
+        documentRepository.delete(d);
     }
 }
