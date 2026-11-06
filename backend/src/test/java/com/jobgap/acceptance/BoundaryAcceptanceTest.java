@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 /**
  * 경계값 판정 테스트 — 기존 판정 테스트가 짚지 않은 SPEC 숫자·규칙을 한 곳에 (오너: 기술 리드 · 이 파일은 구현자가 고치지 않는다).
@@ -32,7 +32,7 @@ class BoundaryAcceptanceTest extends AcceptanceSupport {
 
     private static final int KB200 = 200 * 1024;
 
-    private static MockHttpServletRequestBuilder uploadAs(String filename, String contentType, String title, byte[] bytes) {
+    private static MockMultipartHttpServletRequestBuilder uploadAs(String filename, String contentType, String title, byte[] bytes) {
         return multipart("/api/documents")
                 .file(new MockMultipartFile("file", filename, contentType, bytes))
                 .param("type", "RESUME").param("title", title);
