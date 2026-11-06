@@ -62,4 +62,5 @@ public class AnalysisMessage {
     void onCreate() {
         this.createdAt = OffsetDateTime.now(ZoneId.of("Asia/Seoul"));
     }
+
 }
