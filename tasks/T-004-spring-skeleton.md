@@ -9,7 +9,7 @@ SPEC.md §1 BE 의존성 — 이 절 본문을 지시서(에이전트 프롬프�
 Maven wrapper를 넣고 백엔드를 처음 컴파일·기동한다.
 
 ## [수용 기준]
-- [ ] start.spring.io(Maven · Java 17 · Boot 3.3.x)에서 `mvnw`·`mvnw.cmd`·`.mvn/`만 가져와 커밋
+- [ ] start.spring.io(Maven · Java 17 · Boot 4.1.x)에서 `mvnw`·`mvnw.cmd`·`.mvn/`만 가져와 커밋
 - [ ] `./mvnw test -Dtest='JobgapApplicationTests,PiiMaskerTest'` green (DB: dev compose `database`)
 - [ ] 컴파일 에러는 출력 전체를 기술 리드에게
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력

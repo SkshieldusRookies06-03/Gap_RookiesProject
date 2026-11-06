@@ -10,6 +10,7 @@ SPEC.md §4.3 목록·메시지 — 이 절 본문을 지시서(에이전트 프
 
 ## [수용 기준]
 - [ ] `AnalysisAcceptanceTest` ⑥의 목록·페이징 단언(403 단언은 T-026 뒤)
+- [ ] `BoundaryAcceptanceTest` `paging`(분석 목록·메시지 줄) green
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-056` 무출력
 - [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다
@@ -21,5 +22,5 @@ SPEC.md §4.3 목록·메시지 — 이 절 본문을 지시서(에이전트 프
 
 ## [확인 명령]
 ```bash
-cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest
+cd backend && ./mvnw test -Dtest='AnalysisAcceptanceTest,BoundaryAcceptanceTest#paging'
 ```

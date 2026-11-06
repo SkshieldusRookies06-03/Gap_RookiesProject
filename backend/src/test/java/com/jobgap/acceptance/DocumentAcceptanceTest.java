@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 @AcceptanceTest
-@DisplayName("[BE-기능 T-014·T-024·T-026 · 기술 리드 T-028] 문서 — SPEC §4.2 · 점검서 B-2·B-10·A-3")
+@DisplayName("[BE-기능 T-014·T-024·T-026·T-055 · 기술 리드 T-028] 문서 — SPEC §4.2 · 점검서 B-2·B-10·A-3")
 class DocumentAcceptanceTest extends AcceptanceSupport {
 
     @Test

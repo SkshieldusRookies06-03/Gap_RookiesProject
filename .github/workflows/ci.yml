@@ -45,11 +45,11 @@ jobs:
     defaults: { run: { working-directory: ai-module } }
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.11", cache: pip, cache-dependency-path: ai-module/requirements.txt }
-      - run: pip install -r requirements.txt
+      - uses: astral-sh/setup-uv@v6
+        with: { python-version: "3.12", enable-cache: true, cache-dependency-glob: ai-module/uv.lock }
+      - run: uv sync --locked
       - name: 1단계 — 토큰·헬스 (필수)
-        run: pytest -q tests/test_hardening.py tests/test_contract.py -k "hardening or health or require_token"
+        run: uv run pytest -q tests/test_hardening.py tests/test_contract.py -k "hardening or health or require_token"
       - name: 2단계 — 판정 테스트 현황 (D5까지 red 허용)
-        run: pytest -q
+        run: uv run pytest -q
         continue-on-error: true

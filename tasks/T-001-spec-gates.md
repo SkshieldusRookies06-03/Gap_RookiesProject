@@ -11,7 +11,6 @@ SPEC.md §0~§10 전체 — 이 절 본문을 지시서(에이전트 프롬프�
 ## [수용 기준]
 - [ ] `node mock/server.mjs` + `node seams/check-api.mjs http://localhost:8080` green 20줄
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
-- [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-001` 무출력
 - [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다
 

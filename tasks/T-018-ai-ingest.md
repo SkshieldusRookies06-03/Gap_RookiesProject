@@ -1,16 +1,17 @@
-# T-018 — vectorstore ingest·delete를 Chroma로 구현한다
+# T-018 — vectorstore ingest·delete를 FAISS로 구현한다
 
 **담당:** AI · **브랜치:** `feature/ai` · **예상:** D2 · **선행:** T-007
 
 ## [배경]
-SPEC.md §6.1 · §6.4 · ADR-03 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대로 붙여 넣는다(링크만 주지 않는다).
+SPEC.md §1 벡터 저장소 · §6.1 · §6.4 · ADR-03 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대로 붙여 넣는다(링크만 주지 않는다).
 
 ## [목표]
-vectorstore ingest·delete를 Chroma로 구현한다.
+vectorstore ingest·delete를 FAISS로 구현한다.
 
 ## [수용 기준]
-- [ ] `pytest -q tests/test_contract.py` 중 health·token·ingest·delete 계열 green
-- [ ] 분할 500/50 · 메타 owner_uuid·document_id·doc_type·seq · 재적재 멱등 · 삭제 where에 owner_uuid
+- [ ] `pytest -q tests/test_contract.py` 중 health·token·ingest 계열 green (delete 둘은 스트림으로 확인하므로 T-019 뒤 green)
+- [ ] `tests/test_rag_contract.py` `[T-018]` 2개(재적재 멱등 · 거리 cosine·디스크 영속) green
+- [ ] 분할 500/50 · 메타 owner_uuid·document_id·doc_type·seq · 재적재 멱등 · 삭제는 owner_uuid·document_id로 찾은 청크 id만 · 바꿀 때마다 save_local
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-018` 무출력
 - [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다
@@ -23,5 +24,5 @@ vectorstore ingest·delete를 Chroma로 구현한다.
 
 ## [확인 명령]
 ```bash
-cd ai-module && pytest -q
+cd ai-module && uv run pytest -q
 ```

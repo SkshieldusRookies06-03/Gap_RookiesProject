@@ -5,7 +5,7 @@
 
 ## 1. 기술 스택
 
-- **Framework**: Spring Boot 3.3.5 (Web · Security · Data JPA · Validation · Actuator · WebFlux(WebClient)) · Flyway(`flyway-core` + `flyway-mysql`) · jjwt 0.12.6
+- **Framework**: Spring Boot 4.1.2 (WebMVC · Security · Data JPA · Validation · Actuator · WebFlux(WebClient)) · Flyway(`spring-boot-starter-flyway` + `flyway-mysql`) · jjwt 0.12.6 · Jackson 3(`tools.jackson.*` · 애너테이션만 `com.fasterxml.jackson.annotation`)
 - **언어**: Java 17
 - **데이터베이스**: MariaDB 10.11 (`mariadb-java-client`) · `ddl-auto: validate` + Flyway 마이그레이션
 - **빌드**: Maven — 로컬 `./mvnw`(wrapper · T-004에서 커밋), CI는 러너의 `mvn`, Docker 빌드 이미지 `maven:3.9.9-eclipse-temurin-17`
@@ -170,7 +170,7 @@ List<Analysis> findAllUsing(@Param("docId") Long docId);
 | 대상 | `${AI_BASE_URL}` (compose: `http://ai-service:8000` · `app` 망) |
 | 내부 토큰 | 모든 호출에 `X-Internal-Token: ${AI_INTERNAL_TOKEN}` — `AiClient`가 기본 헤더로 주입 |
 | 단건(ingest·delete) | `RestClient` · connect 3,000ms · read 30,000ms · 실패 → `BusinessException(AI_UNAVAILABLE)` = 503 |
-| 스트림(analyze) | `WebClient` `bodyToFlux(ServerSentEvent<String>)` · responseTimeout **290s** · `onErrorResume` → `event: error`(AI_UNAVAILABLE 봉투) |
+| 스트림(analyze) | `WebClient` `bodyToFlux(ServerSentEvent<String>)` · 전체 상한 `Flux.timeout(290s)`(`responseTimeout`은 읽기 사이 유휴 시간이라 상한이 아니다 · SPEC §1) · done·error 없이 EOF면 `event: error` · `onErrorResume` → `event: error`(AI_UNAVAILABLE 봉투) |
 | 소유자 | `ownerUuid`는 `AuthUser.uuid()`에서만 — 프론트 값을 쓰지 않는다(A-3) |
 | 문맥 | 후속 질문은 이전 메시지 최근 6개를 `history`로(이번 질문 제외) |
 
