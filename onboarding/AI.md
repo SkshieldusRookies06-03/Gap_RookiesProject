@@ -15,14 +15,18 @@
 | `test_delete_is_idempotent_and_removes` | DELETE 204 · 재삭제 204 · 삭제 후 sources에 없음 | T-018 · T-019 | red |
 | `test_delete_needs_owner` | 다른 ownerUuid의 삭제는 내 청크를 못 지운다 | T-018 · T-019 | red |
 | `test_llm_failure_becomes_error_event` | `LLM_PROVIDER=fail` → 상태 200 · 마지막 이벤트 error · 봉투(`AI_UNAVAILABLE`·timestamp) | T-019 | red |
+| `test_rag_contract.py` 재적재·cosine | 같은 documentId 재적재 = 교체(두 배 아님) · 컬렉션 `hnsw:space` = cosine | T-018 | red |
+| `test_rag_contract.py` seq·프롬프트 | REPORT 로드 seq 순서 최대 12개·남의 owner 0개 · system에만 지시 · `<자료>` 격리 · 자료 속 `</자료>` → `[/자료]` | T-019 (· T-036 유지) | red |
+| `test_rag_contract.py` 검색·분기 | 검색 = 내 owner·고른 문서·k개·점수 0~1 내림차순 · 정확 일치 1등 · 후속 문맥(history·question) · FOLLOWUP은 0.45 미만일 때만 Tavily · REPORT는 항상 | T-029 | red |
+| `test_hardening.py` (41) | 404·405·500 봉투 · 잘못된 토큰 401 · null·FOLLOWUP 빈 질문·Literal 400 — 실물과 목(mock_app) 같은 규칙 | (이미 · CI 1단계 필수) | green |
 
 - 테스트는 키 없이 돈다: `conftest.py`가 `LLM_PROVIDER=fake` · `AI_INTERNAL_TOKEN=test-token` · 임시 `CHROMA_DIR`을 넣는다.
-- 참고: 기술 리드가 참조 구현으로 7개 전부 green이 되는 것을 확인했다 — 테스트가 불가능한 요구를 하지 않는다.
+- 참고: 기술 리드가 참조 구현(LangGraph)으로 판정 테스트 전부(contract·failure 7 + rag_contract 9)가 green이 되는 것을 확인했다 — 테스트가 불가능한 요구를 하지 않는다. 각 `test_rag_contract` 테스트 첫 줄의 `[T-###]`가 담당 티켓이다.
 - seam 검사(서버를 띄워서): `AI_INTERNAL_TOKEN=… node seams/check-ai.mjs http://127.0.0.1:8000` — 실물은 `MOCK` 없이.
 
 ## 1. 완료 정의 (D5 저녁)
 
-- [ ] `pytest -q` 7/7 green (`cd ai-module`)
+- [ ] `pytest -q` 전부 green (`cd ai-module` · 판정 16 + hardening 41)
 - [ ] `node seams/check-ai.mjs http://127.0.0.1:8000` 전 행 green — 실물(`uvicorn app.main:app`) 기준
 - [ ] REPORT 스트림이 compose E2E에서 화면까지 흘러나온다(T-032와 함께)
 - [ ] LangGraph `StateGraph` + `add_conditional_edges` 1 · Tavily 노드 · sources에 `type: web`
@@ -90,7 +94,7 @@ def delete_document(document_id, owner_uuid):
         _store().delete(ids=got["ids"])
 ```
 - owner 조건이 **한 곳이라도** 빠지면 남의 문서가 섞이거나 지워진다(A-3) — 검색·로드·삭제 전부.
-- 확인: `pytest -q -k "ingest or token or health"` · 실물 서버로 check-ai의 ingest·delete·401 행.
+- 확인: `pytest -q -k "ingest or token or health or reingest or cosine"` · 실물 서버로 check-ai의 ingest·delete·401 행.
 - 커밋: `feat(ai): Chroma 적재·삭제(owner 필터·멱등) [T-018]`
 
 ### T-019 REPORT 단일 경로 스트림 (D2) — `tasks/T-019-ai-report-stream.md`
@@ -122,7 +126,7 @@ def build_messages(req, docs, web):
     return [SystemMessage(SYSTEM), *history_messages(req.history), HumanMessage(human)]
 ```
 - `history_messages`: `req.history`(백엔드가 이전 최근 6개를 보냄) → USER는 HumanMessage, ASSISTANT는 AIMessage. 이번 질문은 history에 없다.
-- 확인: `pytest -q` 7/7 · 실물 서버 + check-ai 전 행.
+- 확인: `pytest -q tests/test_contract.py tests/test_failure.py` 7/7 + `test_rag_contract.py`의 `[T-019]` 2개 · 실물 서버 + check-ai 전 행.
 - 커밋: `feat(ai): REPORT 스트림 load→generate · token JSON [T-019]`
 
 ### T-029 LangGraph 분기 + FOLLOWUP (D3) — `tasks/T-029-langgraph-branch.md`
@@ -155,7 +159,7 @@ res = TavilyClient(api_key=os.environ["TAVILY_API_KEY"]).search(
 web = [{"type": "web", "url": r["url"], "title": r["title"]} for r in res["results"]]
 ```
 - Tavily는 동기 호출 — 노드 안에서 그대로 써도 되지만 타임아웃이 길면 스트림 첫 토큰이 늦어진다(체감 확인).
-- 확인: `pytest -q` 그대로 7/7 · 키 넣고 실물로 기업 질문 → sources에 `type: web`.
+- 확인: `pytest -q` 전부 green(`[T-029]` 5개 포함) · 키 넣고 실물로 기업 질문 → sources에 `type: web`.
 - 커밋: `feat(ai): LangGraph grade→Tavily 분기 · FOLLOWUP 검색 [T-029]`
 
 ### T-035 골든셋 세 조건 (D4) — `tasks/T-035-golden-set.md`
@@ -239,7 +243,7 @@ web = [{"type": "web", "url": r["url"], "title": r["title"]} for r in res["resul
 [배경] SPEC.md §6.1·§6.4·ADR-03 (붙여 넣기)
 [목표] ai-module/app/vectorstore.py 의 ingest_document·delete_document 를 Chroma로 구현한다.
 [수용 기준]
-- cd ai-module && pytest -q -k "ingest or token or health" green
+- cd ai-module && pytest -q -k "ingest or token or health or reingest or cosine" green
 - 메타데이터 owner_uuid·document_id·doc_type·seq · 같은 document_id 재적재 = 지우고 다시
 - 모든 get/delete 조건에 owner_uuid ($and)
 [제약]

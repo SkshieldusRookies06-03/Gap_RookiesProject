@@ -11,7 +11,7 @@ T-0XX — `tasks/T-0XX-*.md` · 출발 브랜치 `feature/backend|frontend|ai|se
 
 ## 체크
 - [ ] 판정 테스트·게이트 green (위 출력)
-- [ ] `node seams/check-scope.mjs T-0XX` 무출력 — 내 레인 파일만
+- [ ] `node seams/check-scope.mjs T-0XX,T-0YY` 무출력 — 이 PR에 담긴 티켓 전부(공유 브랜치 · 기준 기본값 `origin/dev`)
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] 변경량·내용 확인 (`git diff --stat origin/dev...HEAD` · `dev → main` PR은 `origin/main...HEAD`)
 - [ ] 계약(SPEC §4·§6)을 바꿨다면 SPEC·mock·seams를 같은 PR에서

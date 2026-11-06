@@ -8,7 +8,7 @@
 
 | T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| [T-001](T-001-spec-gates.md) | TL | 설계 정본·목 서버 둘·seam 검사·판정 테스트·원장·역할 문서를 리포에 둔다. | — | `node seams/check-scope.mjs --owners && node scripts/check-sec-deploy.mjs` |
+| [T-001](T-001-spec-gates.md) | TL | 설계 정본·목 서버 둘·seam 검사·판정 테스트·원장·역할 문서를 리포에 둔다. | — | `node scripts/check-sec-deploy.mjs` |
 | [T-002](T-002-repo-settings.md) | LD | GitHub 리포 설정과 팀 핸들을 확정한다. | T-001 | `(GitHub Settings 화면 캡처를 PR 설명에)` |
 | [T-003](T-003-spec-freeze.md) | LD | D1 저녁 SPEC 동결 회의를 열고 v1을 승인한다. | T-001 | `git log -1 --format=%s -- SPEC.md` |
 | [T-004](T-004-spring-skeleton.md) | LD | Maven wrapper를 넣고 백엔드를 처음 컴파일·기동한다. | T-001 | `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database` |
@@ -24,10 +24,10 @@
 
 | T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| [T-012](T-012-flyway.md) | BF | Flyway V1·V2를 빈 DB에서 적용하고 시드 시각 오프셋을 관측한다. | T-004 | `cd backend && ./mvnw test -Dtest=JobgapApplicationTests` |
+| [T-012](T-012-flyway.md) | BF | Flyway V1·V2를 빈 DB에서 적용하고 시드 시각 오프셋을 관측한다. | T-004 | `cd backend && ./mvnw test -Dtest='JobgapApplicationTests,BoundaryAcceptanceTest#timesAreKst'` |
 | [T-013](T-013-entities.md) | BF | Document·Analysis·AnalysisMessage 엔티티와 리포지토리 3개. | T-012 · T-015(User) | `cd backend && ./mvnw test -Dtest=JobgapApplicationTests` |
-| [T-014](T-014-document-read-api.md) | BF | 문서 목록·상세·제목 수정·삭제(단순 삭제) — **소유 검증 없이**(S-01 조치 전 상태). | T-013 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
-| [T-015](T-015-user-register-login.md) | LD | User 엔티티·가입·로그인(+감사 이벤트 발행). **D2 오전 우선** — BE-기능 엔티티가 User를 참조한다. | T-004 | `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` |
+| [T-014](T-014-document-read-api.md) | BF | 문서 목록·상세·제목 수정·삭제(단순 삭제) — **소유 검증 없이**(S-01 조치 전 상태). | T-013 | `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,BoundaryAcceptanceTest#paging+timesAreKst'` |
+| [T-015](T-015-user-register-login.md) | LD | User 엔티티·가입·로그인(+감사 이벤트 발행). **D2 오전 우선** — BE-기능 엔티티가 User를 참조한다. | T-004 | `cd backend && ./mvnw test -Dtest='AuthAcceptanceTest,BoundaryAcceptanceTest#registerValidation'` |
 | [T-058](T-058-refresh-logout.md) | LD | refresh 회전(SHA-256 해시 저장)과 로그아웃. | T-015 | `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` |
 | [T-016](T-016-security-observe.md) | TL | 보안 설정을 실서버에서 관측하고 5번 명세 5.2(CSRF 사유)를 쓴다. | T-005 | `cd backend && ./mvnw test -Dtest=SecurityAcceptanceTest` |
 | [T-017](T-017-pii-masker.md) | TL | PiiMasker를 단위 테스트로 고정한다 — 업로드 연결은 T-028. | T-005 | `cd backend && ./mvnw test -Dtest=PiiMaskerTest` |
@@ -44,13 +44,13 @@
 
 | T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| [T-024](T-024-ai-client-upload.md) | BF | AiClient 단건(ingest·delete)과 업로드 흐름. | T-014 · T-018 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
+| [T-024](T-024-ai-client-upload.md) | BF | AiClient 단건(ingest·delete)과 업로드 흐름. | T-014 · T-018 | `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,BoundaryAcceptanceTest#uploadExtensionAndMime+uploadSizeBoundary+uploadTitleLength'` |
 | [T-055](T-055-delete-order.md) | BF | 문서 삭제 순서: AI DELETE → 그 문서를 쓴 분석 → 문서 · AI 실패면 503이고 DB 그대로. | T-024 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
-| [T-025](T-025-stream-relay.md) | BF | 분석 스트림 중계 — 새 분석·후속 질문 · done 가로채 저장. | T-006 · T-013 · T-019 | `cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest` |
-| [T-056](T-056-analysis-list.md) | BF | 분석 목록(lastStatus 파생)·메시지 페이징. | T-025 | `cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest` |
+| [T-025](T-025-stream-relay.md) | BF | 분석 스트림 중계 — 새 분석·후속 질문 · done 가로채 저장. | T-006 · T-013 · T-019 | `cd backend && ./mvnw test -Dtest='AnalysisAcceptanceTest,BoundaryAcceptanceTest#reportRequestHasNoNulls+historyIsLastSix+questionLength+analysisTitleIsTruncated'` |
+| [T-056](T-056-analysis-list.md) | BF | 분석 목록(lastStatus 파생)·메시지 페이징. | T-025 | `cd backend && ./mvnw test -Dtest='AnalysisAcceptanceTest,BoundaryAcceptanceTest#paging'` |
 | [T-026](T-026-s01-ownership.md) | BF | `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]` — 방어만 담은 커밋 하나. | T-014 · T-025 · T-062(FE-분석 재현) | `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,AnalysisAcceptanceTest'` |
 | [T-027](T-027-s02-lock-seed.md) | LD | `fix(security): [S-02] 로그인 5회 잠금 · B-5 [T-027]` + SeedIngestRunner. | T-015 · 기술 리드 재현 | `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` |
-| [T-028](T-028-s03-masking.md) | TL | `fix(security): [S-03] 업로드·제목·질문 PiiMasker 연결 · A-3 [T-028]` + 감사 로그 캡처. | T-017 · T-024 | `cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest` |
+| [T-028](T-028-s03-masking.md) | TL | `fix(security): [S-03] 업로드·제목·질문 PiiMasker 연결 · A-3 [T-028]` + 감사 로그 캡처. | T-017 · T-024 | `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,BoundaryAcceptanceTest#titlesAreMasked+questionIsMasked'` |
 | [T-029](T-029-langgraph-branch.md) | AI | LangGraph 분기(grade → Tavily)와 FOLLOWUP 검색. | T-019 | `cd ai-module && pytest -q` |
 | [T-062](T-062-s01-reproduce.md) | FA | S-01 IDOR 재현 — 조치 전 커밋에서 kim 토큰으로 lee 문서·분석을 열어 200을 캡처하고, T-026 머지 뒤 같은 요청 403으로 재확인한다. | T-014(머지·소유 검증 없음) · T-015 | `curl -s localhost:8080/api/documents/3 -H "Authorization: Bearer $T"` |
 | [T-030](T-030-followup-ui.md) | FA | 후속 질문·기록 재진입(hydrate)·분석 화면 상태 테스트. | T-022 | `cd frontend && npm test` |

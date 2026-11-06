@@ -170,7 +170,7 @@ List<Analysis> findAllUsing(@Param("docId") Long docId);
 | 대상 | `${AI_BASE_URL}` (compose: `http://ai-service:8000` · `app` 망) |
 | 내부 토큰 | 모든 호출에 `X-Internal-Token: ${AI_INTERNAL_TOKEN}` — `AiClient`가 기본 헤더로 주입 |
 | 단건(ingest·delete) | `RestClient` · connect 3,000ms · read 30,000ms · 실패 → `BusinessException(AI_UNAVAILABLE)` = 503 |
-| 스트림(analyze) | `WebClient` `bodyToFlux(ServerSentEvent<String>)` · responseTimeout **290s** · `onErrorResume` → `event: error`(AI_UNAVAILABLE 봉투) |
+| 스트림(analyze) | `WebClient` `bodyToFlux(ServerSentEvent<String>)` · 전체 상한 `Flux.timeout(290s)`(`responseTimeout`은 읽기 사이 유휴 시간이라 상한이 아니다 · SPEC §1) · done·error 없이 EOF면 `event: error` · `onErrorResume` → `event: error`(AI_UNAVAILABLE 봉투) |
 | 소유자 | `ownerUuid`는 `AuthUser.uuid()`에서만 — 프론트 값을 쓰지 않는다(A-3) |
 | 문맥 | 후속 질문은 이전 메시지 최근 6개를 `history`로(이번 질문 제외) |
 

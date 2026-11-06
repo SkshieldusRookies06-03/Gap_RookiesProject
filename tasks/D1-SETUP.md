@@ -44,9 +44,9 @@ git add backend && git commit -m "chore(be): Spring 골격 [T-004]" && git push 
 | 누가 | 명령 | 기대 |
 |---|---|---|
 | 전원 | `node mock/server.mjs` + `node seams/check-api.mjs http://localhost:8080` | green 20줄 |
-| BE 둘 · 기술 리드 | `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database` → `cd backend && ./mvnw test -Dtest='JobgapApplicationTests,PiiMaskerTest'` | green (`.env`의 DB_PASSWORD=jobgap 또는 `TEST_DB_PASSWORD`) |
-| 프론트 둘 | `cd frontend && npm ci && npx vitest run src/api` | 9 passed |
-| AI | `cd ai-module && pip install -r requirements.txt && pytest -q` | 2 passed · 5 failed(판정 — 내가 green으로 만든다) |
+| BE 둘 · 기술 리드 | `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database` → `cd backend && ./mvnw test -Dtest='JobgapApplicationTests,PiiMaskerTest,PiiMaskerEdgeTest,GlobalExceptionHandlerTest,CorsConfigTest,JwtProviderTest,PageRequestsTest,ApiResponseJsonTest'`(= CI 1단계) | green (`.env`의 DB_PASSWORD=jobgap 또는 `TEST_DB_PASSWORD`) |
+| 프론트 둘 | `cd frontend && npm ci && npx vitest run src/api src/components` | 27 passed(= CI 1단계) |
+| AI | `cd ai-module && pip install -r requirements.txt && pytest -q` | 43 passed · 14 failed(판정 — 내가 green으로 만든다 · hardening 41·health·token은 green) |
 | DevOps | `docker compose config -q && node scripts/check-sec-deploy.mjs` | 무출력 |
 | 기술 리드 | `node scripts/check-sec-deploy.mjs` | 무출력 |
 
@@ -54,15 +54,16 @@ git add backend && git commit -m "chore(be): Spring 골격 [T-004]" && git push 
 
 | 레인 | 판정 테스트 | 시작 | green으로 만드는 티켓 |
 |---|---|---|---|
-| 팀장(BE-인증) | `AuthAcceptanceTest` 6 | red | T-015 · T-027 |
-| BE-기능 | `DocumentAcceptanceTest` 7 · `AnalysisAcceptanceTest` 6 | red | T-014 · T-024 · T-025 · T-026 |
-| 기술 리드 | `SecurityAcceptanceTest` 3 · `PiiMaskerTest` 3 | green 목표(D1) | T-005 · T-016 · T-017 |
-| FE-화면 | `api/*.test.js` 9 · `DocumentsPage.test.jsx` 4 | green · red | T-009 · T-021 |
+| 팀장(BE-인증) | `AuthAcceptanceTest` 6 · `BoundaryAcceptanceTest#registerValidation` 1 | red | T-015 · T-027 |
+| BE-기능 | `DocumentAcceptanceTest` 7 · `AnalysisAcceptanceTest` 6 · `BoundaryAcceptanceTest` 9 | red | T-012 · T-014 · T-024 · T-025 · T-026 · T-055 · T-056 |
+| 기술 리드 | `SecurityAcceptanceTest` 3 · `PiiMaskerTest` 6 · 단위 6클래스(JWT·페이지·봉투·에러 매핑·CORS·마스킹 경계) | green 목표(D1 · CI 1단계) | T-005 · T-016 · T-017 |
+| 기술 리드 | `BoundaryAcceptanceTest` 마스킹 2 · `ReportText.test.jsx` 4 | red | T-028 · T-054 |
+| FE-화면 | `api/*.test.js` 22 · `components/ErrorMessage.test.jsx` 5 · `DocumentsPage.test.jsx` 4 | green · green · red | T-009 · T-021 |
 | FE-분석 | `useChatStream.test.jsx` 4 | red | T-022 |
-| AI | `tests/` 7 | 2 green · 5 red | T-018 · T-019 |
+| AI | `tests/` contract·failure 7 · rag_contract 9 · hardening 41 | 2 green·5 red · 9 red · 41 green | T-018 · T-019 · T-029 · T-036 |
 
 CI(`.github/workflows/ci.yml`)는 1단계(컴파일·기동·공용)만 필수, 판정은 2단계 현황판(red 허용). **D5 아침에 2단계의
 `continue-on-error` 세 줄을 지운다**(기술 리드).
 
 검증 경계(정직하게): 프론트·AI 판정 테스트는 참조 구현으로 **전부 green이 되는 것까지 확인**했다. 백엔드 Java는 작성 환경에서
-Maven Central이 막혀 **컴파일 전**이다 — 3·4번 커밋 직후 `./mvnw test`에서 처음 컴파일된다. 에러는 출력 전체를 기술 리드에게.
+Maven Central이 막혀 **컴파일 전**이다 — 3·4번 커밋 직후 `./mvnw test`에서 처음 컴파일된다(11/5 추가한 단위·경계값 테스트도 같다 — 소스 대조와 독립 검토만 거쳤다). 에러는 출력 전체를 기술 리드에게.

@@ -9,6 +9,8 @@
 |---|---|---|---|
 | `frontend/src/api/client.test.js` (5) | 봉투 벗기기 · `ApiError`(code·status) · nginx HTML 413 → `FILE_TOO_LARGE` · `TOKEN_EXPIRED` 동시 2요청에 refresh 1회 · Access는 localStorage에 없음 | T-009 | green — 깨지 않게 |
 | `frontend/src/api/sse.test.js` (4) | 프레임 조각 모으기 · `data:` 공백 0개 · CRLF · `decodeData` | T-009 | green — 깨지 않게 |
+| `frontend/src/api/session.test.js` (13) | 새로고침 직후 refresh 1회 복구 · 동시 요청 refresh 1회 · 스트림 401·refresh 실패 시 세션 비움 · 사용자 중단 ABORTED / 타임아웃 NETWORK_ERROR · SSE CR 경계 (기술 리드 회귀 · CI 1단계) | T-009 | green — 깨지 않게 |
+| `frontend/src/components/ErrorMessage.test.jsx` (5) | 코드별 문구 · 423은 해제 시각만 · 서버 message 미노출(F-7) · 다시 시도 버튼 (기술 리드 회귀 · CI 1단계) | T-009 | green — 깨지 않게 |
 | `frontend/src/pages/DocumentsPage.test.jsx` (4) | 로딩 `role=status` · 빈 문구 `"공고나 이력서를 올려 보세요"` · 에러 `role=alert` + 서버 message 노출 금지 · 정상 = 제목 텍스트, 제목 속 `<img>`는 글자로(img 요소 0) | T-021 | **red** |
 | `frontend/src/pages/LoginPage.test.jsx` | 만들 것(내 테스트 · T-020) — 실패 문구 1 · 성공 시 이동 1 | T-020 | 없음 |
 | `frontend/src/pages/AnalysesPage.test.jsx` | 만들 것(내 테스트 · T-031) — 상태 넷 중 빈·정상 + INCOMPLETE "중단됨" | T-031 | 없음 |
@@ -44,7 +46,7 @@
 
 ### 3.1 T-009 프론트 골격 (D1 · 선행 없음)
 
-1. `npm ci && npm run build && npx vitest run src/api` → 9 passed 확인.
+1. `npm ci && npm run build && npx vitest run src/api` → 22 passed 확인(공용 9 + 세션·SSE 회귀 13).
 2. `node mock/server.mjs` + `VITE_API_URL=http://localhost:8080 npm run dev` → `/login`이 뜬다(골격 "TODO" 문구면 정상).
 3. 커밋: `chore(fe): 프론트 골격 [T-009]`
 

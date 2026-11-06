@@ -10,6 +10,7 @@ AiClient 단건(ingest·delete)과 업로드 흐름.
 
 ## [수용 기준]
 - [ ] `DocumentAcceptanceTest` ④ ⑤ green(③은 T-028 뒤)
+- [ ] `BoundaryAcceptanceTest` `uploadExtensionAndMime` · `uploadSizeBoundary` · `uploadTitleLength` green
 - [ ] RestClient connect 3s·read 30s · `X-Internal-Token` · 실패 → AI_UNAVAILABLE
 - [ ] 검증(확장자·MIME·UTF-8·빈 파일·크기 직접 검사) → 저장 → 커밋 → ingest → 실패 시 행 삭제
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
@@ -23,5 +24,5 @@ AiClient 단건(ingest·delete)과 업로드 흐름.
 
 ## [확인 명령]
 ```bash
-cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest
+cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,BoundaryAcceptanceTest#uploadExtensionAndMime+uploadSizeBoundary+uploadTitleLength'
 ```

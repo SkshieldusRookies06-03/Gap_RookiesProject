@@ -10,6 +10,7 @@ Flyway V1·V2를 빈 DB에서 적용하고 시드 시각 오프셋을 관측한�
 
 ## [수용 기준]
 - [ ] 빈 DB(볼륨 삭제) 기동 green
+- [ ] `BoundaryAcceptanceTest` `timesAreKst` green(T-014와 함께 — createdAt이 `+09:00`)
 - [ ] 시드 응답 시각 `+09:00` 관측 결과를 SPEC §1 표 옆에(SPEC PR)
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-012` 무출력
@@ -23,5 +24,5 @@ Flyway V1·V2를 빈 DB에서 적용하고 시드 시각 오프셋을 관측한�
 
 ## [확인 명령]
 ```bash
-cd backend && ./mvnw test -Dtest=JobgapApplicationTests
+cd backend && ./mvnw test -Dtest='JobgapApplicationTests,BoundaryAcceptanceTest#timesAreKst'
 ```

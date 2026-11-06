@@ -9,7 +9,8 @@ SPEC.md §6.1 · §6.4 · ADR-03 — 이 절 본문을 지시서(에이전트 �
 vectorstore ingest·delete를 Chroma로 구현한다.
 
 ## [수용 기준]
-- [ ] `pytest -q tests/test_contract.py` 중 health·token·ingest·delete 계열 green
+- [ ] `pytest -q tests/test_contract.py` 중 health·token·ingest 계열 green (delete 둘은 스트림으로 확인하므로 T-019 뒤 green)
+- [ ] `tests/test_rag_contract.py` `[T-018]` 2개(재적재 멱등 · 거리 cosine) green
 - [ ] 분할 500/50 · 메타 owner_uuid·document_id·doc_type·seq · 재적재 멱등 · 삭제 where에 owner_uuid
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-018` 무출력

@@ -15,13 +15,14 @@
 | | ⑤ `bruteForce_locks` | [S-02] 존재 계정 5회 401 → 6번째는 **맞는 비밀번호여도** 423 · `locked_until` not null | T-027 | red |
 | | (지킴) `unknownEmail_neverLocks` | 없는 이메일은 6번 틀려도 전부 401 `INVALID_CREDENTIALS` | T-027 | red |
 | `JobgapApplicationTests` | `contextLoads` | 컨텍스트 + Flyway 적용 (CI 1단계 필수) | T-004 | 컴파일 후 green 목표 |
+| `BoundaryAcceptanceTest` | `registerValidation` | 이름 공백·21자 · 비밀번호 7·65자 · 이메일 형식 → 400 `fields[]`에 그 필드 · 경계 64자·20자 201 | T-015 | red |
 | `SecurityAcceptanceTest` | (기술 리드) | 내가 깨지 않게만 — 401·403 봉투 | — | — |
 
-확인: `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` (DB: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database`).
+확인: `cd backend && ./mvnw test -Dtest='AuthAcceptanceTest,BoundaryAcceptanceTest#registerValidation'` (DB: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database`).
 
 ## 1. 완료 정의 (D5 저녁 동결 시점)
 
-- [ ] `AuthAcceptanceTest` 6개 전부 green
+- [ ] `AuthAcceptanceTest` 6개 전부 green + `BoundaryAcceptanceTest#registerValidation` green
 - [ ] 가입 → 로그인 → 15분 뒤 `TOKEN_EXPIRED` → refresh 1회 → 재요청 성공 (프론트와 E2E 1회)
 - [ ] Burp Intruder 10회 → 6번째부터 423 + 해제 시각(S-02 재확인 캡처는 기술 리드가 `security/evidence/S-02/`에)
 - [ ] 감사 로그: `LOGIN_SUCCESS`·`LOGIN_FAILURE`·`LOCK` 줄이 이메일 마스킹(`k***@e.com`)으로 찍힌다

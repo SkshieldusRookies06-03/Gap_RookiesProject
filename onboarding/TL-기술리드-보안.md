@@ -12,13 +12,16 @@
 | `SecurityAcceptanceTest` ③ | API 응답 CSP `default-src 'none'` · 없는 경로 404 봉투 | T-005 | green 목표 |
 | `PiiMaskerTest` 6개 | 네 종 마스킹 · 한글 인접 · 생년월일 문맥 · 200KB 1초 · 일반 텍스트 보존 · 이메일 로그 마스킹 | T-017 | green 목표 |
 | `DocumentAcceptanceTest` ③ 마스킹 단언 | ingest 본문·DB에 원문 연락처 없음 · `masked_count` | **T-028** (S-03) | red |
+| 단위 6클래스 `JwtProviderTest`·`PageRequestsTest`·`ApiResponseJsonTest`·`GlobalExceptionHandlerTest`·`CorsConfigTest`·`PiiMaskerEdgeTest` | JWT·페이지·봉투 JSON·에러 매핑·CORS `*` 거부·마스킹 경계 (DB 없음 · CI 1단계 필수) | T-005·T-016·T-017 | green 목표 |
+| `BoundaryAcceptanceTest` `titlesAreMasked`·`questionIsMasked` | 제목·후속 질문 마스킹(DB·AI) · 마스킹 뒤 같은 제목 409 | **T-028** (S-03) | red |
+| `frontend/src/pages/analysis/ReportText.test.jsx` 4 | 제목·표·목록 요소 · HTML은 글자로(F-1) · 덜 온 마크다운 · 출처 칩 http(s)만 링크 | T-054 | red |
 | 나머지 전 레인 판정 테스트 | 작성자 = 나 · 수정 권한도 나만 | — | — |
 
-판정 테스트를 고쳐 달라는 요청이 오면: ① SPEC 문장과 대조 → SPEC이 맞으면 구현이 고친다 ② SPEC이 틀렸으면 SPEC PR(팀장 승인) → 같은 PR에서 테스트·목·검사를 고친다.
+판정 테스트를 고쳐 달라는 요청이 오면: ① SPEC 문장과 대조 → SPEC이 맞으면 구현이 고친다 ② SPEC이 틀렸으면 SPEC PR(팀장·영향 담당에게 공유·확인 — SPEC §9 · 필수 승인 없음) → 같은 PR에서 테스트·목·검사를 고친다.
 
 ## 1. 완료 정의 (D5 저녁 동결 시점)
 
-- [ ] `SecurityAcceptanceTest`·`PiiMaskerTest` green · `DocumentAcceptanceTest` ③ green
+- [ ] `SecurityAcceptanceTest`·`PiiMaskerTest`·단위 6클래스 green · `DocumentAcceptanceTest` ③ · `BoundaryAcceptanceTest` 마스킹 2 green · `ReportText.test.jsx` 4 green
 - [ ] `security/LEDGER.md` 31행 결과 칸 전부(발견·미발견·해당 없음·미조치 중 하나) + 점검 방법 칸이 실제 실행한 명령
 - [ ] `fix(security): [S-0N]` 커밋 S-01·S-02·S-03(+예비 발견 시 S-04) · 각 `security/evidence/S-0N/`에 재현·재확인 증거
 - [ ] `security/evidence/bom.json` · `security/evidence/npm-audit.json`
@@ -129,7 +132,7 @@ String question = PiiMasker.maskAndTrim(req.question(), 1000).text();   // 스�
 | DevOps | 외부 포트 캡처(T-042) · CSP 헤더 | I-행 점검 방법 · `check-sec-deploy` | D4~D5 |
 | 팀장 | 동결 승인 · 자르기 결정 | 게이트 결과(D3·D5) · 보안 시연 5분 | D1·D3·D5 |
 
-리뷰 규칙: seam 파일·보안 파일·판정 테스트 PR만 내가 본다. 그 밖은 부오너(SPEC §8).
+리뷰 규칙(선택 — 필수 승인은 없다 · GitHub규약 §3·§4): seam 파일·보안 파일·판정 테스트 변경은 나에게 공유·확인(SPEC §9). 그 밖은 필요하면 부오너(SPEC §8)에게 요청.
 
 ## 5. 일정
 

@@ -13,20 +13,25 @@
 | | ④ `upload_rejects` | .exe 415 · 빈 파일 400 · 300KB 413 · 같은 제목 409 · EUC-KR 415 | T-024 | red |
 | | ⑤ `upload_aiDown` | AI 다운 → 503 `AI_UNAVAILABLE` · 행이 남지 않음 | T-024 | red |
 | | ⑥ `updateTitle` | 200 · 빈 제목 400 · 다른 내 문서와 같은 제목 409 | T-014 | red |
-| | ⑦ `delete_order` | AI 다운이면 503·문서 그대로 → 정상이면 AI DELETE(`ownerUuid=` 내 uuid) · 그 문서를 쓴 분석 삭제 · 문서 삭제 | T-024 | red |
+| | ⑦ `delete_order` | AI 다운이면 503·문서 그대로 → 정상이면 AI DELETE(`ownerUuid=` 내 uuid) · 그 문서를 쓴 분석 삭제 · 문서 삭제 | T-055 | red |
 | `AnalysisAcceptanceTest` | ① `newAnalysis_relaysAndSaves` | analysis → token(JSON 문자열 그대로) → sources → done{messageId} · USER·ASSISTANT 저장(토큰 디코드 연결) · AI 요청에 uuid·REPORT·postingId | T-025 | red |
 | | ② `validation_beforeStream` | (Accept: text/event-stream) 남의 문서 403 · 종류 뒤바뀜 400 `DOCUMENT_TYPE_MISMATCH` · 후속 빈 질문 400 · 없는 분석 404 · AI 미호출 | T-025 + **T-026** | red |
 | | ③ `followUp` | FOLLOWUP · question 그대로 · history 2개(이번 질문 제외) · analysis 이벤트 없음 | T-025 | red |
 | | ④ `aiError_notSaved` | AI가 error → 그대로 흘림 · ASSISTANT 저장 안 함 | T-025 | red |
 | | ⑤ `aiDown_isEventError` | AI 연결 실패 → 200 유지 · 마지막 `event: error` `AI_UNAVAILABLE` | T-025 | red |
-| | ⑥ `listAndMessages` | lastStatus DONE/INCOMPLETE 파생 · postingTitle · messages page/size · 남의 분석 403(양방향) | T-025 + **T-026** | red |
+| | ⑥ `listAndMessages` | lastStatus DONE/INCOMPLETE 파생 · postingTitle · messages page/size · 남의 분석 403(양방향) | T-056 + **T-026** | red |
+| `BoundaryAcceptanceTest`(경계값) | `paging` | 목록 셋 size>50 → 50 · size 0·page 음수·정수 아님 400 | T-014 · T-056 | red |
+| | `timesAreKst` | 봉투 timestamp·createdAt `+09:00` | T-014 · T-012 | red |
+| | `uploadExtensionAndMime` · `uploadSizeBoundary` · `uploadTitleLength` | 확장자(대소문자 무시)·MIME 허용 목록 · 정확히 200KB 201 / +1바이트 413 · 제목 100자 | T-024 | red |
+| | `titlesAreMasked` · `questionIsMasked` | 제목·후속 질문 마스킹(DB·AI) · 마스킹 뒤 같은 제목 409 | T-028(기술 리드) — 업로드·중계 흐름 위에서 | red |
+| | `reportRequestHasNoNulls` · `historyIsLastSix` · `questionLength` · `analysisTitleIsTruncated` | AI 요청에 null 없음(question "" · history []) · 후속 문맥 최근 6개 · 질문 1000/1001 · 분석 제목 100자 절단 | T-025 | red |
 
 AI는 MockWebServer가 흉내낸다(`AcceptanceSupport`): `X-Internal-Token: test-internal-token`이 아니면 401 — 헤더 빠지면 전부 깨진다.
-확인: `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,AnalysisAcceptanceTest'`
+확인: `cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,AnalysisAcceptanceTest,BoundaryAcceptanceTest'` (`BoundaryAcceptanceTest`의 `registerValidation`은 팀장 T-015 몫)
 
 ## 1. 완료 정의 (D5 저녁 동결)
 
-- [ ] 위 13개 green(③은 T-028 연결 후)
+- [ ] 위 판정 테스트 전부 green — `DocumentAcceptanceTest` 7 · `AnalysisAcceptanceTest` 6 · `BoundaryAcceptanceTest` 중 내 티켓 9개(③과 마스킹 2개 `titlesAreMasked`·`questionIsMasked`는 T-028 연결 후 함께)
 - [ ] `node seams/check-api.mjs http://localhost` green(compose · `OTHER_DOC_ID=3 OTHER_ANALYSIS_ID=1`)
 - [ ] 스트림 curl(SPEC §4.3)에서 토큰이 **시간 간격을 두고** 찍힌다 · 30초 넘는 답변도 완주
 - [ ] AI 컨테이너를 멈춘 상태: 업로드·삭제 503 봉투 캡처 · 스트림은 `event: error` (R-BE14 증거)
@@ -174,7 +179,7 @@ return isNew ? Flux.concat(Mono.just(analysisEvent(analysisId)), relay) : relay;
    - `json.readValue` 예외는 checked — 람다 밖 헬퍼로 감싼다. `errorEvent()` = `event("error")` + data `objectMapper.writeValueAsString(ApiResponse.error(ErrorCode.AI_UNAVAILABLE))`.
    - 끊김(중단 버튼)은 `done`이 오지 않으니 저장되지 않는다 — 별도 `doOnCancel` 불필요(넣으면 로그만).
    - WebClient: `post().uri("/internal/analyze/stream").bodyValue(body).retrieve().bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})`
-     `.timeout(Duration.ofSeconds(props.streamTimeoutSeconds()))` — `responseTimeout`은 토큰이 계속 오면 끝나지 않으므로 전체 상한은 이것(290s < async 300s). **RestClient로 받으면 끝까지 버퍼링**.
+     `.timeout(Duration.ofSeconds(props.streamTimeoutSeconds()))` — `responseTimeout`은 토큰이 계속 오면 끝나지 않으므로 전체 상한은 이것(290s < nginx 310s · Spring async 300s는 Flux SSE에 걸리지 않는다 — SPEC §1). **RestClient로 받으면 끝까지 버퍼링**.
    - AI 요청 본문 키는 SPEC §6.2 그대로: ownerUuid·postingId·resumeId·postingTitle·mode(REPORT|FOLLOWUP)·question(REPORT면 "")·history[{role,content}].
      **null을 보내지 않는다** — `question`은 `""`, `history`는 `List.of()`로 정규화(Jackson은 null도 직렬화하고 AI는 `"question":null`을 400으로 거부한다.
      판정 테스트의 MockWebServer는 본문을 검사하지 않으니 green이어도 compose에서 깨진다 — AI 목(mock_app)은 실물 스키마로 검사한다).
@@ -191,14 +196,15 @@ return isNew ? Flux.concat(Mono.just(analysisEvent(analysisId)), relay) : relay;
 //   @Query("select d from Document d join fetch d.owner where d.id = :id") Optional<Document> findWithOwner(@Param("id") Long id);
 private Document ownedDocument(AuthUser me, Long id) {
     Document d = documentRepository.findWithOwner(id).orElseThrow(() -> new BusinessException(ErrorCode.DOCUMENT_NOT_FOUND));
-    if (!d.getOwner().getUuid().equals(me.uuid()) && !me.isAdmin()) {
+    if (!d.getOwner().getUuid().equals(me.uuid())) {   // 본인 소유만 — ADMIN 예외 없음(5번 명세 §5.1)
         AuditLog.forbidden(me.uuid(), "document", id);
         throw new BusinessException(ErrorCode.FORBIDDEN);
     }
     return d;
 }
 ```
-- get·updateTitle·delete·stream(문서·분석)·messages 전부 이 헬퍼를 지난다(삭제는 AI 호출 **전에**). 순서: 형식(@Valid) → 존재/소유 → 업무 규칙(종류).
+- get·updateTitle·delete·stream(문서·분석)·messages 전부 이 헬퍼를 지난다(삭제는 AI 호출 **전에**). 순서: 형식(@Valid) → 소유(403) → 존재(404) → 업무 규칙(종류) — SPEC §4 공통. 단건은 위 헬퍼처럼 조회 먼저여도 결과가 같다(없는 문서는 소유를 따질 수 없어 404).
+  문서 둘을 보는 스트림은 **둘 다 조회한 뒤** 하나라도 남의 것이면 403, 그다음 없는 것이 있으면 404(403이 404보다 앞선다).
 - IDOR 403 회귀 테스트 1: `backend/src/test/java/com/jobgap/document/`에 `AcceptanceSupport`를 상속해 남의 문서 GET 403.
 - green: Document ② · Analysis ②⑥ · 확인 `./mvnw test -Dtest='DocumentAcceptanceTest,AnalysisAcceptanceTest'`
 - 커밋: `fix(security): [S-01] 문서·분석 소유 검증 · B-2 [T-026]`
@@ -237,7 +243,7 @@ AI 컨테이너 정지 상태로 업로드·삭제(503 봉투)·스트림(event:
 | 증상 | 원인 | 해결 |
 |---|---|---|
 | 스트림이 한꺼번에 도착 | RestClient로 받음 / nginx buffering | WebClient `bodyToFlux` · nginx는 DevOps(이미 off) |
-| 30초에 끊김 | async 타임아웃 | application.yml 300s(있음) · WebClient는 290s로 그보다 짧게 |
+| 30초·수 분에 끊김 | 타임아웃 사슬 | 스트림 상한은 AiClient `Flux.timeout(290s)` 하나 · nginx 310s(DevOps) · application.yml async 300s는 일반 async용(Flux SSE엔 안 걸림 — SPEC §1) |
 | 스트림 끝에 401·AccessDenied | ASYNC 재진입 인가 | SecurityConfig에 있음 — 지웠는지 |
 | ① 토큰에 따옴표 두 겹 | data를 다시 JSON 인코딩 | AI data를 그대로 흘리고, 저장용만 디코드 |
 | ① done에 messageId 없음 | AI done을 그대로 흘림 | §T-025 concatMap |

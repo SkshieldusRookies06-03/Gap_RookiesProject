@@ -24,7 +24,7 @@ ai-module/
 │   ├── vectorstore.py   Chroma 적재·삭제·로드·검색 (구현 T-018 · T-029)
 │   └── graph.py         LangGraph 그래프 · 프롬프트 · SSE 출력 (구현 T-019 · T-029)
 ├── mock_app.py          D1 목 서버(같은 경로·같은 이벤트) — 백엔드가 AI를 기다리지 않게
-├── tests/               판정 테스트(pytest · 키 없이) — test_contract.py · test_failure.py
+├── tests/               판정 테스트(pytest · 키 없이) — test_contract.py · test_failure.py · test_rag_contract.py · 회귀 test_hardening.py
 ├── eval/                골든셋 세 조건 평가 (run_eval.py · data/ · result.md)
 ├── requirements.txt · pytest.ini · Dockerfile · .dockerignore
 ```
@@ -158,7 +158,7 @@ g.add_edge("generate", END)
 | 인증 | `X-Internal-Token` 헤더 · 값은 양쪽 `AI_INTERNAL_TOKEN` |
 | 주소 | compose 내부 `http://ai-service:8000` (`AI_BASE_URL`) |
 | 단건 호출 | 백엔드 `RestClient` — connect 3s · read 30s · 실패 → 백엔드가 503 `AI_UNAVAILABLE` |
-| 스트림 | 백엔드 `WebClient` — response 290s(< Spring async 300s < nginx 310s) |
+| 스트림 | 백엔드 `WebClient` — 전체 상한 `Flux.timeout(290s)`(< nginx 310s · Spring async 300s는 Flux SSE에 걸리지 않는다 — SPEC §1) |
 | SSE 중계 | 백엔드가 `token`·`sources`·`error`를 그대로 흘리고, 새 분석이면 앞에 `analysis` 이벤트를 붙이고, AI의 `done{}`은 가로채 답변 저장 후 `done{messageId}`를 보낸다 |
 
 ## 8. 지원 파일 형식

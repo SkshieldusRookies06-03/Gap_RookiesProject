@@ -10,6 +10,7 @@ SPEC.md §4.2 — 이 절 본문을 지시서(에이전트 프롬프트)에 그�
 
 ## [수용 기준]
 - [ ] `DocumentAcceptanceTest` ① ⑥ green
+- [ ] `BoundaryAcceptanceTest` `paging`(문서 목록 줄) · `timesAreKst` green
 - [ ] 정렬 `PageRequests.documentSort()` · 페이지 `PageRequests.of()` · 서비스에만 `@Transactional`(조회 readOnly)
 - [ ] check-api 문서 행 green(403 행 제외)
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
@@ -24,5 +25,5 @@ SPEC.md §4.2 — 이 절 본문을 지시서(에이전트 프롬프트)에 그�
 
 ## [확인 명령]
 ```bash
-cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest
+cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,BoundaryAcceptanceTest#paging+timesAreKst'
 ```

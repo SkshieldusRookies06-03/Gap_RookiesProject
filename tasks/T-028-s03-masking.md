@@ -11,6 +11,7 @@ SPEC.md §7 S-03 · ADR-04 — 이 절 본문을 지시서(에이전트 프롬�
 ## [수용 기준]
 - [ ] 조치 전 재현 캡처 `security/evidence/S-03/before.json`
 - [ ] `DocumentAcceptanceTest` ③ green
+- [ ] `BoundaryAcceptanceTest` `titlesAreMasked` · `questionIsMasked` green(제목은 마스킹 뒤 중복 검사 · 질문은 DB·AI 둘 다)
 - [ ] 감사 로그 4줄 `security/evidence/B-9-audit.txt`
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-028` 무출력
@@ -24,5 +25,5 @@ SPEC.md §7 S-03 · ADR-04 — 이 절 본문을 지시서(에이전트 프롬�
 
 ## [확인 명령]
 ```bash
-cd backend && ./mvnw test -Dtest=DocumentAcceptanceTest
+cd backend && ./mvnw test -Dtest='DocumentAcceptanceTest,BoundaryAcceptanceTest#titlesAreMasked+questionIsMasked'
 ```

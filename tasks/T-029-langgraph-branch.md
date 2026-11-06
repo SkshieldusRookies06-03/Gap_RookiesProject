@@ -11,7 +11,7 @@ LangGraph 분기(grade → Tavily)와 FOLLOWUP 검색.
 ## [수용 기준]
 - [ ] `StateGraph` + `add_conditional_edges` 1 · 노드 이름 ≠ 상태 키
 - [ ] FOLLOWUP `as_retriever` + relevance score 분기 · sources type web
-- [ ] `pytest -q` green 유지
+- [ ] `tests/test_rag_contract.py` `[T-029]` 5개(검색 범위·점수 · 정확 일치 1등 · 후속 문맥 · grade 분기 둘) green · `pytest -q` 전체 green 유지
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-029` 무출력
 - [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다

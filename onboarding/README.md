@@ -17,7 +17,11 @@
    | 프론트(FE-화면·FE-분석) | `npm run build && npm test` + `seams/smoke.md` 내 줄 |
    | AI | `pytest -q`(`test_contract`·`test_failure`·`test_rag_contract`) + `node seams/check-ai.mjs <base>` |
    | DevOps | `docker compose config -q && node scripts/check-sec-deploy.mjs` |
-   | 전원 | `node scripts/check-sec-deploy.mjs` 무출력 · `node seams/check-scope.mjs <내 티켓>` 무출력 |
+   | 전원 | `node scripts/check-sec-deploy.mjs` 무출력 · push 전 `node seams/check-scope.mjs <내 티켓> origin/<내 브랜치>` 무출력 |
+
+   > 범위 검사는 **아직 올리지 않은 내 커밋만** 본다: 담당 브랜치(`feature/backend` 등)는 여럿이 함께 쓰므로 기본 기준(`origin/dev`)으로
+   > 돌리면 동료 티켓 파일까지 RED가 된다. 작업 전 `git pull origin <내 브랜치>` → 커밋 → push **전에** 위 명령. 티켓 둘이면 `T-014,T-024`.
+   > `feature → dev` PR에서는 그 PR에 담긴 티켓 전부를 쉼표로(`node seams/check-scope.mjs T-014,T-015,T-024`) — 기준은 기본값 `origin/dev`.
 3. **정한 것은 문서로, 내 파트 밖은 손대지 않는다** — 구두 합의는 무효
    ("그때 그렇게 말했잖아"와 남의 버그 책임에서 나를 지키는 두 줄)
 4. **30분 막히면 말한다** — 질문은 잘못이 아니라 팀 일정을 구하는 행위.
@@ -34,7 +38,7 @@
 ## 하루 끝 (매일 · 5분)
 
 1. 게이트 1회 → green
-2. `git diff --stat origin/dev...HEAD` 를 내가 읽는다. **본 코드가 150줄을 넘으면 머지하지 않고 티켓을 쪼갠다**
+2. push 전 `git diff --stat origin/<내 브랜치>...HEAD` 를 내가 읽는다(공유 브랜치라 `origin/dev` 기준이면 동료 변경까지 센다). **본 코드가 150줄을 넘으면 머지하지 않고 티켓을 쪼갠다**
    (본 코드 = `backend/src/main` · `frontend/src`의 비테스트 파일 · `ai-module/app` — 테스트·문서·lock은 안 센다)
 3. 커밋·push는 **내가** 한다(에이전트가 아니라) → `feature/* → dev` PR → 통합 테스트(리뷰 요청은 선택)
 4. `worklog/<내이름>/D#.md` 3줄

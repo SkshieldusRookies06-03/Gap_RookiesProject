@@ -10,7 +10,7 @@ SPEC.md §5 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대
 
 ## [수용 기준]
 - [ ] `npm ci && npm run build` 성공
-- [ ] `npx vitest run src/api` 9 passed
+- [ ] `npx vitest run src/api` 22 passed(공용 9 + 세션·SSE 회귀 13)
 - [ ] `npm run dev` + `node mock/server.mjs` 로 로그인 화면(TODO)이 뜬다
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-009` 무출력

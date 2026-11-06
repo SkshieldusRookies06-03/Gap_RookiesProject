@@ -259,7 +259,7 @@ BE 문서 삭제 순서: ① 이 호출 ② 그 문서를 posting 또는 resume�
 | 봉투 · 에러 코드 · 페이지 규칙 | `backend/**/common/` (ApiResponse · ErrorCode · GlobalExceptionHandler · PageRequests) | 기술 리드 |
 | 보안 설정 · JWT · 감사 · 마스킹 | `backend/**/security/` | 기술 리드 |
 | 판정 테스트 BE | `backend/src/test/java/com/jobgap/acceptance/` (실 MariaDB + MockMvc + MockWebServer가 AI 흉내) | 기술 리드 작성 · 구현자 수정 금지 |
-| 판정 테스트 FE | `frontend/src/api/*.test.js` · `src/hooks/useChatStream.test.jsx` · `src/pages/DocumentsPage.test.jsx` (Vitest + MSW) | 기술 리드 작성 |
+| 판정 테스트 FE | `frontend/src/api/*.test.js` · `src/hooks/useChatStream.test.jsx` · `src/pages/DocumentsPage.test.jsx` · `src/pages/analysis/ReportText.test.jsx` (Vitest + MSW) | 기술 리드 작성 |
 | 판정 테스트 AI | `ai-module/tests/` (키 없이 — `LLM_PROVIDER=fake`) | 기술 리드 작성 |
 | 판정 테스트 경계값 BE | `acceptance/BoundaryAcceptanceTest` — 페이지·MIME·200KB·제목/질문 마스킹·AI 요청 null 금지·후속 문맥 6개·질문 1000자·분석 제목 100자·가입 검증·+09:00 (테스트 이름의 [T-###]가 green으로 만든다) | 기술 리드 작성 · 구현자 수정 금지 |
 | 판정 테스트 RAG 내부 AI | `tests/test_rag_contract.py` — 재적재 멱등·seq 순서 12개·검색 범위·점수 0~1·cosine·<자료> 격리와 구분자 치환(A-2)·후속 문맥·grade 분기(Tavily) | 기술 리드 작성 · 구현자 수정 금지 |
