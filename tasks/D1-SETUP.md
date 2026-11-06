@@ -9,7 +9,7 @@
 ## 0. 준비 (기술 리드)
 1. GitHub에 빈 리포 `jobgap` 생성 · 팀원 7명 초대
 2. zip을 리포 밖 `../jobgap-d1/`에 풀어 둔다 — 아래 명령은 전부 이 폴더에서 **리포로 복사**한다
-3. 공유: 이 파일 · `onboarding/<내 레인>.md` · 각자 노트북에 Node 20 · JDK 17 · Python 3.11 · Docker
+3. 공유: 이 파일 · `onboarding/<내 레인>.md` · 각자 노트북에 Node 20 · JDK 17 · Python 3.12 + uv · Docker
 
 ## 1. 과거 초기 셋업 참고 순서 (현재는 feature/* → dev → main)
 
@@ -24,7 +24,7 @@
 | 7 | FE-화면 | `frontend/` 에서 **아래 셋을 뺀 전부**: `src/pages/analysis/ src/hooks/useChatStream.js src/stores/chatStore.js` · 판정 테스트 둘(`src/hooks/useChatStream.test.jsx` `src/pages/DocumentsPage.test.jsx`) | `chore(fe): 프론트 골격 [T-009]` |
 | 8 | FE-분석 | `frontend/src/pages/analysis/ frontend/src/hooks/useChatStream.js frontend/src/stores/chatStore.js` | `chore(fe): 분석 화면 골격 [T-010]` |
 | 9 | 기술 리드 | `frontend/src/hooks/useChatStream.test.jsx frontend/src/pages/DocumentsPage.test.jsx ai-module/tests/ ai-module/pytest.ini` | `test: 프론트·AI 판정 테스트(red 시작) [T-005]` |
-| 10 | AI | `ai-module/app/ ai-module/eval/ ai-module/mock_app.py ai-module/requirements.txt` | `chore(ai): FastAPI 골격·목 [T-007]` |
+| 10 | AI | `ai-module/app/ ai-module/eval/ ai-module/mock_app.py ai-module/pyproject.toml ai-module/uv.lock ai-module/.python-version` | `chore(ai): FastAPI 골격·목 [T-007]` |
 | 11 | DevOps | `docker-compose.yml docker-compose.dev.yml .dockerignore nginx/ .github/workflows/ backend/Dockerfile backend/.dockerignore frontend/Dockerfile ai-module/Dockerfile ai-module/.dockerignore` | `chore(devops): 컨테이너·CI 골격 [T-023]` |
 
 (기존 팩 최초 커밋 순서에 관한 참고) 7번과 8번 사이에는 프론트 빌드가 깨진다(App.jsx가 분석 화면을 import) — 8번을 바로 이어서 머지한다. 현재는 `feature/frontend`에서 검증 후 `dev`에 PR한다.
@@ -46,7 +46,7 @@ git add backend && git commit -m "chore(be): Spring 골격 [T-004]" && git push 
 | 전원 | `node mock/server.mjs` + `node seams/check-api.mjs http://localhost:8080` | green 20줄 |
 | BE 둘 · 기술 리드 | `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database` → `cd backend && ./mvnw test -Dtest='JobgapApplicationTests,PiiMaskerTest,PiiMaskerEdgeTest,GlobalExceptionHandlerTest,CorsConfigTest,JwtProviderTest,PageRequestsTest,ApiResponseJsonTest'`(= CI 1단계) | green (`.env`의 DB_PASSWORD=jobgap 또는 `TEST_DB_PASSWORD`) |
 | 프론트 둘 | `cd frontend && npm ci && npx vitest run src/api src/components` | 27 passed(= CI 1단계) |
-| AI | `cd ai-module && pip install -r requirements.txt && pytest -q` | 43 passed · 14 failed(판정 — 내가 green으로 만든다 · hardening 41·health·token은 green) |
+| AI | `cd ai-module && uv sync && uv run pytest -q` | 43 passed · 15 failed(판정 — 내가 green으로 만든다 · hardening 41·health·token은 green) |
 | DevOps | `docker compose config -q && node scripts/check-sec-deploy.mjs` | 무출력 |
 | 기술 리드 | `node scripts/check-sec-deploy.mjs` | 무출력 |
 

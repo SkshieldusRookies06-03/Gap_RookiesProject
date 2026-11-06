@@ -9,8 +9,8 @@ class Settings:
     llm_provider: str          # openai | fake | fail (테스트)
     llm_model: str
     embedding_model: str       # 바꾸면 벡터 인덱스 재생성
-    chroma_dir: str            # compose named volume vector-data
-    collection: str
+    vector_dir: str            # compose named volume vector-data
+    index_name: str            # FAISS 파일 <vector_dir>/<index_name>.faiss · .pkl
     grade_threshold: float
     report_chunks_per_doc: int  # ADR-08
     followup_k: int
@@ -24,8 +24,8 @@ def settings() -> Settings:
         llm_provider=e("LLM_PROVIDER", "openai"),
         llm_model=e("LLM_MODEL", "gpt-4o-mini"),
         embedding_model=e("EMBEDDING_MODEL", "text-embedding-3-small"),
-        chroma_dir=e("CHROMA_DIR", "/data/vector"),
-        collection=e("CHROMA_COLLECTION", "jobgap"),
+        vector_dir=e("VECTOR_DIR", "/data/vector"),
+        index_name=e("VECTOR_INDEX", "jobgap"),
         grade_threshold=float(e("GRADE_THRESHOLD", "0.45")),
         report_chunks_per_doc=int(e("REPORT_CHUNKS_PER_DOC", "12")),
         followup_k=int(e("FOLLOWUP_K", "4")),

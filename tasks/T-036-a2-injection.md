@@ -22,5 +22,5 @@ SPEC.md §7 예비 A-2 — 이 절 본문을 지시서(에이전트 프롬프트
 
 ## [확인 명령]
 ```bash
-cd ai-module && pytest -q
+cd ai-module && uv run pytest -q
 ```

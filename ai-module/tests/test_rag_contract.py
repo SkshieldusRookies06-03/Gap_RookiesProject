@@ -1,7 +1,7 @@
 """[AI T-018·T-019·T-029·T-036 · 기술 리드] RAG 내부 계약 판정 테스트 — SPEC §1 벡터 저장소 · §6.1·§6.2 · ADR-03·ADR-08 · 점검서 A-2·A-3.
 
 test_contract.py가 HTTP 모양을 본다면, 이 파일은 그 안쪽 규칙을 본다:
-  vectorstore — 재적재 멱등 · REPORT 로드 = seq 순서 최대 N개 · 검색 = 내 문서·고른 문서만 · 점수 0~1 · 거리 cosine
+  vectorstore — 재적재 멱등 · REPORT 로드 = seq 순서 최대 N개 · 검색 = 내 문서·고른 문서만 · 점수 0~1 · 거리 cosine · 디스크 영속
   graph       — 자료는 <자료> 구분자 안 · 자료 속 구분자는 치환 · 지시는 system에만 · 후속 질문 문맥 · grade 분기(Tavily)
 함수 이름·인자는 app/vectorstore.py·app/graph.py 골격의 시그니처가 계약이다. 각 테스트 첫 줄의 [T-###]가 green으로 만드는 티켓이다. 키 없이 돈다(LLM_PROVIDER=fake). 이 파일은 고치지 않는다.
 """
@@ -82,6 +82,18 @@ def test_search_is_scoped_and_scored():
     assert vectorstore.search(other, ["s-p", "s-r"], "Java", 4) == [], "남의 owner로 내 문서가 검색됐다 (A-3)"
 
 
+def test_search_not_starved_by_other_owners():
+    """[T-029] 필터는 검색 뒤에 걸린다(FAISS fetch_k 기본 20) — 남의 청크가 위를 다 차지해도 내 문서는 나온다 (filter를 줄 때 fetch_k=index.ntotal)"""
+    from app import vectorstore
+    me, other = str(uuid.uuid4()), str(uuid.uuid4())
+    q = "Kafka 스트리밍 파이프라인 운영"
+    for i in range(30):
+        vectorstore.ingest_document(f"crowd-{i}", other, "RESUME", "t", q)
+    vectorstore.ingest_document("mine-1", me, "RESUME", "t", "기술: Java Spring")
+    hits = vectorstore.search(me, ["mine-1"], q, 4)
+    assert [h["documentId"] for h in hits] == ["mine-1"], "남의 청크에 밀려 내 문서가 빠졌다 — fetch_k"
+
+
 def test_exact_text_scores_highest():
     """[T-029] 같은 문장으로 물으면 그 청크가 1등이고 relevance가 기준값(0.45)을 넉넉히 넘는다 — 점수 방향·스케일 확인"""
     from app import vectorstore
@@ -93,16 +105,28 @@ def test_exact_text_scores_highest():
     assert hits[0]["score"] >= 0.9
 
 
-def test_collection_distance_is_cosine():
-    """[T-018] 거리 = cosine (SPEC §1 벡터 저장소) — 기본 L2면 relevance가 0~1을 벗어나 분기 기준 0.45가 늘 web으로 간다"""
-    import chromadb
+def test_index_is_cosine_and_persisted():
+    """[T-018] 거리 = cosine · 디스크 영속 (SPEC §1 벡터 저장소) — 저장된 벡터가 단위 길이(normalize_L2)라야 relevance가 0~1이고 분기 기준 0.45가 뜻을 갖는다 · 다시 읽어도 청크가 있다(재시작 대비)"""
+    from pathlib import Path
 
-    from app import vectorstore
+    import faiss
+    import numpy as np
+    from langchain_community.vectorstores import FAISS
+
+    from app import providers, vectorstore
     from app.config import settings
-    vectorstore.ingest_document("cos-1", str(uuid.uuid4()), "RESUME", "t", "기술: Java")
+    owner = str(uuid.uuid4())
+    vectorstore.ingest_document("cos-1", owner, "RESUME", "t", "기술: Java")
     s = settings()
-    col = chromadb.PersistentClient(path=s.chroma_dir).get_collection(s.collection)
-    assert (col.metadata or {}).get("hnsw:space") == "cosine", col.metadata
+    path = Path(s.vector_dir) / f"{s.index_name}.faiss"
+    assert path.exists(), "save_local을 하지 않았다 — 컨테이너를 다시 띄우면 인덱스가 빈다"
+    idx = faiss.read_index(str(path))
+    norms = np.linalg.norm(idx.reconstruct_n(0, idx.ntotal), axis=1)
+    assert np.allclose(norms, 1.0, atol=1e-3), "단위 벡터가 아니다 — normalize_L2=True로 만든다"
+
+    reloaded = FAISS.load_local(s.vector_dir, providers.get_embeddings(), s.index_name, allow_dangerous_deserialization=True)
+    metas = [d.metadata for d in reloaded.docstore._dict.values()]
+    assert any(m.get("document_id") == "cos-1" and m.get("owner_uuid") == owner for m in metas), "다시 읽은 인덱스에 방금 넣은 청크가 없다"
 
 
 # ── graph: 프롬프트 (A-2) · 문맥 · 분기 ─────────────────────────────────────

@@ -22,5 +22,5 @@ REPORT 단일 경로(load → generate) 스트림.
 
 ## [확인 명령]
 ```bash
-cd ai-module && pytest -q
+cd ai-module && uv run pytest -q
 ```

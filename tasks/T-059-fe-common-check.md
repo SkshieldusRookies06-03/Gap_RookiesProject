@@ -16,7 +16,7 @@ SPEC.md §5 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대
 - [ ] 본 코드(src/main·app·src 비테스트) diff 150줄 이하 — 넘으면 티켓을 쪼갠다
 
 ## [제약]
-- 수정 허용: `frontend/src/components/` · `frontend/src/pages/*.jsx`
+- 수정 허용: `frontend/src/components/` · `frontend/src/pages/*.jsx` (판정 테스트 `pages/DocumentsPage.test.jsx`는 이 패턴에 걸려도 고치지 않는다 — check-scope가 막지 못한다)
 - 판정 테스트(`backend/src/test/**/acceptance/` · `ai-module/tests/` · 기술 리드가 커밋한 `*.test.jsx`)·게이트(`seams/`·`scripts/`)는 고치지 않는다
 - commit·push는 사람이 한다 · 커밋 `type(범위): 요약 [T-059]` · 전면 재작성 금지
 
