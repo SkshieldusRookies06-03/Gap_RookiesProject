@@ -9,6 +9,7 @@ import com.jobgap.common.PageRequests;
 import com.jobgap.common.PageResponse;
 import com.jobgap.document.DocumentDtos.DocumentDetail;
 import com.jobgap.document.DocumentDtos.DocumentSummary;
+import com.jobgap.security.AuditLog;
 import com.jobgap.security.AuthUser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -68,10 +69,22 @@ public class DocumentService {
                 d.getCharCount(), d.getCreatedAt());
     }
 
-    /** T-014: 소유 검증 없이 존재(404)만 — 소유 403은 T-026(fix(security): [S-01])에서 별도 커밋으로 넣는다 */
-    public DocumentDetail get(AuthUser me, Long id) {
+    /**
+     * [S-01] 소유 검증(B-2 IDOR · ADR-06) — 없으면 404, 남의 것이면 403 + 감사 로그(404로 숨기지 않는다).
+     * id로 문서를 다루는 메서드(get·updateTitle·delete)는 반드시 이걸 거친다 — 업무 규칙 검증보다 먼저.
+     */
+    private Document findOwned(AuthUser me, Long id) {
         Document d = documentRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.DOCUMENT_NOT_FOUND));
+        if (!d.getOwner().getUuid().equals(me.uuid())) {
+            AuditLog.forbidden(me.uuid(), "document", id);
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return d;
+    }
+
+    public DocumentDetail get(AuthUser me, Long id) {
+        Document d = findOwned(me, id);
         return new DocumentDetail(String.valueOf(d.getId()), d.getDocType(), d.getTitle(), d.getCharCount(),
                 d.getCreatedAt(), d.getContent(), d.getMaskedCount());
     }
@@ -122,13 +135,12 @@ public class DocumentService {
     }
 
     /**
-     * T-014: 소유 검증 없이 존재(404)만 — 소유 403은 T-026. 빈 제목·100자 초과는 컨트롤러 @Valid가 400으로 먼저 막는다.
+     * 빈 제목·100자 초과는 컨트롤러 @Valid가 400으로 먼저 막는다 → 소유 403 → 존재 404 → 같은 제목 409.
      * 같은 제목은 UNIQUE(uk_documents_owner_title) 위반 → 409. flush()로 UPDATE를 지금 보내야 예외가 여기서 나와 봉투로 바뀐다.
      */
     @Transactional
     public DocumentSummary updateTitle(AuthUser me, Long id, String title) {
-        Document d = documentRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DOCUMENT_NOT_FOUND));
+        Document d = findOwned(me, id);
         d.changeTitle(title);
         documentRepository.flush();
         return toSummary(d);
@@ -136,6 +148,7 @@ public class DocumentService {
 
     @Transactional
     public void delete(AuthUser me, Long id) {
+        findOwned(me, id);   // [S-01] 소유 검증은 삭제 구현(T-055) 전에도 먼저 막는다
         throw new UnsupportedOperationException("T-014/T-055 미구현");
     }
 }
