@@ -21,8 +21,9 @@ import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -36,8 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
  * 만들 것: Document 엔티티(@Table·@Column·LAZY) · DocumentRepository(메서드 이름 쿼리 1 + @Query 1)
  */
 @Service
-@Transactional(readOnly = true)
-public class DocumentService {
+public class DocumentService {   // 클래스 단위 @Transactional 없음 — upload가 트랜잭션 밖이어야 해서 조회 메서드에 readOnly를 따로 붙인다
 
     private static final long MAX_FILE_BYTES = 200 * 1024;
     private static final Set<String> ALLOWED_MIME =
@@ -47,15 +47,18 @@ public class DocumentService {
     private final UserRepository userRepository;
     private final AiClient aiClient;
     private final AnalysisRepository analysisRepository;
+    private final TransactionTemplate tx;
 
     public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, AiClient aiClient,
-                           AnalysisRepository analysisRepository) {
+                           AnalysisRepository analysisRepository, PlatformTransactionManager txManager) {
         this.documentRepository = documentRepository;
         this.userRepository = userRepository;
         this.aiClient = aiClient;
         this.analysisRepository = analysisRepository;
+        this.tx = new TransactionTemplate(txManager);
     }
 
+    @Transactional(readOnly = true)
     public PageResponse<DocumentSummary> list(AuthUser me, DocumentType type, int page, int size, String sort) {
         User owner = userRepository.findByUuid(me.uuid())
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
@@ -87,6 +90,7 @@ public class DocumentService {
         return d;
     }
 
+    @Transactional(readOnly = true)
     public DocumentDetail get(AuthUser me, Long id) {
         Document d = findOwned(me, id);
         return new DocumentDetail(String.valueOf(d.getId()), d.getDocType(), d.getTitle(), d.getCharCount(),
@@ -94,39 +98,46 @@ public class DocumentService {
     }
 
     /**
-     * SPEC §1 업로드 순서: 검증 → 마스킹 → DB 저장(트랜잭션 끝) → AI ingest(트랜잭션 밖) → 실패하면 그 행을 지우고 503.
-     * NOT_SUPPORTED = 클래스의 readOnly 트랜잭션을 끈다 → save()·delete()가 각자 트랜잭션으로 바로 커밋된다.
-     * 같은 제목은 DB UNIQUE(uk_documents_owner_title) 위반 → GlobalExceptionHandler가 409 DUPLICATE_TITLE.
+     * SPEC §1 업로드 순서. 메서드에 @Transactional을 붙이지 않는다(클래스에도 없다) — 저장만 TransactionTemplate으로 짧게 커밋하고,
+     * AI ingest는 트랜잭션 밖에서 부른다. ingest가 실패하면 방금 저장한 행을 지우고 503 AI_UNAVAILABLE.
      */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DocumentSummary upload(AuthUser me, MultipartFile file, DocumentType type, String title) {
-        String text = readText(file);
+        String text = readText(file);                                          // a~d
         User owner = userRepository.findByUuid(me.uuid())
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
-        // [T-028 기술 리드] PiiMasker 연결 자리 — 마스킹한 title·text·maskedCount로 바꾼다(S-03)
-        Document saved = documentRepository.save(Document.builder()
-                .owner(owner).docType(type).title(title).content(text).maskedCount(0)
-                .build());
+        // e. [T-028 기술 리드] PiiMasker 연결 자리 — 마스킹한 title·text·maskedCount로 바꾼다(S-03)
+        String maskedTitle = title;
+        String maskedText = text;
+        int maskedCount = 0;
 
+        // f. 같은 소유자·같은 제목 → 409 (동시 요청은 DB UNIQUE가 2차로 막고 GlobalExceptionHandler가 409로 바꾼다)
+        if (documentRepository.existsByOwnerIdAndTitle(owner.getId(), maskedTitle)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_TITLE);
+        }
+
+        // g. 저장 → 커밋 → ingest(트랜잭션 밖) → 실패 시 행 삭제 + 503
+        Document saved = tx.execute(status -> documentRepository.save(Document.builder()
+                .owner(owner).docType(type).title(maskedTitle).content(maskedText).maskedCount(maskedCount)
+                .build()));
         try {
             aiClient.ingest(String.valueOf(saved.getId()), me.uuid(), type.name(), saved.getTitle(), saved.getContent());
         } catch (RuntimeException e) {
-            documentRepository.delete(saved);
-            throw (e instanceof BusinessException be) ? be : new BusinessException(ErrorCode.AI_UNAVAILABLE);
+            tx.executeWithoutResult(status -> documentRepository.deleteById(saved.getId()));
+            throw new BusinessException(ErrorCode.AI_UNAVAILABLE);
         }
         return toSummary(saved);
     }
 
-    /** 검증 순서: 확장자·MIME 415 → 빈 파일 400 → 크기 413 → UTF-8 엄격 디코딩 415 (SPEC §1 업로드 행) */
+    /** a. 확장자·MIME 415 → b. 크기 413 → c. 빈 파일 400 → d. UTF-8 엄격 디코딩 415 (SPEC §1 업로드 행) */
     private String readText(MultipartFile file) {
         String name = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase(Locale.ROOT);
         String mime = file.getContentType() == null ? "" : file.getContentType();
         if (!(name.endsWith(".md") || name.endsWith(".txt")) || !ALLOWED_MIME.contains(mime)) {
             throw new BusinessException(ErrorCode.UNSUPPORTED_FILE);
         }
-        if (file.isEmpty()) throw new BusinessException(ErrorCode.VALIDATION_ERROR, "빈 파일은 올릴 수 없습니다");
         if (file.getSize() > MAX_FILE_BYTES) throw new BusinessException(ErrorCode.FILE_TOO_LARGE);
+        if (file.isEmpty()) throw new BusinessException(ErrorCode.VALIDATION_ERROR, "빈 파일은 올릴 수 없습니다");
         try {
             return StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPORT)
