@@ -20,13 +20,16 @@ export function useChatStream() {
     setError(null);
     setMessages((m) => [...m, ...(req.question ? [{ role: 'USER', content: req.question, sources: [] }] : []),
       { role: 'ASSISTANT', content: '', sources: [] }]);
-    ctrl.current = new AbortController();
+    // 요청마다 자기 컨트롤러 c — reset()이나 새 start()로 ctrl.current가 바뀌면 이 요청은 상태를 더 건드리지 않는다
+    const c = new AbortController();
+    ctrl.current = c;
     setStreaming(true);
     try {
-      const res = await streamPost('/api/analyses/stream', req, ctrl.current.signal);
+      const res = await streamPost('/api/analyses/stream', req, c.signal);
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       const parser = createSseParser((event, data) => {
+        if (ctrl.current !== c) return;   // 이전 요청의 남은 이벤트는 버린다
         if (event === 'analysis') setAnalysisId(JSON.parse(data).analysisId);
         else if (event === 'token') patchLast((x) => ({ ...x, content: x.content + decodeData(data) }));
         else if (event === 'sources') patchLast((x) => ({ ...x, sources: JSON.parse(data) }));
@@ -38,10 +41,11 @@ export function useChatStream() {
         parser.feed(dec.decode(value, { stream: true }));
       }
     } catch (e) {
+      if (ctrl.current !== c) return;   // reset()으로 버린 요청 — 비운 messages에 stopped를 남기지 않는다
       if (isAbort(e)) patchLast((x) => ({ ...x, stopped: true }));   // 부분 답변은 화면에만 남는다(서버 저장 안 됨)
       else { setError(e); setMessages(dropEmpty); }
     } finally {
-      setStreaming(false);
+      if (ctrl.current === c) setStreaming(false);   // 이전 요청의 finally가 새 요청의 streaming을 끄지 않게
     }
   }, []);
 
@@ -52,6 +56,8 @@ export function useChatStream() {
   }, []);
   const reset = useCallback(() => {
     ctrl.current?.abort();
+    ctrl.current = null;   // 진행 중이던 요청을 "버린 요청"으로 만든다
+    setStreaming(false);
     setMessages([]);
     setAnalysisId(null);
     setError(null);
