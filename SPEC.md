@@ -40,7 +40,7 @@
 | 커밋·브랜치 | `type(범위): 요약 [T-###]` · 보안 수정 `fix(security): [S-0N] 무엇 · 행 [T-###]` · **담당 영역 브랜치**(`feature/backend`, `feature/frontend`, `feature/ai`, `feature/security`, `feature/infra`) → PR → `dev`(통합·테스트) → PR → `main`(배포) · 티켓 번호는 커밋·PR에 유지 |
 
 관측 명령(D3 전 1회 · 결과를 이 표 옆에 적는다): 페이지 음수 400 · JWT alg · 시드 시각 `+09:00` · 200KB 경계 업로드(nginx 경유) ·
-스트림 30초 초과 완주 · temurin 이미지 curl 유무(`docker run --rm eclipse-temurin:17-jre sh -c 'command -v curl wget'`).
+스트림 30초 초과 완주 · temurin 이미지 curl 유무(`docker run --rm eclipse-temurin:17-jre-jammy sh -c 'command -v curl wget'`).
 
 ## 2. 범위 세트 (상한 — 늘리지 않는다)
 
@@ -237,9 +237,9 @@ BE 문서 삭제 순서: ① 이 호출 ② 그 문서를 posting 또는 resume�
 | 레인 | 사람 | 맡는 것 | 문서 | 부오너 |
 |---|---|---|---|---|
 | 기술 리드·보안 | ydh | 이 SPEC · 목·seam 게이트 · `common/`(봉투·ErrorCode·Advice) · `security/`(SecurityConfig·JwtProvider·필터·401/403 핸들러·감사 리스너·PiiMasker·CORS) · 원장·재현 · 분석 화면 응답 안전 렌더(`ReportText`·`SourceChips`) | 9번 · 2번 6절 · 5번 5절 | DevOps |
-| 팀장 (BE-인증 레인) | (팀장 · Spring 상) | 진행·발표·취합·동결·자르기 결정 / User · auth API · refresh 회전 · 잠금(S-02) · 인증 테스트 · 시드 적재 | 1번 · 5번 · README | BE-기능 |
+| 팀장 (BE-인증 레인) | (팀장 · Spring 상) | 진행·발표·취합·동결·자르기 결정 / User · auth API · refresh 회전 · 잠금(S-02) · 인증 테스트 · 시드 적재(`seed/SeedIngestRunner` · T-027) | 1번 · 5번 · README | BE-기능 |
 | FE-화면 | (중~상 · React) | FE 화면 4(로그인·가입·내 문서·분석 기록) · 공용 컴포넌트 · `api/`(client·streamPost) · authStore · `useUpload` | 6번 §5.1·§6·§7 | FE-분석 |
-| BE-기능 | (최상) | Document·Analysis·Message · Flyway·시드·SeedIngestRunner · 페이징/@Query · **SSE 중계** · AI 클라이언트 · 소유 검증(S-01) | 3번 · 4번 | BE-인증 · AI |
+| BE-기능 | (최상) | Document·Analysis·Message · Flyway·시드 SQL(V2) · SeedIngestRunner가 부르는 리포지토리·AiClient 제공 · 페이징/@Query · **SSE 중계** · AI 클라이언트 · 소유 검증(S-01) | 3번 · 4번 | BE-인증 · AI |
 | AI | (상) | FastAPI · RAG · LangGraph 분기 · Tavily · 골든셋 평가 · mock_app · pytest | 7번 · 3번 4절 | BE-기능 |
 | FE-분석 | (중) | 분석 화면 · `useChatStream` · chatStore · 반응형 캡처 · **보안 점검: F-1~F-7 · S-01 재현 · B-1·B-8·B-10·B-11**(`security/rows/FA.md`) | 6번 | FE-화면 |
 | DevOps | (중) | Dockerfile×3 · compose(망 3) · nginx · GHA · EC2 · (K8s 가산) | 8번 · 2번 | 기술 리드 |

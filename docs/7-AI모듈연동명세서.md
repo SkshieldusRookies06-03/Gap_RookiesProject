@@ -182,6 +182,8 @@ g.add_edge("generate", END)
 | `test_report_stream_shape_and_owner_filter` | token JSON 문자열 · sources · done · 다른 ownerUuid엔 문서 없음 | TODO(T-019) |
 | `test_delete_is_idempotent_and_removes` · `test_delete_needs_owner` | 204 멱등 · 삭제 후 미검색 · 남의 uuid로 삭제 불가 | TODO(T-018) |
 | `test_llm_failure_becomes_error_event` | LLM 장애 → `event: error` 봉투 | TODO(T-019) |
+| `test_rag_contract.py` 9개 | 재적재 멱등·cosine(T-018) · seq 순서 12개·`<자료>` 격리와 구분자 치환(T-019) · 검색 범위·점수·후속 문맥·grade 분기(T-029) — 각 테스트 첫 줄의 [T-###] | TODO(T-018·T-019·T-029) |
+| `test_hardening.py` 41개 | 404·405·500 봉투 · 잘못된 토큰 401 · null·FOLLOWUP 빈 질문·Literal 400 — 실물과 mock_app 같은 규칙 (CI 1단계 필수) | green |
 
 실행: `cd ai-module && pytest -q`(키 없이 — `LLM_PROVIDER=fake`). 계약 검사: `node seams/check-ai.mjs http://127.0.0.1:8000`.
 

@@ -31,7 +31,7 @@
 | [T-058](T-058-refresh-logout.md) | LD | refresh 회전(SHA-256 해시 저장)과 로그아웃. | T-015 | `cd backend && ./mvnw test -Dtest=AuthAcceptanceTest` |
 | [T-016](T-016-security-observe.md) | TL | 보안 설정을 실서버에서 관측하고 5번 명세 5.2(CSRF 사유)를 쓴다. | T-005 | `cd backend && ./mvnw test -Dtest=SecurityAcceptanceTest` |
 | [T-017](T-017-pii-masker.md) | TL | PiiMasker를 단위 테스트로 고정한다 — 업로드 연결은 T-028. | T-005 | `cd backend && ./mvnw test -Dtest=PiiMaskerTest` |
-| [T-054](T-054-safe-render.md) | TL | 분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`(완성본)를 FE-분석에 넘긴다. | T-009 | `cd frontend && npx vitest run src/pages/analysis` |
+| [T-054](T-054-safe-render.md) | TL | 분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`를 만들어(판정 테스트 `ReportText.test.jsx` 4) FE-분석에 넘긴다. | T-009 | `cd frontend && npx vitest run src/pages/analysis` |
 | [T-018](T-018-ai-ingest.md) | AI | vectorstore ingest·delete를 Chroma로 구현한다. | T-007 | `cd ai-module && pytest -q` |
 | [T-019](T-019-ai-report-stream.md) | AI | REPORT 단일 경로(load → generate) 스트림. | T-018 | `cd ai-module && pytest -q` |
 | [T-020](T-020-login-pages.md) | FS | 로그인·회원가입 화면과 보호 라우트. | T-009 | `cd frontend && npm run build && npm test` |
@@ -62,13 +62,13 @@
 
 | T | 레인 | 할 일 | 선행 | 확인 |
 |---|---|---|---|---|
-| [T-034](T-034-dynamic-check.md) | TL | 동적 점검일: 원장 취합 · B-2~7·B-9·B-12~14·A·I 행 · S-02 Burp · SBOM. FE-분석 몫(F 행·B-1·8·10·11·S-01)은 `security/rows/FA.md`에서 합친다. | T-026 · T-027 · T-028 | `node scripts/check-rubric-p3.mjs | grep R-SE` |
+| [T-034](T-034-dynamic-check.md) | TL | 동적 점검일: 원장 취합 · B-2~7·B-9·B-12~14·A·I 행 · S-02 Burp · SBOM. FE-분석 몫(F 행·B-1·8·10·11·S-01)은 `security/rows/FA.md`에서 합친다. | T-026 · T-027 · T-028 | `node scripts/check-rubric-p3.mjs \| grep R-SE` |
 | [T-035](T-035-golden-eval.md) | AI | 골든셋 세 조건 평가 → `eval/result.md`. | T-029 · T-011 | `cd ai-module && LLM_PROVIDER=openai python eval/run_eval.py` |
 | [T-036](T-036-a2-injection.md) | AI | 프롬프트 인젝션 재현 → 자료 구분자 조치(발견이면 `fix(security): [S-04]`). | T-029 | `cd ai-module && pytest -q` |
 | [T-037](T-037-edge-400.md) | LD | 400·415 경계 정리 — 500이나 봉투 아닌 응답 제거. | T-015 | `cd backend && ./mvnw test` |
 | [T-038](T-038-be-500-check.md) | BF | 500 경로 점검(삭제 중 AI 실패 · 스트림 중 AI 다운) · N+1 확인. | T-025 | `docker compose stop ai-service && OTHER_DOC_ID=3 OTHER_ANALYSIS_ID=1 node seams/check-api.mjs http://localhost` |
 | [T-039](T-039-fe-security-check.md) | FA | 스트림 error UI + 프론트 보안 점검 F-1~F-7(증거·기록). | T-022 · T-054 | `cd frontend && npm test` |
-| [T-063](T-063-be-static-check.md) | FA | 백엔드 정적·입력 점검 B-1·B-8·B-10·B-11 — 실행한 명령과 결과를 기록한다. | T-026 · T-037 | `grep -rn '" *+ *[a-z]' backend/src/main --include=*Repository.java | wc -l` |
+| [T-063](T-063-be-static-check.md) | FA | 백엔드 정적·입력 점검 B-1·B-8·B-10·B-11 — 실행한 명령과 결과를 기록한다. | T-026 · T-037 | `grep -rn '" *+ *[a-z]' backend/src/main --include=*Repository.java \| wc -l` |
 | [T-040](T-040-scope-cut.md) | LD | 아침 ⓪ 빈칸 세기 → 자르기 결정 · README 실행 절차. | T-033 | `node scripts/check-rubric-p3.mjs` |
 | [T-059](T-059-fe-common-check.md) | FS | 공용 컴포넌트 재사용·PropTypes·에러 문구 점검. | T-021 · T-031 | `cd frontend && npm test && npm run build` |
 | [T-041](T-041-build-push.md) | DO | 빌드·푸시 워크플로 3개. | T-023 | `(GitHub Actions 화면)` |

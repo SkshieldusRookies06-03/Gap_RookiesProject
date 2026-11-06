@@ -1,4 +1,4 @@
-# T-054 — 분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`(완성본)를 FE-분석에 넘긴다
+# T-054 — 분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`를 만들어(판정 테스트 `ReportText.test.jsx` 4) FE-분석에 넘긴다
 
 **담당:** 기술 리드·보안 · **브랜치:** `feature/security` · **예상:** D2 · **선행:** T-009
 
@@ -6,7 +6,7 @@
 SPEC.md §5 · 점검서 F-1 — 이 절 본문을 지시서(에이전트 프롬프트)에 그대로 붙여 넣는다(링크만 주지 않는다).
 
 ## [목표]
-분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`(완성본)를 FE-분석에 넘긴다.
+분석 화면 응답 안전 렌더 `ReportText`·`SourceChips`를 만들어(판정 테스트 `ReportText.test.jsx` 4) FE-분석에 넘긴다.
 
 ## [수용 기준]
 - [ ] `npx vitest run src/pages/analysis` 4 passed
