@@ -42,6 +42,12 @@
 관측 명령(D3 전 1회 · 결과를 이 표 옆에 적는다): 페이지 음수 400 · JWT alg · 시드 시각 `+09:00` · 200KB 경계 업로드(nginx 경유) ·
 스트림 30초 초과 완주 · temurin 이미지 curl 유무(`docker run --rm eclipse-temurin:17-jre-jammy sh -c 'command -v curl wget'`).
 
+관측 결과(T-016 · 2026-11-06 · `spring-boot:run` + MariaDB 10.11.18 · nginx 미경유):
+- 헬스: `GET /actuator/health` 토큰 없이 200 `{"status":"UP"}`
+- 메트릭: `GET /actuator/metrics` 토큰 없음 401 `UNAUTHORIZED` · USER 토큰 403 `FORBIDDEN` 봉투(로그인 미구현이라 USER 토큰은 서버와 같은 secret으로 직접 서명)
+- CSP: `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`
+- JWT alg: 실서버 미관측 — `POST /api/auth/login`이 T-015 전이라 500. T-015 머지 뒤 발급 토큰으로 관측해 이 줄을 `HS256` 결과로 바꾼다
+
 ## 2. 범위 세트 (상한 — 늘리지 않는다)
 
 ```
