@@ -2,8 +2,8 @@ package com.jobgap.acceptance;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.jobgap.security.JwtProvider;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -27,7 +27,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.AbstractMockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 /**
  * 판정 테스트 공통 도우미 (오너: 기술 리드).
@@ -127,11 +128,11 @@ public abstract class AcceptanceSupport {
     }
 
     // ── 요청 ───────────────────────────────────────────────
-    protected static MockHttpServletRequestBuilder as(MockHttpServletRequestBuilder b, TestUser u) {
+    protected static <B extends AbstractMockHttpServletRequestBuilder<B>> B as(B b, TestUser u) {
         return b.header("Authorization", "Bearer " + u.token());
     }
 
-    protected static MockHttpServletRequestBuilder upload(String filename, String type, String title, byte[] bytes) {
+    protected static MockMultipartHttpServletRequestBuilder upload(String filename, String type, String title, byte[] bytes) {
         return multipart("/api/documents")
                 .file(new MockMultipartFile("file", filename, filename.endsWith(".txt") ? "text/plain"
                         : filename.endsWith(".md") ? "text/markdown" : "application/octet-stream", bytes))
