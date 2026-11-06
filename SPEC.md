@@ -18,8 +18,8 @@
 
 | 항목 | 값 |
 |---|---|
-| 스택 | React 18 + Vite · Zustand · react-router-dom · **CSS Modules + 토큰 1파일**(`src/styles/tokens.css`) · PropTypes / Spring Boot 3.3 · JDK 17 · **Maven wrapper** / FastAPI · **Python 3.12 · uv**(`pyproject.toml` + `uv.lock` · `uv sync --locked`) · **LangChain 1.x**(`langchain-core`·`langchain-text-splitters`·`langchain-openai`·`langchain-community`) + LangGraph 1.x · pytest / **MariaDB 10.11** / nginx 1.27-alpine |
-| BE 의존성 | web · security · data-jpa · validation · actuator · **webflux**(WebClient) · `mariadb-java-client` · **`flyway-core` + `flyway-mysql`** · jjwt · lombok(선택) · test |
+| 스택 | React 18 + Vite · Zustand · react-router-dom · **CSS Modules + 토큰 1파일**(`src/styles/tokens.css`) · PropTypes / Spring Boot 4.1 · JDK 17 · **Maven wrapper** / FastAPI · **Python 3.12 · uv**(`pyproject.toml` + `uv.lock` · `uv sync --locked`) · **LangChain 1.x**(`langchain-core`·`langchain-text-splitters`·`langchain-openai`·`langchain-community`) + LangGraph 1.x · pytest / **MariaDB 10.11** / nginx 1.27-alpine |
+| BE 의존성 | webmvc · security · data-jpa · validation · actuator · **webflux**(WebClient) · `mariadb-java-client`(3.5.11 고정) · **`spring-boot-starter-flyway` + `flyway-mysql`** · jjwt · lombok(선택) · test(+webmvc-test · security-test) · JSON은 Jackson 3(`tools.jackson.*` · 애너테이션만 `com.fasterxml.jackson.annotation`) |
 | LLM · 임베딩 | **OpenAI** `gpt-4o-mini` · `text-embedding-3-small`(바꾸면 벡터 인덱스 재생성) · 웹 검색 **Tavily** |
 | 벡터 저장소 | **FAISS**(`faiss-cpu` · `langchain_community.vectorstores.FAISS` · ai 컨테이너 안 인덱스 1개 · 바꿀 때마다 `save_local` → named volume `vector-data`의 `<VECTOR_DIR>/<VECTOR_INDEX>.faiss`·`.pkl`) · 거리 **cosine** = `normalize_L2=True` + `relevance_score_fn = 1 - d/2`(0~1로 자름) — 분기 기준값 §1이 0~1 relevance를 전제 · 메타데이터 `owner_uuid`·`document_id`·`doc_type`·`seq`(청크 순번) · 청크 id `{owner_uuid}:{document_id}:{seq}` — 검색·로드·삭제 모두 `owner_uuid` 조건 필수(ADR-03) · 조건이 둘 이상이면 `{"$and":[…]}` · **필터를 주면 `fetch_k=index.ntotal`**(FAISS는 `fetch_k`개를 먼저 찾고 거른다 — 기본 20이면 남의 청크에 밀려 내 청크가 빠진다) · 쓰기는 잠금 1개로 직렬화(uvicorn worker 1) · `load_local(allow_dangerous_deserialization=True)`는 이 컨테이너가 쓴 볼륨 파일만 읽는다 |
 | 포트 | 외부 공개 **frontend 80 하나** · backend 8080 · ai 8000 · db 3306 은 compose 내부만 · 로컬 디버깅은 `docker-compose.dev.yml`(127.0.0.1 바인드) · Vite 5173(`strictPort`) |
@@ -42,7 +42,7 @@
 관측 명령(D3 전 1회 · 결과를 이 표 옆에 적는다): 페이지 음수 400 · JWT alg · 시드 시각 `+09:00` · 200KB 경계 업로드(nginx 경유) ·
 스트림 30초 초과 완주 · temurin 이미지 curl 유무(`docker run --rm eclipse-temurin:17-jre-jammy sh -c 'command -v curl wget'`).
 
-관측 결과(T-016 · 2026-11-06 · `spring-boot:run` + MariaDB 10.11.18 · nginx 미경유):
+관측 결과(T-016 · 2026-11-06 · `spring-boot:run` + MariaDB 10.11.18 · nginx 미경유 · Boot 4.1.2 전환 뒤 jar로 재관측 — 아래 헬스·메트릭·CSP 값 동일):
 - 헬스: `GET /actuator/health` 토큰 없이 200 `{"status":"UP"}`
 - 메트릭: `GET /actuator/metrics` 토큰 없음 401 `UNAUTHORIZED` · USER 토큰 403 `FORBIDDEN` 봉투(로그인 미구현이라 USER 토큰은 서버와 같은 secret으로 직접 서명)
 - CSP: `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`
