@@ -1,8 +1,8 @@
-package com.jobgap.analysis;
+package com.jobgap.analysis.service;
 
-import com.jobgap.analysis.AnalysisDtos.AnalysisSummary;
-import com.jobgap.analysis.AnalysisDtos.MessageResponse;
-import com.jobgap.analysis.AnalysisDtos.StreamRequest;
+import com.jobgap.analysis.dto.AnalysisDtos.AnalysisSummary;
+import com.jobgap.analysis.dto.AnalysisDtos.MessageResponse;
+import com.jobgap.analysis.dto.AnalysisDtos.StreamRequest;
 import com.jobgap.common.PageResponse;
 import com.jobgap.security.AuthUser;
 import org.springframework.http.codec.ServerSentEvent;

@@ -1,8 +1,9 @@
-package com.jobgap.document;
+package com.jobgap.document.service;
 
 import com.jobgap.common.PageResponse;
-import com.jobgap.document.DocumentDtos.DocumentDetail;
-import com.jobgap.document.DocumentDtos.DocumentSummary;
+import com.jobgap.document.entity.DocumentType;
+import com.jobgap.document.dto.DocumentDtos.DocumentDetail;
+import com.jobgap.document.dto.DocumentDtos.DocumentSummary;
 import com.jobgap.security.AuthUser;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

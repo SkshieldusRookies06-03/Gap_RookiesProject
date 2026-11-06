@@ -1,10 +1,12 @@
-package com.jobgap.document;
+package com.jobgap.document.controller;
 
 import com.jobgap.common.ApiResponse;
 import com.jobgap.common.PageResponse;
-import com.jobgap.document.DocumentDtos.DocumentDetail;
-import com.jobgap.document.DocumentDtos.DocumentSummary;
-import com.jobgap.document.DocumentDtos.TitleUpdateRequest;
+import com.jobgap.document.dto.DocumentDtos.DocumentDetail;
+import com.jobgap.document.dto.DocumentDtos.DocumentSummary;
+import com.jobgap.document.dto.DocumentDtos.TitleUpdateRequest;
+import com.jobgap.document.service.DocumentService;
+import com.jobgap.document.entity.DocumentType;
 import com.jobgap.security.AuthUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
