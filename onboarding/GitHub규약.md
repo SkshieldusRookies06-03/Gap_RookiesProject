@@ -18,6 +18,13 @@
 - 같은 브랜치를 공유하는 BE/FE 담당자는 작업 전 `git pull origin <해당 브랜치>`로 최신 변경을 받고, 티켓의 수정 허용 파일 범위를 지킨다.
 - `spike/<이름>`과 `demo/S-0N`은 필요할 때만 임시로 만들고 통합 브랜치에는 병합하지 않는다.
 
+**선행이 다른 브랜치에 있을 때**(예: 기술 리드 T-028 ← BE-기능 T-024 · FE-분석 T-022 ← 기술 리드 T-054 · 팀장 T-037 → 기술 리드 `common/`):
+1. 선행 티켓의 PR이 `dev`에 머지될 때까지 기다린다(채널에 "T-0XX dev 머지" 한 줄이 신호).
+2. `git pull origin <내 브랜치>` → `git merge origin/dev` → **내 변경 없이 그 병합 커밋만 먼저** `git push origin <내 브랜치>`.
+   이렇게 해야 범위 검사 기준 `origin/<내 브랜치>`에 남의 변경이 들어가 있어 내 커밋만 검사된다(먼저 push하지 않으면 합쳐 온 남의 파일이 전부 RED).
+3. 그다음 내 작업 · 커밋 · 범위 검사 · push. 같은 파일을 다른 브랜치가 같은 날 고치면(T-028 ↔ T-024·T-025·T-026의 `DocumentService`·`AnalysisService`) 시작 전에 상대에게 알리고, 충돌은 `dev`에서 아래 "충돌 났을 때"대로 푼다.
+
+
 ```bash
 git switch feature/backend
 git pull origin feature/backend

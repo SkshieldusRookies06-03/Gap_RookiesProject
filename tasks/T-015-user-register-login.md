@@ -10,6 +10,7 @@ User 엔티티·가입·로그인(+감사 이벤트 발행). **D2 오전 우선*
 
 ## [수용 기준]
 - [ ] `AuthAcceptanceTest` ① ② green
+- [ ] `BoundaryAcceptanceTest` `registerValidation` green(이름 공백·21자 · 비밀번호 7·65자 · 경계 64·20자 통과)
 - [ ] BCrypt · subject = uuid · 성공·실패 감사 이벤트 발행
 - [ ] 없는 이메일도 같은 401
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
@@ -24,5 +25,5 @@ User 엔티티·가입·로그인(+감사 이벤트 발행). **D2 오전 우선*
 
 ## [확인 명령]
 ```bash
-cd backend && ./mvnw test -Dtest=AuthAcceptanceTest
+cd backend && ./mvnw test -Dtest='AuthAcceptanceTest,BoundaryAcceptanceTest#registerValidation'
 ```

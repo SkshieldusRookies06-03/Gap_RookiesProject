@@ -1,12 +1,6 @@
-"""벡터 저장소 — Chroma 단일 컬렉션 + owner_uuid 필터 (ADR-03). 오너: AI · 티켓 T-018.
-
-판정 테스트: tests/test_contract.py (수정 금지 — 기술 리드 작성).
-규칙:
-- 분할: RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-- 메타데이터: owner_uuid · document_id · doc_type · seq(청크 순번)
-- 같은 document_id 재적재 = 지우고 다시 넣는다(멱등)
-- 검색·삭제·적재 전부 owner_uuid 조건 필수 — 빠지면 남의 문서가 답변에 섞인다(점검서 A-3)
-재료: langchain_chroma.Chroma(collection_name, embedding_function=providers.get_embeddings(), persist_directory=settings().chroma_dir)
+"""벡터 저장소 — FAISS 인덱스 1개 + owner_uuid 메타데이터 필터 (ADR-03). 오너: AI · 티켓 T-018.
+판정 테스트: tests/test_contract.py · tests/test_rag_contract.py (수정 금지). 구현 규칙은 SPEC §1 벡터 저장소 · docs/7 §5.1·§6.
+재료: RecursiveCharacterTextSplitter · langchain_community.vectorstores.FAISS · as_retriever
 """
 
 

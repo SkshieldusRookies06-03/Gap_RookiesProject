@@ -1,0 +1,28 @@
+# 오너: AI (T-007에서 실행 확인 후 고정 · 바꾸면 PR) · 정본 SPEC §1 스택 · 버전은 uv.lock이 고정한다
+[project]
+name = "jobgap-ai"
+version = "0.1.0"
+description = "JobGap AI 모듈 — FastAPI + LangChain 1.x RAG(FAISS) + LangGraph 분기"
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+    "fastapi>=0.128.0",
+    "uvicorn>=0.40.0",
+    "pydantic>=2.0",
+    "langchain-core>=1.2",
+    "langchain-text-splitters>=1.1.0",
+    "langchain-openai>=1.1.7",
+    "langchain-community>=0.4.1",
+    "faiss-cpu>=1.13.2",
+    "langgraph>=1.0",
+    "tavily-python>=0.7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.28",
+]
+
+[tool.uv]
+package = false

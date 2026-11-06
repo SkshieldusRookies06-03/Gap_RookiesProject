@@ -9,6 +9,7 @@ SPEC.md §7 예비 A-2 — 이 절 본문을 지시서(에이전트 프롬프트
 프롬프트 인젝션 재현 → 자료 구분자 조치(발견이면 `fix(security): [S-04]`).
 
 ## [수용 기준]
+- [ ] `tests/test_rag_contract.py` `test_prompt_isolates_material_and_escapes_delimiters` green 유지(구분자 탈출 회귀)
 - [ ] `security/evidence/A-2/` 전·후 응답 · 원장 A-2 행 내용을 기술 리드에게
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-036` 무출력
@@ -21,5 +22,5 @@ SPEC.md §7 예비 A-2 — 이 절 본문을 지시서(에이전트 프롬프트
 
 ## [확인 명령]
 ```bash
-cd ai-module && pytest -q
+cd ai-module && uv run pytest -q
 ```

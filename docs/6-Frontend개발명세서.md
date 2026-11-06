@@ -1,6 +1,6 @@
 # Frontend 개발 명세서
 
-> 정본 기준 · 기준 커밋: (확정 시 기입) · v0.1 — 2026-11-05 · 문서 오너: FE-분석(파일 리뷰) · §5.1·§6·§7은 FE-화면 · §9는 기술 리드
+> 정본 기준 · 기준 커밋: (확정 시 기입) · v0.1 — 2026-11-05 · 문서 오너: FE-분석(파일 리뷰) · §5.1·§6·§7은 FE-화면 · §9(보안 — npm audit 요약)는 FE-분석이 T-039 결과로 T-043에서 쓰고 기술 리드가 확인
 > 정본: `frontend/` 코드 · `SPEC.md` §1·§4·§5. **"구현 예정 T-0xx"** 표시는 D1 골격 시점에 아직 없는 화면·컴포넌트 — 구현되면 표시를 지운다.
 
 ## 1. 기술 스택
@@ -23,7 +23,7 @@ frontend/src/
 ├── hooks/                 useChatStream.js(스트림) — FE-분석 · useUpload.js(업로드) — FE-화면
 ├── components/            Button · Layout · LoadingSpinner · EmptyState · ErrorMessage (+ .module.css) — FE-화면
 ├── pages/                 LoginPage · RegisterPage · DocumentsPage · AnalysesPage — FE-화면
-│   └── analysis/          AnalysisPage(+ DocumentPicker · MessageList · SourceChips · FollowUpForm 구현 예정) — FE-분석
+│   └── analysis/          AnalysisPage(+ DocumentPicker · MessageList · FollowUpForm 은 이 파일 안 함수) — FE-분석 · ReportText·SourceChips — 기술 리드(T-054)
 ├── styles/                tokens.css · global.css
 └── test/                  setup.js · server.js · handlers.js (MSW — 네트워크만 가로챈다)
 ```
@@ -124,7 +124,7 @@ Access는 메모리에만, Refresh만 localStorage(`partialize`) — 새로고�
 - **토큰 만료 처리**: `TOKEN_EXPIRED`만 refresh 1회(탭 안·탭 사이 단일 비행) · 실패 시 세션 비우고 로그인으로 — F-3
 - **보호 라우트**: `App.jsx` `Protected`가 Refresh 없으면 `/login` · 서버가 최종 판정(401/403) — F-3
 - **의존성 점검**: `npm audit --json > security/evidence/npm-audit.json` — F-5
-  <!-- TODO(D4·기술 리드): npm audit 결과 요약(High 이상 건수) -->
+  <!-- TODO(D5·FE-분석 T-043): npm audit 결과 요약(T-039 증거)(High 이상 건수) -->
 - **에러 노출**: 서버 message 대신 `ErrorMessage.messageFor(code)` 사용자 문구 · 500은 "잠시 후 다시 시도해 주세요" — F-7
 
 ## 10. 빌드 및 배포

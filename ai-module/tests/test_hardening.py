@@ -50,7 +50,7 @@ def test_unhandled_exception_is_500_envelope_without_internals(real, monkeypatch
     from app import vectorstore
 
     def boom(*_args, **_kwargs):
-        raise RuntimeError("chroma exploded at /data/vector/secret-path")
+        raise RuntimeError("faiss exploded at /data/vector/secret-path")
 
     monkeypatch.setattr(vectorstore, "ingest_document", boom)
     r = real.post("/internal/ingest", headers=TOKEN, json=VALID_INGEST)

@@ -141,7 +141,7 @@ List<Analysis> findAllUsing(@Param("docId") Long docId);
 - 발급: `JwtProvider.createAccessToken(uuid, role)` — subject = uuid · claim role · HS256 명시 · 15분
 - 검증: `JwtAuthenticationFilter`가 `Bearer` → `JwtProvider.parse()` → 만료면 `TOKEN_EXPIRED`, 서명·형식 오류면 `UNAUTHORIZED`(EntryPoint가 봉투로) · 필터는 보안 체인 안에서만 돈다(서블릿 자동 등록 해제)
 - Refresh: `JwtProvider.newRefreshToken()`(랜덤 32바이트) → DB에는 `JwtProvider.sha256()`만 · 재발급 시 교체 · 로그아웃 시 삭제
-- 역할 + 소유: 컨트롤러 `@PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")` + 서비스 "본인 또는 ADMIN"(`AuthUser.isAdmin()`) — 실패 시 `AuditLog.forbidden(…)` 후 403
+- 역할 + 소유: 컨트롤러 `@PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")` + 서비스에서 본인 소유만 허용(ADMIN 예외 없음) — 실패 시 `AuditLog.forbidden(…)` 후 403
 
 ### 5.2 공격 방어
 
@@ -170,7 +170,7 @@ List<Analysis> findAllUsing(@Param("docId") Long docId);
 | 대상 | `${AI_BASE_URL}` (compose: `http://ai-service:8000` · `app` 망) |
 | 내부 토큰 | 모든 호출에 `X-Internal-Token: ${AI_INTERNAL_TOKEN}` — `AiClient`가 기본 헤더로 주입 |
 | 단건(ingest·delete) | `RestClient` · connect 3,000ms · read 30,000ms · 실패 → `BusinessException(AI_UNAVAILABLE)` = 503 |
-| 스트림(analyze) | `WebClient` `bodyToFlux(ServerSentEvent<String>)` · responseTimeout **290s** · `onErrorResume` → `event: error`(AI_UNAVAILABLE 봉투) |
+| 스트림(analyze) | `WebClient` `bodyToFlux(ServerSentEvent<String>)` · 전체 상한 `Flux.timeout(290s)`(`responseTimeout`은 읽기 사이 유휴 시간이라 상한이 아니다 · SPEC §1) · done·error 없이 EOF면 `event: error` · `onErrorResume` → `event: error`(AI_UNAVAILABLE 봉투) |
 | 소유자 | `ownerUuid`는 `AuthUser.uuid()`에서만 — 프론트 값을 쓰지 않는다(A-3) |
 | 문맥 | 후속 질문은 이전 메시지 최근 6개를 `history`로(이번 질문 제외) |
 

@@ -1,7 +1,7 @@
 """ai-module/mock_app.py — 둘째 seam(백엔드 → AI) 목 · SPEC.md §6 계약 그대로.
 
-실행:  cd ai-module && pip install fastapi==0.115.* uvicorn==0.32.* && AI_INTERNAL_TOKEN=dev-token uvicorn mock_app:app --port 8000
-실물(app.py)은 같은 경로·같은 이벤트로 바뀐다. 계약이 바뀌면 이 파일도 같은 PR에서 고친다(SPEC §9).
+실행:  cd ai-module && uv sync && AI_INTERNAL_TOKEN=dev-token uv run uvicorn mock_app:app --port 8000
+실물(app/main.py)은 같은 경로·같은 이벤트로 바뀐다. 계약이 바뀌면 이 파일도 같은 PR에서 고친다(SPEC §9).
 """
 import asyncio
 import hmac

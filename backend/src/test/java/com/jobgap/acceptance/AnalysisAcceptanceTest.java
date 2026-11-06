@@ -16,7 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
 @AcceptanceTest
-@DisplayName("[BE-기능 T-025·T-026] 분석 — SPEC §4.3 중계 규칙 · 점검서 B-2")
+@DisplayName("[BE-기능 T-025·T-026·T-056] 분석 — SPEC §4.3 중계 규칙 · 점검서 B-2")
 class AnalysisAcceptanceTest extends AcceptanceSupport {
 
     private MvcResult startStream(TestUser u, Map<String, ?> req) throws Exception {

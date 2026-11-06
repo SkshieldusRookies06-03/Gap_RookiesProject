@@ -4,7 +4,7 @@ import tempfile
 
 os.environ.setdefault("AI_INTERNAL_TOKEN", "test-token")
 os.environ.setdefault("LLM_PROVIDER", "fake")
-os.environ["CHROMA_DIR"] = tempfile.mkdtemp(prefix="jobgap-vec-")
+os.environ["VECTOR_DIR"] = tempfile.mkdtemp(prefix="jobgap-vec-")
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

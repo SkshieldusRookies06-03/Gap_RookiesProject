@@ -10,7 +10,8 @@ SPEC.md §4.3 중계 규칙 — 이 절 본문을 지시서(에이전트 프롬�
 
 ## [수용 기준]
 - [ ] `AnalysisAcceptanceTest` ① ③ ④ ⑤ green
-- [ ] WebClient responseTimeout 290s · analysis 이벤트 선행 · done 가로채 ASSISTANT 저장 후 done{messageId} · 끊김·error면 미저장
+- [ ] `BoundaryAcceptanceTest` `reportRequestHasNoNulls` · `historyIsLastSix` · `questionLength` · `analysisTitleIsTruncated` green
+- [ ] WebClient 전체 상한 `Flux.timeout(290s)`(responseTimeout은 유휴 시간이라 상한이 아니다 · SPEC §1 SSE·AI 호출 행) · done·error 없이 EOF면 `event: error` · analysis 이벤트 선행 · done 가로채 ASSISTANT 저장 후 done{messageId} · 끊김·error면 미저장
 - [ ] 스트림 curl(SPEC §4.3)에서 토큰이 시간 간격을 두고
 - [ ] `node scripts/check-sec-deploy.mjs` 무출력
 - [ ] `node seams/check-scope.mjs T-025` 무출력
@@ -24,5 +25,5 @@ SPEC.md §4.3 중계 규칙 — 이 절 본문을 지시서(에이전트 프롬�
 
 ## [확인 명령]
 ```bash
-cd backend && ./mvnw test -Dtest=AnalysisAcceptanceTest
+cd backend && ./mvnw test -Dtest='AnalysisAcceptanceTest,BoundaryAcceptanceTest#reportRequestHasNoNulls+historyIsLastSix+questionLength+analysisTitleIsTruncated'
 ```

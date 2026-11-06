@@ -5,6 +5,26 @@
 그리고 `onboarding/` 에 내 레인 파일이 한 장 있다 — **LD-팀장(BE-인증) · TL-기술리드-보안 · BF-BE기능 · AI · FS-FE화면 · FA-FE분석 · DO-DevOps**.
 판정 테스트 · 만들 파일 · 티켓별 구현 명세 · 계약 상대 · 막힐 곳 · 내 문서 절이 거기 다 있다. git 규칙 전체는 `onboarding/GitHub규약.md` 한 장.
 
+| 레인 (BOARD 코드) | 내 문서 | 내 브랜치 (같이 쓰는 사람) | 맡는 것 요약 — 정본 SPEC §8 | 내가 쓰는 산출 문서 |
+|---|---|---|---|---|
+| 팀장·BE-인증 (LD) | `LD-팀장.md` | `feature/backend` (BE-기능) | 진행·동결·자르기·발표·취합 / User·auth API·refresh 회전·잠금(S-02)·인증 테스트·시드 적재 | 1번 · 5번 · README |
+| 기술 리드·보안 (TL) | `TL-기술리드-보안.md` | `feature/security` | SPEC·목·seam 게이트 · `common/`·`security/` · 원장·재현 · 응답 안전 렌더(`ReportText`·`SourceChips`) | 9번 · 2번 6절 · 5번 5절 |
+| BE-기능 (BF) | `BF-BE기능.md` | `feature/backend` (팀장) | 문서·분석·메시지 · Flyway·시드 · 페이징 · **SSE 중계** · AI 클라이언트 · 소유 검증(S-01) | 3번 · 4번 |
+| AI (AI) | `AI.md` | `feature/ai` | Python 3.12·uv · FastAPI · LangChain 1.x RAG(FAISS) · LangGraph 분기 · Tavily · 골든셋 평가 · mock_app · pytest | 7번 · 3번 4절 |
+| FE-화면 (FS) | `FS-FE화면.md` | `feature/frontend` (FE-분석) | 화면 4 · 공용 컴포넌트 · `api/`·authStore · `useUpload` | 6번 §5.1·§6·§7 |
+| FE-분석 (FA) | `FA-FE분석.md` | `feature/frontend` (FE-화면) | 분석 화면 · `useChatStream`·chatStore · 반응형 캡처 · 보안 점검 F-1~F-7·S-01 재현·B-1·B-8·B-10·B-11 | 6번 · `security/rows/FA.md` |
+| DevOps (DO) | `DO-DevOps.md` | `feature/infra` | Dockerfile×3 · compose(망 3) · nginx · GHA · EC2 · (K8s 가산) | 8번 · 2번 |
+
+- 브랜치는 사람이 아니라 **영역**이다 — 내 산출물은 그 영역이 다른 폴더(예: FE-분석의 `security/rows/FA.md`)여도 내 브랜치로 올린다. 수정 가능 범위는 브랜치가 아니라 **티켓의 "수정 허용"**이 정한다.
+- 흐름: `git pull origin <내 브랜치>` → 작업·커밋 → push 전 범위 검사(아래 2번) → push → PR `feature/… → dev` → 통합 확인 후 `dev → main`. 필수 리뷰·승인은 없다(GitHub규약 §3·§4).
+
+**선행이 다른 브랜치에 있을 때**(예: 기술 리드 T-028 ← BE-기능 T-024 · FE-분석 T-022 ← 기술 리드 T-054 · 팀장 T-037 → 기술 리드 `common/`):
+1. 선행 티켓의 PR이 `dev`에 머지될 때까지 기다린다(채널에 "T-0XX dev 머지" 한 줄이 신호).
+2. `git pull origin <내 브랜치>` → `git merge origin/dev` → **내 변경 없이 그 병합 커밋만 먼저** `git push origin <내 브랜치>`.
+   이렇게 해야 범위 검사 기준 `origin/<내 브랜치>`에 남의 변경이 들어가 있어 내 커밋만 검사된다(먼저 push하지 않으면 합쳐 온 남의 파일이 전부 RED).
+3. 그다음 내 작업 · 커밋 · 범위 검사 · push. 같은 파일을 다른 브랜치가 같은 날 고치면(T-028 ↔ T-024·T-025·T-026의 `DocumentService`·`AnalysisService`) 시작 전에 상대에게 알리고, 충돌은 `dev`에서 아래 "충돌 났을 때"대로 푼다.
+
+
 ## 나를 지키는 다섯 줄
 
 1. **답은 SPEC.md에 있다** — 없으면 추측하지 말고 묻는다
@@ -15,9 +35,13 @@
    |---|---|
    | 백엔드(팀장·BE-기능) | `./mvnw test -Dtest=<내 판정 테스트>` + `BoundaryAcceptanceTest`에서 이름에 내 티켓 번호가 붙은 것 + `node seams/check-api.mjs <base>` |
    | 프론트(FE-화면·FE-분석) | `npm run build && npm test` + `seams/smoke.md` 내 줄 |
-   | AI | `pytest -q`(`test_contract`·`test_failure`·`test_rag_contract`) + `node seams/check-ai.mjs <base>` |
+   | AI | `uv run pytest -q`(`test_contract`·`test_failure`·`test_rag_contract`) + `node seams/check-ai.mjs <base>` |
    | DevOps | `docker compose config -q && node scripts/check-sec-deploy.mjs` |
-   | 전원 | `node scripts/check-sec-deploy.mjs` 무출력 · `node seams/check-scope.mjs <내 티켓>` 무출력 |
+   | 전원 | `node scripts/check-sec-deploy.mjs` 무출력 · push 전 `node seams/check-scope.mjs <내 티켓> origin/<내 브랜치>` 무출력 |
+
+   > 범위 검사는 **아직 올리지 않은 내 커밋만** 본다: 담당 브랜치(`feature/backend` 등)는 여럿이 함께 쓰므로 기본 기준(`origin/dev`)으로
+   > 돌리면 동료 티켓 파일까지 RED가 된다. 작업 전 `git pull origin <내 브랜치>` → 커밋 → push **전에** 위 명령. 티켓 둘이면 `T-014,T-024`.
+   > `feature → dev` PR에서는 그 PR에 담긴 티켓 전부를 쉼표로(`node seams/check-scope.mjs T-014,T-015,T-024`) — 기준은 기본값 `origin/dev`.
 3. **정한 것은 문서로, 내 파트 밖은 손대지 않는다** — 구두 합의는 무효
    ("그때 그렇게 말했잖아"와 남의 버그 책임에서 나를 지키는 두 줄)
 4. **30분 막히면 말한다** — 질문은 잘못이 아니라 팀 일정을 구하는 행위.
@@ -34,7 +58,7 @@
 ## 하루 끝 (매일 · 5분)
 
 1. 게이트 1회 → green
-2. `git diff --stat origin/dev...HEAD` 를 내가 읽는다. **본 코드가 150줄을 넘으면 머지하지 않고 티켓을 쪼갠다**
+2. push 전 `git diff --stat origin/<내 브랜치>...HEAD` 를 내가 읽는다(공유 브랜치라 `origin/dev` 기준이면 동료 변경까지 센다). **본 코드가 150줄을 넘으면 머지하지 않고 티켓을 쪼갠다**
    (본 코드 = `backend/src/main` · `frontend/src`의 비테스트 파일 · `ai-module/app` — 테스트·문서·lock은 안 센다)
 3. 커밋·push는 **내가** 한다(에이전트가 아니라) → `feature/* → dev` PR → 통합 테스트(리뷰 요청은 선택)
 4. `worklog/<내이름>/D#.md` 3줄

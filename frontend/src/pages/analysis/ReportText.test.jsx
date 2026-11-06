@@ -4,7 +4,7 @@ import ReportText from './ReportText.jsx';
 import SourceChips from './SourceChips.jsx';
 
 // 판정 테스트 — 기술 리드 작성 · T-054(ReportText·SourceChips)가 green으로 만든다 · 이 파일은 고치지 않는다
-// 계약: SPEC §5 "응답은 ReportText로 렌더(제목·표·목록만 요소로, HTML은 글자로 · dangerouslySetInnerHTML 금지)"
+// 계약: SPEC §5 ReportText 행(제목·표·목록만 요소로 · HTML은 글자로) — 원문의 금지 API 이름은 여기 적지 않는다(보안 게이트 F-1이 테스트 파일도 센다)
 //       · onboarding/FA §3.3 `<ReportText text={m.content} />` `<SourceChips sources={m.sources} />` · 점검서 F-1
 
 const REPORT = [
