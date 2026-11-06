@@ -1,6 +1,6 @@
-package com.jobgap.analysis.entity;
+package com.jobgap.analysis;
 
-import com.jobgap.document.entity.Document;
+import com.jobgap.document.Document;
 import com.jobgap.auth.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

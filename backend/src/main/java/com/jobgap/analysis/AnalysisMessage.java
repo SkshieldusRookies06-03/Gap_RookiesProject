@@ -1,4 +1,4 @@
-package com.jobgap.analysis.entity;
+package com.jobgap.analysis;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
