@@ -92,13 +92,13 @@ git log -1 --format=%s -- SPEC.md
 
 ### T-004 Spring 골격 · 첫 컴파일 (D1 · 선행 T-001)
 - 수정 허용: `backend/mvnw` · `backend/mvnw.cmd` · `backend/.mvn/` · `backend/pom.xml`
-- 수용 기준: start.spring.io(Maven · Java 17 · Boot 3.3.x)에서 `mvnw`·`mvnw.cmd`·`.mvn/`만 가져와 커밋 · `JobgapApplicationTests,PiiMaskerTest` green(DB: dev compose `database`) · 컴파일 에러는 출력 전체를 기술 리드에게
+- 수용 기준: start.spring.io(Maven · Java 17 · Boot 4.1.x)에서 `mvnw`·`mvnw.cmd`·`.mvn/`만 가져와 커밋 · `JobgapApplicationTests,PiiMaskerTest` green(DB: dev compose `database`) · 컴파일 에러는 출력 전체를 기술 리드에게
 - 확인 명령:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 cd backend && ./mvnw test -Dtest='JobgapApplicationTests,PiiMaskerTest'
 ```
-1. start.spring.io: Maven · Java 17 · Boot 3.3.x · group `com.jobgap` → zip에서 `mvnw`·`mvnw.cmd`·`.mvn/`만 리포 `backend/`에 둔다(pom은 리포 것 유지).
+1. start.spring.io: Maven · Java 17 · Boot 4.1.x · group `com.jobgap` → zip에서 `mvnw`·`mvnw.cmd`·`.mvn/`만 리포 `backend/`에 둔다(pom은 리포 것 유지).
 2. 테스트 DB 기본값 `jobgap/jobgap`(`backend/src/test/resources/application-test.yml`) — `.env`의 `DB_USER`/`DB_PASSWORD`가 다르면 `TEST_DB_USER`·`TEST_DB_PASSWORD`를 맞춘다. `.env`는 `cp .env.example .env` 후 `DB_PASSWORD`·`DB_ROOT_PASSWORD`·`JWT_SECRET`·`AI_INTERNAL_TOKEN`을 채운다(비면 compose가 기동 거부).
 3. 컴파일 에러는 **출력 전체**를 기술 리드에게(골격은 컴파일 검증 전 — 기술 리드 T-005가 받는다).
 - 커밋: `chore(be): Spring 골격·Maven wrapper [T-004]`
