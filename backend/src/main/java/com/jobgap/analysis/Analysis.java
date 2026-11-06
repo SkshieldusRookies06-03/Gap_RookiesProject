@@ -15,8 +15,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -32,7 +30,6 @@ import java.util.List;
 @Entity
 @Table(name = "analyses")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Analysis {
 
     @Id
@@ -61,18 +58,20 @@ public class Analysis {
     @OrderBy("id ASC")
     private List<AnalysisMessage> messages = new ArrayList<>();
 
-    @Builder
-    private Analysis(User owner, Document posting, Document resume, String title) {
-        this.owner = owner;
-        this.posting = posting;
-        this.resume = resume;
-        this.title = title;
+    protected Analysis() {}
+
+    /** title은 호출하는 쪽(서비스)이 "공고 × 이력서"로 만들어 100자로 자른 값 */
+    public static Analysis create(User owner, Document posting, Document resume, String title) {
+        Analysis a = new Analysis();
+        a.owner = owner;
+        a.posting = posting;
+        a.resume = resume;
+        a.title = title;
+        return a;
     }
 
     public AnalysisMessage addMessage(String role, String content, String sourcesJson) {
-        AnalysisMessage m = AnalysisMessage.builder()
-                .analysis(this).role(role).content(content).sources(sourcesJson)
-                .build();
+        AnalysisMessage m = AnalysisMessage.create(this, role, content, sourcesJson);
         messages.add(m);
         return m;
     }
