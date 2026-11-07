@@ -1,4 +1,4 @@
-package com.jobgap.analysis.entity;
+package com.jobgap.analysis;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,7 +26,7 @@ import java.time.ZoneId;
 @Entity
 @Table(name = "analysis_messages")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class AnalysisMessage {
 
     @Id
@@ -49,18 +49,17 @@ public class AnalysisMessage {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    /** 빌더는 같은 패키지(Analysis.addMessage)에서만 — 밖에서 만들면 messages 목록에 안 들어가 양방향이 어긋난다 */
-    @Builder(access = AccessLevel.PACKAGE)
-    private AnalysisMessage(Analysis analysis, String role, String content, String sources) {
-        this.analysis = analysis;
-        this.role = role;
-        this.content = content;
-        this.sources = sources;
+    public static AnalysisMessage create(Analysis analysis, String role, String content, String sources) {
+        AnalysisMessage am = new AnalysisMessage();
+        am.analysis = analysis;
+        am.role = role;
+        am.content = content;
+        am.sources = sources;
+        return am;
     }
 
     @PrePersist
     void onCreate() {
         this.createdAt = OffsetDateTime.now(ZoneId.of("Asia/Seoul"));
     }
-
 }

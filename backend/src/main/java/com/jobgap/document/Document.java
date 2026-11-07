@@ -1,4 +1,4 @@
-package com.jobgap.document.entity;
+package com.jobgap.document;
 
 import com.jobgap.auth.User;
 import jakarta.persistence.Column;

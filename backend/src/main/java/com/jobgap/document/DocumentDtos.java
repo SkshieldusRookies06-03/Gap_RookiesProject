@@ -1,6 +1,5 @@
-package com.jobgap.document.dto;
+package com.jobgap.document;
 
-import com.jobgap.document.entity.DocumentType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
