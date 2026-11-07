@@ -88,12 +88,32 @@ public class AuthService {
         }
     }
 
-    // Reserved for T-058. Keep this ticket separate to preserve the scope/line-count gate.
+    /** 유효한 refresh로 재발급하고, DB의 해시를 교체해 이전 토큰을 즉시 무효화한다. */
+    @Transactional
     public TokenResponse refresh(String refreshToken) {
-        throw new UnsupportedOperationException("T-058 미구현");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String hash = JwtProvider.sha256(refreshToken);
+        User user = userRepository.findByRefreshTokenHash(hash)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
+
+        OffsetDateTime now = OffsetDateTime.now(SEOUL);
+        if (user.getRefreshExpiresAt() == null || !user.getRefreshExpiresAt().isAfter(now)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String newRefresh = jwtProvider.newRefreshToken();
+        user.rotateRefresh(JwtProvider.sha256(newRefresh),
+                now.plus(Duration.ofMillis(jwtProvider.refreshTokenExpirationMs())));
+        String newAccess = jwtProvider.createAccessToken(user.getUuid(), user.getRole());
+        return new TokenResponse(newAccess, newRefresh);
     }
 
+    /** 현재 로그인 사용자의 refresh를 폐기한다. Access JWT는 원래 만료시각까지 유효하다. */
+    @Transactional
     public void logout(String userUuid) {
-        throw new UnsupportedOperationException("T-058 미구현");
+        userRepository.findByUuid(userUuid).ifPresent(User::clearRefresh);
     }
 }

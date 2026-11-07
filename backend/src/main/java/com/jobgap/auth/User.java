@@ -81,6 +81,12 @@ public class User {
         this.refreshExpiresAt = expiresAt;
     }
 
+    /** 로그아웃 시 저장된 refresh 해시와 만료시각을 함께 제거한다. */
+    public void clearRefresh() {
+        this.refreshTokenHash = null;
+        this.refreshExpiresAt = null;
+    }
+
     @PrePersist
     void onCreate() {
         this.createdAt = OffsetDateTime.now(ZoneId.of("Asia/Seoul"));
