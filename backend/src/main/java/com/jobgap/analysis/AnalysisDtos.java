@@ -1,4 +1,4 @@
-package com.jobgap.analysis.dto;
+package com.jobgap.analysis;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import jakarta.validation.constraints.Pattern;
