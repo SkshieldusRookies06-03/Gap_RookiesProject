@@ -5,7 +5,7 @@
 
 ## 1. 기술 스택
 
-- **Framework**: Spring Boot 3.3.5 (Web · Security · Data JPA · Validation · Actuator · WebFlux(WebClient)) · Flyway(`flyway-core` + `flyway-mysql`) · jjwt 0.12.6
+- **Framework**: Spring Boot 4.1.2 (WebMVC · Security · Data JPA · Validation · Actuator · WebFlux(WebClient)) · Flyway(`spring-boot-starter-flyway` + `flyway-mysql`) · jjwt 0.12.6 · Jackson 3(`tools.jackson.*` · 애너테이션만 `com.fasterxml.jackson.annotation`)
 - **언어**: Java 17
 - **데이터베이스**: MariaDB 10.11 (`mariadb-java-client`) · `ddl-auto: validate` + Flyway 마이그레이션
 - **빌드**: Maven — 로컬 `./mvnw`(wrapper · T-004에서 커밋), CI는 러너의 `mvn`, Docker 빌드 이미지 `maven:3.9.9-eclipse-temurin-17`

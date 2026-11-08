@@ -16,7 +16,7 @@ spring:
   sql.init.mode: never
   jackson:
     time-zone: Asia/Seoul
-    serialization.write-dates-as-timestamps: false
+    datatype.datetime.write-dates-as-timestamps: false
   servlet.multipart:
     max-file-size: 200KB        # SPEC §1 업로드 — nginx client_max_body_size 1m 과 짝
     max-request-size: 1MB
@@ -32,6 +32,7 @@ server:
 management:
   endpoints.web.exposure.include: ${ACTUATOR_EXPOSURE:health,info}
   endpoint.health.show-details: never
+  endpoint.health.probes.enabled: false   # Boot 4 기본값이면 응답에 groups가 붙는다 — SPEC §1 관측값 {"status":"UP"} 유지
 
 app:
   jwt:
