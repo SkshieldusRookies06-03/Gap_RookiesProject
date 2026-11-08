@@ -123,14 +123,17 @@
   color: var(--color-muted);
 }
 
-@media (max-width: 767px) {
-  .row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.uploadForm { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-4); background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); align-items: center; }
+.uploadForm input, .uploadForm select { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius); font-size: var(--font-size-sm); background-color: var(--color-surface); color: var(--color-text); }
+.formError { width: 100%; color: var(--color-danger); font-size: var(--font-size-sm); }
+.actions { display: flex; align-items: center; gap: var(--space-2); }
+.btnSm { padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius); background-color: var(--color-surface); font-size: var(--font-size-sm); cursor: pointer; }
+.editInput { padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius); font-size: var(--font-size-sm); }
+.dialog { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm); color: var(--color-danger); }
 
-  .meta {
-    width: 100%;
-    justify-content: space-between;
-  }
+@media (max-width: 767px) {
+  .row { flex-direction: column; align-items: flex-start; }
+  .meta { width: 100%; justify-content: space-between; }
+  .uploadForm { flex-direction: column; align-items: stretch; }
+  .actions { width: 100%; justify-content: flex-end; }
 }
