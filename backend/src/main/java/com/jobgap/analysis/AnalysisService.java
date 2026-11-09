@@ -9,6 +9,7 @@ import com.jobgap.auth.UserRepository;
 import com.jobgap.common.ApiResponse;
 import com.jobgap.common.BusinessException;
 import com.jobgap.common.ErrorCode;
+import com.jobgap.common.PageRequests;
 import com.jobgap.common.PageResponse;
 import com.jobgap.document.Document;
 import com.jobgap.document.DocumentRepository;
@@ -22,9 +23,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -140,11 +143,28 @@ public class AnalysisService {   // 클래스 단위 @Transactional 없음 — s
         return event("error", json.writeValueAsString(ApiResponse.error(ErrorCode.AI_UNAVAILABLE)));
     }
 
+    /** 내 분석 목록 — 최신순 고정 · lastStatus는 저장하지 않고 마지막 메시지 role로 파생(SPEC §2) */
+    @Transactional(readOnly = true)
     public PageResponse<AnalysisSummary> list(AuthUser me, int page, int size) {
-        throw new UnsupportedOperationException("T-056 미구현");
+        var pageable = PageRequests.of(page, size, Sort.unsorted());   // 형식 400 먼저(SPEC §4 공통 순서) · size>50 → 50
+        User owner = userRepository.findByUuid(me.uuid()).orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+        return PageResponse.of(analysisRepository.findByOwnerIdOrderByCreatedAtDesc(owner.getId(), pageable), this::toSummary);
     }
 
+    /** DTO 변환은 트랜잭션 안에서(posting·resume LAZY) · 분석당 쿼리 2개(N+1 감수 — size 50 상한) */
+    private AnalysisSummary toSummary(Analysis a) {
+        String lastStatus = messageRepository.findTopByAnalysisIdOrderByIdDesc(a.getId())
+                .filter(m -> "ASSISTANT".equals(m.getRole())).isPresent() ? "DONE" : "INCOMPLETE";
+        return new AnalysisSummary(String.valueOf(a.getId()), a.getTitle(), a.getPosting().getTitle(), a.getResume().getTitle(),
+                (int) messageRepository.countByAnalysisId(a.getId()), lastStatus, a.getCreatedAt());
+    }
+
+    /** 대화 내역 — 오래된 순 · sources는 DB 문자열 그대로(@JsonRawValue로 배열) */
+    @Transactional(readOnly = true)
     public PageResponse<MessageResponse> messages(AuthUser me, Long analysisId, int page, int size) {
-        throw new UnsupportedOperationException("T-056 미구현");
+        var pageable = PageRequests.of(page, size, Sort.unsorted());
+        if (!analysisRepository.existsById(analysisId)) throw new BusinessException(ErrorCode.ANALYSIS_NOT_FOUND);
+        return PageResponse.of(messageRepository.findByAnalysisIdOrderByIdAsc(analysisId, pageable),
+                m -> new MessageResponse(String.valueOf(m.getId()), m.getRole(), m.getContent(), m.getSources(), m.getCreatedAt()));
     }
 }
