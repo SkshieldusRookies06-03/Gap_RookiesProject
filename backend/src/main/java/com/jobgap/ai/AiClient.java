@@ -5,12 +5,14 @@ import com.jobgap.common.ErrorCode;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
 /**
@@ -30,6 +32,8 @@ public class AiClient {
     private static final String TOKEN_HEADER = "X-Internal-Token";
 
     private final RestClient restClient;
+    private final WebClient webClient;
+    private final int streamTimeoutSeconds;
 
     /** Boot 4는 RestClient.Builder 빈이 별도 스타터(restclient)에 있어 정적 builder()를 쓴다 — Jackson 3 변환기는 클래스패스로 자동 등록 */
     public AiClient(AiProperties props) {
@@ -41,6 +45,11 @@ public class AiClient {
                 .requestFactory(factory)
                 .defaultHeader(TOKEN_HEADER, props.internalToken())
                 .build();
+        this.webClient = WebClient.builder()
+                .baseUrl(props.baseUrl())
+                .defaultHeader(TOKEN_HEADER, props.internalToken())
+                .build();
+        this.streamTimeoutSeconds = props.streamTimeoutSeconds();
     }
 
     /** SPEC §6.1 POST /internal/ingest → 201 · 같은 documentId면 AI가 지우고 다시 넣는다(멱등) */
@@ -72,6 +81,15 @@ public class AiClient {
     /** mode = REPORT | FOLLOWUP · history = [{role, content}] 최근 historySize개(이번 질문 제외) */
     public Flux<ServerSentEvent<String>> analyze(String ownerUuid, String postingId, String resumeId, String postingTitle,
                                                  String mode, String question, List<Map<String, String>> history) {
-        throw new UnsupportedOperationException("T-025 미구현");
+        Map<String, Object> body = Map.of("ownerUuid", ownerUuid, "postingId", postingId, "resumeId", resumeId,
+                "postingTitle", postingTitle, "mode", mode,
+                "question", question == null ? "" : question, "history", history == null ? List.of() : history);
+        return webClient.post().uri("/internal/analyze/stream")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
+                .timeout(Duration.ofSeconds(streamTimeoutSeconds));   // 전체 상한 — 오류 처리는 호출하는 서비스가 event: error로
     }
 }
