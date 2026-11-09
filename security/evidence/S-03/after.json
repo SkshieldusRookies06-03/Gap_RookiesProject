@@ -1,0 +1,35 @@
+{
+  "_note": "S-03 (A-3) 조치 후 재확인 — PiiMasker 연결. before.json과 같은 업로드 → 제목·본문 마스킹본만 저장 · maskedCount 2",
+  "_commit": "작업 트리 (fix(security): [S-03] 커밋 대상) · feature/security",
+  "_date": "2026-11-09 KST",
+  "_env": "docker compose (ai-service LLM_PROVIDER=fake)",
+  "request": "POST /api/documents (multipart) file=resume-pii.txt type=RESUME title=\"S-03 resume 010-1234-5678\"",
+  "uploadResponse": {
+    "success": true,
+    "data": {
+      "id": "7",
+      "type": "RESUME",
+      "title": "S-03 resume 010-****-****",
+      "charCount": 84,
+      "createdAt": "2026-11-09T10:58:10.655291027+09:00"
+    },
+    "message": "업로드되었습니다",
+    "timestamp": "2026-11-09T10:58:10.723046763+09:00"
+  },
+  "detailRequest": "GET /api/documents/7",
+  "detailResponse": {
+    "success": true,
+    "data": {
+      "id": "7",
+      "type": "RESUME",
+      "title": "S-03 resume 010-****-****",
+      "charCount": 84,
+      "createdAt": "2026-11-09T10:58:10.655291+09:00",
+      "content": "이름: 테스트지원자\n연락처: 010-****-****\n이메일: a***@e.com\n경력: Java · Spring Boot 3년 (2021~2024)\n",
+      "maskedCount": 2
+    },
+    "message": "문서를 조회했습니다",
+    "timestamp": "2026-11-09T10:58:11.136056245+09:00"
+  },
+  "tests": "DocumentAcceptanceTest 7/7 · BoundaryAcceptanceTest#titlesAreMasked green (questionIsMasked는 T-025 스트림 구현 후)"
+}
