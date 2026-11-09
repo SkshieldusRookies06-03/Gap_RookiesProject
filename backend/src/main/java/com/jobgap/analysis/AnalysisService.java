@@ -14,11 +14,13 @@ import com.jobgap.common.PageResponse;
 import com.jobgap.document.Document;
 import com.jobgap.document.DocumentRepository;
 import com.jobgap.document.DocumentType;
+import com.jobgap.security.AuditLog;
 import com.jobgap.security.AuthUser;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -65,14 +67,19 @@ public class AnalysisService {   // 클래스 단위 @Transactional 없음 — s
         boolean followUp = req.analysisId() != null;
         if (followUp && (req.question() == null || req.question().isBlank())) throw new BusinessException(ErrorCode.VALIDATION_ERROR, "후속 질문을 입력하세요");
         if (!followUp && (req.postingId() == null || req.resumeId() == null)) throw new BusinessException(ErrorCode.VALIDATION_ERROR, "공고와 이력서를 골라 주세요");
-        Prepared p = tx.execute(status -> followUp ? prepareFollowUp(req) : prepareNew(me, req));
+        Prepared p = tx.execute(status -> followUp ? prepareFollowUp(me, req) : prepareNew(me, req));
         return relay(me, p);
     }
 
     private Prepared prepareNew(AuthUser me, StreamRequest req) {
         User owner = userRepository.findByUuid(me.uuid()).orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-        Document posting = findDocument(req.postingId());
-        Document resume = findDocument(req.resumeId());
+        // [S-01] 둘 다 조회한 뒤 소유 403 → 존재 404 → (아래) 종류 400 — 남의 문서가 404·400에 묻히지 않게(ADR-06)
+        Optional<Document> p = documentRepository.findById(Long.valueOf(req.postingId()));
+        Optional<Document> r = documentRepository.findById(Long.valueOf(req.resumeId()));
+        requireOwned(me, p);
+        requireOwned(me, r);
+        Document posting = p.orElseThrow(() -> new BusinessException(ErrorCode.DOCUMENT_NOT_FOUND));
+        Document resume = r.orElseThrow(() -> new BusinessException(ErrorCode.DOCUMENT_NOT_FOUND));
         if (posting.getDocType() != DocumentType.JOB_POSTING || resume.getDocType() != DocumentType.RESUME) throw new BusinessException(ErrorCode.DOCUMENT_TYPE_MISMATCH);
         String title = posting.getTitle() + " × " + resume.getTitle();
         Analysis a = Analysis.create(owner, posting, resume, title.length() > TITLE_MAX ? title.substring(0, TITLE_MAX) : title);
@@ -81,9 +88,8 @@ public class AnalysisService {   // 클래스 단위 @Transactional 없음 — s
         return new Prepared(a.getId(), true, req.postingId(), req.resumeId(), posting.getTitle(), "REPORT", "", List.of());
     }
 
-    private Prepared prepareFollowUp(StreamRequest req) {
-        Analysis a = analysisRepository.findById(Long.valueOf(req.analysisId()))
-                .orElseThrow(() -> new BusinessException(ErrorCode.ANALYSIS_NOT_FOUND));
+    private Prepared prepareFollowUp(AuthUser me, StreamRequest req) {
+        Analysis a = ownedAnalysis(me, Long.valueOf(req.analysisId()));   // [S-01]
         // history는 USER 저장 **전에** 읽는다(이번 질문 제외) · 최신순으로 오니 오래된 순으로 뒤집는다
         List<Map<String, String>> history = new ArrayList<>();
         for (AnalysisMessage m : messageRepository.findTop6ByAnalysisIdOrderByIdDesc(a.getId())) {
@@ -97,8 +103,24 @@ public class AnalysisService {   // 클래스 단위 @Transactional 없음 — s
                 a.getPosting().getTitle(), "FOLLOWUP", question, history);
     }
 
-    private Document findDocument(String id) {
-        return documentRepository.findById(Long.valueOf(id)).orElseThrow(() -> new BusinessException(ErrorCode.DOCUMENT_NOT_FOUND));
+    /**
+     * [S-01] 소유 검증(B-2 IDOR · ADR-06) — 없으면 404, 남의 것이면 403 + 감사 로그(404로 숨기지 않는다) · 본인 소유만(ADMIN 예외 없음).
+     * 트랜잭션 안에서만 부른다(owner LAZY).
+     */
+    private void requireOwned(AuthUser me, Optional<Document> doc) {
+        doc.filter(d -> !d.getOwner().getUuid().equals(me.uuid())).ifPresent(d -> {
+            AuditLog.forbidden(me.uuid(), "document", d.getId());
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        });
+    }
+
+    private Analysis ownedAnalysis(AuthUser me, Long id) {
+        Analysis a = analysisRepository.findById(id).orElseThrow(() -> new BusinessException(ErrorCode.ANALYSIS_NOT_FOUND));
+        if (!a.getOwner().getUuid().equals(me.uuid())) {
+            AuditLog.forbidden(me.uuid(), "analysis", id);
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return a;
     }
 
     /** AI의 token·sources·error는 그대로 · done은 가로채 저장 후 자기 done · 연결 실패·타임아웃·EOF는 event: error */
@@ -163,7 +185,7 @@ public class AnalysisService {   // 클래스 단위 @Transactional 없음 — s
     @Transactional(readOnly = true)
     public PageResponse<MessageResponse> messages(AuthUser me, Long analysisId, int page, int size) {
         var pageable = PageRequests.of(page, size, Sort.unsorted());
-        if (!analysisRepository.existsById(analysisId)) throw new BusinessException(ErrorCode.ANALYSIS_NOT_FOUND);
+        ownedAnalysis(me, analysisId);   // [S-01] 남의 분석 403 · 없으면 404
         return PageResponse.of(messageRepository.findByAnalysisIdOrderByIdAsc(analysisId, pageable),
                 m -> new MessageResponse(String.valueOf(m.getId()), m.getRole(), m.getContent(), m.getSources(), m.getCreatedAt()));
     }
