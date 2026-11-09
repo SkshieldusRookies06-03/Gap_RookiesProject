@@ -29,7 +29,7 @@
 | F-7 | [에러 처리] 에러 봉투 → 사용자 문구 변환 확인(SPEC §4.4) |  |  |  |  |  |
 | A-1 | [AI 모듈 외부 직접 접근] 외부에서 EC2:8000 · 내부 토큰 없는 호출 401 |  |  |  |  |  |
 | A-2 | [Prompt Injection] 공고 본문에 숨긴 지시 (예비) |  |  |  |  |  |
-| A-3 | [민감정보 유출] 가짜 연락처 이력서 `POST /api/documents` → `GET /api/documents/{id}` 제목·본문 원문 · maskedCount 0 (조치 전 ec1ddc3) | 발견 | c7fa960 | 같은 업로드 → 제목·본문 마스킹본만 · maskedCount 2 · DocumentAcceptanceTest 7/7 · titlesAreMasked · questionIsMasked green(질문은 USER 저장·AI 전송 둘 다 마스킹본) | evidence/S-03/ | S-03 |
+| A-3 | [민감정보 유출] 가짜 연락처 이력서 `POST /api/documents` → `GET /api/documents/{id}` 제목·본문 원문 · maskedCount 0 (조치 전 ec1ddc3) | 발견 | c7fa960 · ecf2f31(질문) | 같은 업로드 → 제목·본문 마스킹본만 · maskedCount 2 · DocumentAcceptanceTest 7/7 · titlesAreMasked · questionIsMasked green(질문은 USER 저장·AI 전송 둘 다 마스킹본) | evidence/S-03/ | S-03 |
 | A-4 | [과도한 사용] 질문 1000자 상한 · 반복 호출 |  |  |  |  |  |
 | A-5 | [API Key 관리] 코드·로그·이미지 키 grep · compose 서비스별 env |  |  |  |  |  |
 | I-1 | [비밀정보 분리] `check-sec-deploy` I-1 (이력 포함) |  |  |  |  |  |
