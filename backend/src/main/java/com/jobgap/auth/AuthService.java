@@ -8,10 +8,12 @@ import com.jobgap.auth.AuthDtos.UserResponse;
 import com.jobgap.common.BusinessException;
 import com.jobgap.common.ErrorCode;
 import com.jobgap.security.JwtProvider;
+import com.jobgap.security.AuditLog;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,7 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** T-015: registration, login, and login audit events. T-058/T-027 remain separate tickets. */
+/** T-015 가입/로그인 · T-058 refresh/로그아웃 · T-027 로그인 잠금. */
 @Service
 public class AuthService {
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
@@ -30,6 +32,12 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final ApplicationEventPublisher events;
+
+    @Value("${app.login.max-failures:5}")
+    private int maxFailures;
+
+    @Value("${app.login.lock-minutes:15}")
+    private int lockMinutes;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        JwtProvider jwtProvider, ApplicationEventPublisher events) {
@@ -55,20 +63,39 @@ public class AuthService {
         return toResponse(saved);
     }
 
-    // A failed-login transaction must not roll back once T-027 adds failure counters.
+    // 실패 401에서 DB의 실패 횟수가 롤백되지 않아야 한다.
     @Transactional(noRollbackFor = BusinessException.class)
     public LoginResponse login(LoginRequest req) {
         String email = req.email().trim().toLowerCase(java.util.Locale.ROOT);
         User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null || !passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+
+        // 없는 계정에서는 423을 반환하지 않아 계정 존재 여부를 노출하지 않는다.
+        if (user == null) {
             audit(email, false);
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
 
+        OffsetDateTime now = OffsetDateTime.now(SEOUL);
+        // 먼저 잠금 확인: 맞는 비밀번호도 15분 동안 423.
+        if (user.isLocked(now)) {
+            throw new BusinessException(ErrorCode.ACCOUNT_LOCKED,
+                    "로그인 5회 실패로 잠겼습니다. 해제: " + user.getLockedUntil().toLocalTime());
+        }
+
+        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+            boolean lockedNow = user.recordFailure(maxFailures, Duration.ofMinutes(lockMinutes));
+            if (lockedNow) {
+                AuditLog.locked(user.getEmail());
+            }
+            audit(email, false);
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        user.recordSuccess();
         String access = jwtProvider.createAccessToken(user.getUuid(), user.getRole());
         String refresh = jwtProvider.newRefreshToken();
         user.rotateRefresh(JwtProvider.sha256(refresh),
-                OffsetDateTime.now(SEOUL).plus(Duration.ofMillis(jwtProvider.refreshTokenExpirationMs())));
+                now.plus(Duration.ofMillis(jwtProvider.refreshTokenExpirationMs())));
         audit(email, true);
         return new LoginResponse(access, refresh, toResponse(user));
     }
