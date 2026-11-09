@@ -10,7 +10,7 @@
 | B-2 | [접근 제어 / IDOR] 토큰 A로 B의 문서·분석 메시지 GET/PUT/DELETE (S-01) |  |  |  |  |  |
 | B-3 | [인증 / JWT] 발급 토큰 헤더 alg 디코드 → HS256 · 서명 교체 토큰·alg none 토큰으로 `GET /api/documents` → 401 봉투 · 만료는 `./mvnw test -Dtest='SecurityAcceptanceTest,JwtProviderTest'` 9/9(만료 401 `TOKEN_EXPIRED`) · `grep -rnE '(secret\|SECRET)\s*=\s*"' backend/src/main/java` 0건 | 미발견 |  |  | evidence/B-3.txt |  |
 | B-4 | [Refresh Token 관리] DB `LENGTH(refresh_token_hash)` 64 · hex64 · `POST /api/auth/refresh` 회전 후 이전 refresh 401 `INVALID_REFRESH_TOKEN` · 로그아웃 후 새 refresh 401 | 미발견 |  |  | evidence/B-4.txt |  |
-| B-5 | [로그인 Brute Force] Burp Intruder `POST /api/auth/login` kim · password 위치 페이로드 10개 → 10건 전부 401, 잠금 없음 (조치 전 0b81eba) | 발견 |  |  | evidence/S-02/ | S-02 |
+| B-5 | [로그인 Brute Force] Burp Intruder `POST /api/auth/login` kim · password 위치 페이로드 10개 → 10건 전부 401, 잠금 없음 (조치 전 0b81eba) | 발견 | e19c06a · a1ffb36(태그) | 같은 Burp 공격(동시 1) → 요청 0~4 401 · 6번째부터 423 `ACCOUNT_LOCKED` + 해제 시각 · 잠긴 kim 올바른 비밀번호도 423 · 없는 계정 401 · AUDIT `LOCK` 1줄 · AuthAcceptanceTest 6/6 | evidence/S-02/ | S-02 |
 | B-6 | [CSRF] `grep -rn Cookie backend/src/main` 0건 · 사유: 인증은 Authorization 헤더로만 전달(SPEC §1 · docs/5 §5.2) | 해당 없음(쿠키 인증 없음 — Authorization 헤더만) |  |  | evidence/B-6.txt |  |
 | B-7 | [보안 설정 오류] `check-sec-deploy` · USER 토큰 `/actuator/metrics` · CORS Origin |  |  |  |  |  |
 | B-8 | [예외 / 로그] 500 유발 요청 → 응답에 스택 없음 |  |  |  |  |  |
@@ -29,7 +29,7 @@
 | F-7 | [에러 처리] 에러 봉투 → 사용자 문구 변환 확인(SPEC §4.4) |  |  |  |  |  |
 | A-1 | [AI 모듈 외부 직접 접근] 외부에서 EC2:8000 · 내부 토큰 없는 호출 401 |  |  |  |  |  |
 | A-2 | [Prompt Injection] 공고 본문에 숨긴 지시 (예비) |  |  |  |  |  |
-| A-3 | [민감정보 유출] 가짜 연락처 이력서 `POST /api/documents` → `GET /api/documents/{id}` 제목·본문 원문 · maskedCount 0 (조치 전 ec1ddc3) | 발견 | c7fa960 | 같은 업로드 → 제목·본문 마스킹본만 · maskedCount 2 · DocumentAcceptanceTest 7/7 · titlesAreMasked green (질문은 T-025 뒤) | evidence/S-03/ | S-03 |
+| A-3 | [민감정보 유출] 가짜 연락처 이력서 `POST /api/documents` → `GET /api/documents/{id}` 제목·본문 원문 · maskedCount 0 (조치 전 ec1ddc3) | 발견 | c7fa960 | 같은 업로드 → 제목·본문 마스킹본만 · maskedCount 2 · DocumentAcceptanceTest 7/7 · titlesAreMasked · questionIsMasked green(질문은 USER 저장·AI 전송 둘 다 마스킹본) | evidence/S-03/ | S-03 |
 | A-4 | [과도한 사용] 질문 1000자 상한 · 반복 호출 |  |  |  |  |  |
 | A-5 | [API Key 관리] 코드·로그·이미지 키 grep · compose 서비스별 env |  |  |  |  |  |
 | I-1 | [비밀정보 분리] `check-sec-deploy` I-1 (이력 포함) |  |  |  |  |  |
