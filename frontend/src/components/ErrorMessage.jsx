@@ -17,9 +17,6 @@ const BY_CODE = {
   INVALID_CREDENTIALS: '이메일 또는 비밀번호가 올바르지 않습니다',
   ACCOUNT_LOCKED: '로그인 5회 실패로 잠겼습니다. 잠시 후 다시 시도해 주세요',
   UNAUTHORIZED: '다시 로그인해 주세요',
-  TOKEN_EXPIRED: '다시 로그인해 주세요',
-  NOT_FOUND: '목록으로',
-  INTERNAL_SERVER_ERROR: '잠시 후 다시 시도해 주세요',
   INVALID_REFRESH_TOKEN: '다시 로그인해 주세요',
   ABORTED: '요청을 취소했습니다',
 };

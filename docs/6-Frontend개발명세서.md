@@ -42,11 +42,11 @@ frontend/src/
 
 | 페이지 | 컴포넌트 | 기능 |
 |--------|----------|------|
-| 로그인 `ROUTES.LOGIN` `/login` · 공개 | `LoginPage` (FE-화면) | 로그인 → `/documents` · 실패 문구(401·423) · 빈 상태 없음 |
-| 회원가입 `ROUTES.REGISTER` `/register` · 공개 | `RegisterPage` (FE-화면) | 가입 · 400 `fields[]`를 필드 아래에 · 빈 상태 없음 |
-| 내 문서 `ROUTES.DOCUMENTS` `/documents` · 보호 | `DocumentsPage` (FE-화면) | 타입 탭 · 정렬 · 페이지 · 업로드 · 제목 수정 · 삭제 · 빈 "공고나 이력서를 올려 보세요" |
+| 로그인 `ROUTES.LOGIN` `/login` · 공개 | `LoginPage` (FE-화면 · 구현 예정 T-020) | 로그인 → `/documents` · 실패 문구(401·423) · 빈 상태 없음 |
+| 회원가입 `ROUTES.REGISTER` `/register` · 공개 | `RegisterPage` (FE-화면 · 구현 예정 T-020) | 가입 · 400 `fields[]`를 필드 아래에 · 빈 상태 없음 |
+| 내 문서 `ROUTES.DOCUMENTS` `/documents` · 보호 | `DocumentsPage` (FE-화면 · 구현 예정 T-021) | 타입 탭 · 정렬 · 페이지 · 업로드 · 제목 수정 · 삭제 · 빈 "공고나 이력서를 올려 보세요" |
 | 분석 `ROUTES.ANALYSIS_NEW` `/analyses/new` · `ROUTES.ANALYSIS` `/analyses/:id` · 보호 | `AnalysisPage` (FE-분석 · 구현 예정 T-022·T-030) | 공고·이력서 선택 → 리포트 스트리밍 · 중단 · 출처 · 후속 질문 · 빈 "공고 1개와 이력서 1개를 고르세요" |
-| 분석 기록 `ROUTES.ANALYSES` `/analyses` · 보호 | `AnalysesPage` (FE-화면) | 분석 목록 · `INCOMPLETE` = "중단됨" · 클릭 → `ROUTES.analysis(id)` · 빈 "아직 분석이 없습니다" |
+| 분석 기록 `ROUTES.ANALYSES` `/analyses` · 보호 | `AnalysesPage` (FE-화면 · 구현 예정 T-031) | 분석 목록 · `INCOMPLETE` = "중단됨" · 클릭 → `ROUTES.analysis(id)` · 빈 "아직 분석이 없습니다" |
 
 보호 라우트(`App.jsx`의 `Protected`): Refresh 토큰이 없으면 `/login`으로 · 그 밖 경로는 `/documents`로.
 
@@ -54,21 +54,13 @@ frontend/src/
 
 ### 5.1 공통 컴포넌트
 
-공용 컴포넌트 4종 모두 2화면 이상에서 재사용된다(평가표 R-FE01 충족 · T-059).
-
-| 컴포넌트 | 쓰이는 화면 (재사용 현황) | Props(PropTypes) |
+| 컴포넌트 | 쓰이는 화면 | Props(PropTypes) |
 |---|---|---|
-| `Button` | 로그인 · 가입 · 내 문서 (3개 화면) | `children`(필수) · `variant` primary/secondary/danger · `type` button/submit · `disabled` · `onClick` |
-| `Layout` | 보호 화면 전부(내 문서 · 분석 · 분석 기록, 3개 화면) | `children`(필수) — 상단 내비 · 사용자 이름 · 로그아웃(`POST /api/auth/logout` 시도 후 `clear()`, `useChatStore.getState().reset()` 호출) |
-| `LoadingSpinner` | 내 문서 · 분석 기록 · 분석(“생성 중…”) (3개 화면) | `label`(기본 "불러오는 중…") · `role="status"` |
-| `EmptyState` | 내 문서 · 분석 기록 · 분석 (3개 화면) | `message`(필수) · `action` |
-| `ErrorMessage` | 전 화면 (로그인·가입은 `messageFor`, 내 문서·분석·분석기록은 컴포넌트) | `error`({code, message}) · `onRetry` — `messageFor(error)`로 코드별 사용자 문구(서버 message를 그대로 내지 않는다 · F-7 · 예외: 423은 message에서 해제 시각 `HH:MM[:SS]`만 뽑아 붙인다 — SPEC §4.4) |
-
-`ErrorMessage` 최종 지원 에러 코드(`BY_CODE`):
-- 인증/권한: `UNAUTHORIZED`("다시 로그인해 주세요"), `TOKEN_EXPIRED`("다시 로그인해 주세요"), `INVALID_CREDENTIALS`("이메일 또는 비밀번호가 올바르지 않습니다"), `INVALID_REFRESH_TOKEN`("다시 로그인해 주세요"), `FORBIDDEN`("접근 권한이 없습니다"), `ACCOUNT_LOCKED`("로그인 5회 실패로 잠겼습니다... {시각}에 해제됩니다")
-- 리소스/요청: `DOCUMENT_NOT_FOUND`("문서를 찾을 수 없습니다"), `ANALYSIS_NOT_FOUND`("분석을 찾을 수 없습니다"), `NOT_FOUND`("목록으로"), `DOCUMENT_TYPE_MISMATCH`("공고와 이력서를 각각 골라 주세요"), `VALIDATION_ERROR`("입력값을 확인해 주세요"), `DUPLICATE_EMAIL`("이미 가입된 이메일입니다"), `DUPLICATE_TITLE`("같은 제목의 문서가 있습니다")
-- 파일/서버: `FILE_TOO_LARGE`("200KB 이하 파일만 올릴 수 있습니다"), `UNSUPPORTED_FILE`(".md 또는 .txt(UTF-8) 파일만 올릴 수 있습니다"), `INTERNAL_SERVER_ERROR`("잠시 후 다시 시도해 주세요"), `AI_UNAVAILABLE`("분석 서버가 응답하지 않습니다")
-- 네트워크/클라이언트: `NETWORK_ERROR`("서버에 연결할 수 없습니다"), `ABORTED`("요청을 취소했습니다")
+| `Button` | 로그인 · 가입 · 내 문서 · 분석 | `children`(필수) · `variant` primary/secondary/danger · `type` button/submit · `disabled` · `onClick` |
+| `Layout` | 보호 화면 전부(내 문서 · 분석 · 분석 기록) | `children`(필수) — 상단 내비 · 사용자 이름 · 로그아웃 |
+| `LoadingSpinner` | 내 문서 · 분석(“생성 중…”) · 분석 기록 | `label`(기본 "불러오는 중…") · `role="status"` |
+| `EmptyState` | 내 문서 · 분석 · 분석 기록 | `message`(필수) · `action` |
+| `ErrorMessage` | 전 화면 | `error`({code, message}) · `onRetry` — `messageFor(error)`로 코드별 사용자 문구(서버 message를 그대로 내지 않는다 · F-7 · 예외: 423은 message에서 해제 시각 `HH:MM[:SS]`만 뽑아 붙인다 — SPEC §4.4) |
 
 ### 5.2 채팅 컴포넌트
 
@@ -90,7 +82,7 @@ AnalysisPage                    state: useChatStream() → {messages, streaming,
 | Hook | 반환값 | 쓰는 화면 | 책임 |
 |---|---|---|---|
 | `useChatStream(initialAnalysisId?)` | `{ messages, streaming, error, analysisId, start, stop, hydrate }` | 분석 | `start({postingId,resumeId})` 새 분석 / `start({analysisId,question})` 후속 · `streamPost` + `getReader()` + `createSseParser` · 이벤트별 갱신(analysis → id · token 누적 · sources · done · error) · `stop()` = AbortController · `hydrate(messages)` = 지난 대화 채우기 (판정: `useChatStream.test.jsx`) |
-| `useUpload()` | `{ upload, uploading, error }` | 내 문서 | `upload({file,type,title})` → `DocumentSummary` · 클라이언트 사전 검증(.md/.txt · 200KB) 후 `api.upload` |
+| `useUpload()` | `{ upload, uploading, error }` | 내 문서 | `upload({file,type,title})` → `DocumentSummary` · 클라이언트 검증(.md/.txt · 200KB) 후 `api.upload` (구현 예정 T-021) |
 
 ## 6. 상태 관리
 
@@ -105,21 +97,17 @@ export const useAuthStore = create(persist(
 // stores/chatStore.js — 지금 보고 있는 분석의 화면 상태(서버 데이터 사본 아님)
 export const useChatStore = create((set) => ({ analysisId: null, messages: [], setAnalysisId, setMessages, reset }));
 ```
-- **Access 토큰**: 메모리에만 보관하여 XSS 시 저장소 탈취 방지(F-2).
-- **Refresh 토큰**: `localStorage`(`partialize`)에 영속화. 새로고침 직후(Access가 없고 Refresh만 있을 때) 로그인·가입·refresh를 제외한 일반 API 요청 직전에 refresh 1회를 자동 호출하여 세션을 복구한다.
-- **로그아웃/초기화**: `Layout`에서 로그아웃 시 `POST /api/auth/logout` 시도 후 `authStore.clear()` 및 `useChatStore.getState().reset()`을 호출하여 세션과 화면 상태를 비운다.
+Access는 메모리에만, Refresh만 localStorage(`partialize`) — 새로고침 후에도 로그인을 유지하되 15분짜리 Access가 저장소에 남지 않게 한다. 잔여 위험(XSS 시 Refresh 탈취)은 텍스트 렌더·CSP·Refresh 회전으로 줄이고 9번 §7에 적는다(F-2).
 
 ## 7. API 연동
 
 `src/api/client.js` — axios 대신 `fetch` 래퍼 하나(모든 HTTP 호출은 여기를 지난다):
-- 성공 봉투를 벗겨 `data`만 반환 · `success:false`면 `ApiError(status·code·message·fields)`로 reject · 봉투가 아닌 응답(nginx HTML 413 등)도 `ApiError`(`FILE_TOO_LARGE`)
-- **새로고침 직후 세션 복구**: Access가 없고 Refresh만 존재하면 일반 요청 직전에 refresh 1회를 먼저 수행하여 Access를 복원한다(로그인·가입·refresh 경로는 제외).
-- **401 및 토큰 갱신**: `TOKEN_EXPIRED`(401)만 refresh 1회 후 재요청 — 동시 요청이어도 refresh는 한 번만 수행: 탭 안은 진행 중 Promise 공유, 탭 사이는 `navigator.locks.request('jobgap-refresh')` 안에서 localStorage를 다시 읽고 그 Refresh로 요청(회전된 옛 값 재사용 방지) · refresh 실패나 그 밖 401이면 `authStore.clear()`.
-- **예외 매핑**: 사용자가 `signal`로 취소하면 `ABORTED`("요청을 취소했습니다") · 타임아웃 및 네트워크 연결 실패는 `NETWORK_ERROR`("서버에 연결할 수 없습니다").
-- **타임아웃**: 일반 10초 · 업로드·삭제 35초(서버가 AI 적재·삭제를 기다린다).
-- `streamPost(path, body, signal)`: 스트림은 `fetch` + `ReadableStream`(이유: `EventSource`는 POST·`Authorization` 헤더를 못 보낸다) · `Response`를 그대로 반환하고, 시작 전 검증 실패(403/404/400 JSON 봉투)는 `ApiError`로 던짐 · `TOKEN_EXPIRED`면 refresh 1회 후 재시도하며, 401이나 refresh 실패 시 `clear()`, 403은 세션 유지.
+- 성공 봉투를 벗겨 `data`만 반환 · `success:false`면 `ApiError(status·code·message·fields)`로 reject · 봉투가 아닌 응답(nginx HTML 413 등)도 `ApiError`
+- `TOKEN_EXPIRED`(401)만 refresh 1회 후 재요청 — 동시 401이어도 refresh는 한 번: 탭 안은 진행 중 Promise 공유, 탭 사이는 `navigator.locks.request('jobgap-refresh')` 안에서 localStorage를 다시 읽고 그 Refresh로 요청(회전된 옛 값 재사용 방지) · refresh 실패나 그 밖 401이면 `authStore.clear()`
+- 타임아웃: 일반 10초 · 업로드·삭제 35초(서버가 AI 적재·삭제를 기다린다)
+- `streamPost(path, body, signal)`: 스트림은 `fetch` + `ReadableStream`(이유: `EventSource`는 POST·`Authorization` 헤더를 못 보낸다) · `Response`를 그대로 반환하고, 시작 전 검증 실패(403/404/400 JSON 봉투)는 `ApiError`로 · `TOKEN_EXPIRED`면 refresh 후 재시도
 
-`src/api/sse.js` — `createSseParser(onEvent)`: 조각을 버퍼에 모아 `\n\n` 프레임 단위 처리 · `event:`·`data:` 뒤 공백 0~1개 허용(Spring은 공백 없이 쓴다) · CRLF 및 단독 CR 허용 · **CR이 조각 끝에서 갈려도**(`\r` | `\n`) 한 줄바꿈으로 처리 · `decodeData()`로 token의 JSON 문자열을 원문으로(판정: `sse.test.js` · `client.test.js` · `session.test.js`).
+`src/api/sse.js` — `createSseParser(onEvent)`: 조각을 버퍼에 모아 `\n\n` 프레임 단위 · `event:`·`data:` 뒤 공백 0~1개 허용(Spring은 공백 없이 쓴다) · CRLF 허용 · `decodeData()`로 token의 JSON 문자열을 원문으로(판정: `sse.test.js` · `client.test.js`).
 
 ## 8. 주요 기능
 
