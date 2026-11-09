@@ -1,0 +1,9 @@
+# B-9 감사 로그 4줄 — LOGIN_SUCCESS · LOGIN_FAILURE · 401 · 403 (이메일은 k***@e.com로 마스킹)
+# 환경: docker compose backend (feature/security · T-028 작업 트리) · 2026-11-09 KST
+# 명령: docker logs jobgap-backend-1 | grep AUDIT
+#   로그인 성공 → 로그인 실패 → 토큰 없이 GET /api/documents → kim 토큰으로 lee 문서 GET /api/documents/3
+
+2026-11-09T10:58:35.553+09:00  INFO 1 --- [jobgap] [nio-8080-exec-2] AUDIT : LOGIN_SUCCESS account=k***@e.com
+2026-11-09T10:58:35.873+09:00  WARN 1 --- [jobgap] [nio-8080-exec-4] AUDIT : LOGIN_FAILURE account=k***@e.com reason=BadCredentialsException
+2026-11-09T10:58:36.142+09:00  WARN 1 --- [jobgap] [nio-8080-exec-6] AUDIT : 401 UNAUTHORIZED ip=172.21.0.1 uri=GET /api/documents
+2026-11-09T10:58:36.750+09:00  WARN 1 --- [jobgap] [io-8080-exec-10] AUDIT : 403 owner-mismatch actor=11111111-1111-4111-8111-111111111111 resource=document id=3

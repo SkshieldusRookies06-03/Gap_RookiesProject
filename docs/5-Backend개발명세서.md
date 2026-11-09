@@ -5,7 +5,7 @@
 
 ## 1. 기술 스택
 
-- **Framework**: Spring Boot 3.3.5 (Web · Security · Data JPA · Validation · Actuator · WebFlux(WebClient)) · Flyway(`flyway-core` + `flyway-mysql`) · jjwt 0.12.6
+- **Framework**: Spring Boot 4.1.2 (WebMVC · Security · Data JPA · Validation · Actuator · WebFlux(WebClient)) · Flyway(`spring-boot-starter-flyway` + `flyway-mysql`) · jjwt 0.12.6 · Jackson 3(`tools.jackson.*` · 애너테이션만 `com.fasterxml.jackson.annotation`)
 - **언어**: Java 17
 - **데이터베이스**: MariaDB 10.11 (`mariadb-java-client`) · `ddl-auto: validate` + Flyway 마이그레이션
 - **빌드**: Maven — 로컬 `./mvnw`(wrapper · T-004에서 커밋), CI는 러너의 `mvn`, Docker 빌드 이미지 `maven:3.9.9-eclipse-temurin-17`
@@ -161,7 +161,7 @@ List<Analysis> findAllUsing(@Param("docId") Long docId);
 - Actuator: 노출 `health,info` · `/actuator/**` ADMIN(health만 공개)
 - 감사 로그(로거 `AUDIT`): 로그인 성공·실패(`SecurityAuditListener`) · 401(`RestAuthenticationEntryPoint` — IP·URI) · 403(`RestAccessDeniedHandler` · `AuditLog.forbidden`) · 잠금(`AuditLog.locked`). 이메일은 `PiiMasker.maskEmail`로 가린다 — 예: `LOGIN_FAILURE account=k***@e.com reason=BadCredentialsException`. 토큰·비밀번호·질문 본문은 로그에 남기지 않는다.
 - 500: `GlobalExceptionHandler.unknown`이 스택을 서버 로그에만 남기고 응답은 `INTERNAL_SERVER_ERROR` 일반 메시지
-<!-- TODO(D3·기술 리드): 감사 로그 4줄 실제 캡처 경로 security/evidence/B-9-audit.txt 를 여기 링크 -->
+- 감사 로그 실제 캡처(로그인 성공·실패·401·403 4줄): [`security/evidence/B-9-audit.txt`](../security/evidence/B-9-audit.txt)
 
 ## 6. AI 모듈 연동
 

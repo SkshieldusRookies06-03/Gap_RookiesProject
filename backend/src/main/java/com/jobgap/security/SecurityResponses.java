@@ -1,6 +1,6 @@
 package com.jobgap.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.jobgap.common.ApiResponse;
 import com.jobgap.common.ErrorCode;
 import jakarta.servlet.http.HttpServletResponse;

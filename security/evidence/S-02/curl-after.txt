@@ -1,0 +1,40 @@
+# S-02 [B-5 로그인 Brute Force] 조치 후 재확인
+# 환경: docker compose (dev a675472 + 로컬 빌드) · 조치 커밋 e19c06a(코드) · a1ffb36([S-02] 태그) · 2026-11-09 15:27 KST
+# 결과: 실패 5회째에 잠금 · 6번째 요청부터 423 ACCOUNT_LOCKED (SPEC §7 S-02 "6회째 423 + 해제 시각")
+
+## 1. Burp Intruder (intruder-after.png) — POST /api/auth/login · kim · 동시 요청 1
+요청 0(기준 요청 · 틀린 비밀번호)~4  → 401 INVALID_CREDENTIALS (실패 1~5회)
+요청 5~10 (wrong5~wrong10)          → 423 ACCOUNT_LOCKED
+조치 전(intruder-before.png · 0b81eba): 10건 전부 401 · 잠금 없음
+
+## 2. 잠긴 계정 · 올바른 비밀번호도 423
+$ curl -s -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"email":"kim@example.com","password":"Passw0rd!"}'
+{"success":false,"data":null,"message":"로그인 5회 실패로 잠겼습니다. 해제: 15:42:01.940694","timestamp":"2026-11-09T15:28:02.608298787+09:00","statusCode":423,"code":"ACCOUNT_LOCKED"} HTTP 423
+
+## 3. 없는 계정은 423 없이 같은 401 (계정 존재 여부 노출 없음)
+$ curl -s -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"email":"nobody@example.com","password":"wrong"}'
+{"success":false,"data":null,"message":"이메일 또는 비밀번호가 올바르지 않습니다","timestamp":"2026-11-09T15:28:02.882175672+09:00","statusCode":401,"code":"INVALID_CREDENTIALS"} HTTP 401
+
+## 4. 다른 계정은 영향 없음
+$ curl -s -o /dev/null -w "HTTP %{http_code}" -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"email":"lee@example.com","password":"Passw0rd!"}'
+HTTP 200
+
+## 5. DB 상태
+$ SELECT email, failed_login_count, locked_until FROM users;
+kim@example.com  0  2026-11-09 15:42:01.940694   (15분 잠금 · 카운트는 잠글 때 0으로)
+lee@example.com  0  NULL
+
+## 6. 감사 로그 — docker logs jobgap-backend-1 | grep AUDIT
+2026-11-09T15:27:01.222 AUDIT LOGIN_FAILURE account=k***@e.com reason=BadCredentialsException
+2026-11-09T15:27:01.384 AUDIT LOGIN_FAILURE account=k***@e.com reason=BadCredentialsException
+2026-11-09T15:27:01.519 AUDIT LOGIN_FAILURE account=k***@e.com reason=BadCredentialsException
+2026-11-09T15:27:01.712 AUDIT LOGIN_FAILURE account=k***@e.com reason=BadCredentialsException
+2026-11-09T15:27:01.941 AUDIT LOCK account=k***@e.com
+2026-11-09T15:27:01.941 AUDIT LOGIN_FAILURE account=k***@e.com reason=BadCredentialsException
+2026-11-09T15:28:02.881 AUDIT LOGIN_FAILURE account=n***@e.com reason=BadCredentialsException
+2026-11-09T15:28:03.269 AUDIT LOGIN_SUCCESS account=l***@e.com
+
+## 관찰(조치 범위 밖 · 기록만)
+- 잠긴 상태의 시도(423)는 감사 로그 줄이 남지 않는다 → BE-인증에 전달
+- 해제 시각 문구에 마이크로초가 붙는다(15:42:01.940694) — 기능 영향 없음
+- 잠금을 이용한 타인 계정 잠금(DoS)은 SPEC §7 잔여 위험

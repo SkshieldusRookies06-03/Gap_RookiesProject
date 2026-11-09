@@ -1,0 +1,9 @@
+# B-6 [CSRF] 쿠키 인증 0 확인 · 사유 문장(SPEC §1)
+# 2026-11-09 KST · 결과: 해당 없음(쿠키 인증 없음 — Authorization 헤더만)
+
+$ grep -rn Cookie backend/src/main
+(0건)
+
+사유(SPEC §1 인증 행 · docs/5 §5.2 CSRF 행 · SecurityConfig csrf.disable()):
+인증 정보는 쿠키가 아니라 Authorization 헤더로만 전달된다. 브라우저가 교차 사이트 요청에 이 헤더를 자동으로 붙이지 않으므로
+CSRF 공격 전제가 성립하지 않는다. 상태 변경은 GET으로 노출하지 않는다(GET = 조회 전용).
