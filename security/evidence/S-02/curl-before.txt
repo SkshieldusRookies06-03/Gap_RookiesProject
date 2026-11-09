@@ -1,0 +1,20 @@
+# S-02 (B-5) 조치 전 재현 — 로그인 Brute Force
+# 조치 전 커밋: 0b81eba (origin/main · T-015 로그인 머지 · T-027 잠금 없음) · 브랜치 demo/S-02
+# 환경: docker compose (database·backend) · 2026-11-09 09:28 KST
+# 명령: POST localhost:8080/api/auth/login · kim@example.com · 오답 비밀번호 10개
+
+정상 비밀번호 → HTTP 200
+ 1회 wrong1  → HTTP 401 INVALID_CREDENTIALS  (09:28:18.382)
+ 2회 wrong2  → HTTP 401 INVALID_CREDENTIALS  (09:28:18.704)
+ 3회 wrong3  → HTTP 401 INVALID_CREDENTIALS  (09:28:19.024)
+ 4회 wrong4  → HTTP 401 INVALID_CREDENTIALS  (09:28:19.340)
+ 5회 wrong5  → HTTP 401 INVALID_CREDENTIALS  (09:28:19.658)
+ 6회 wrong6  → HTTP 401 INVALID_CREDENTIALS  (09:28:19.971)
+ 7회 wrong7  → HTTP 401 INVALID_CREDENTIALS  (09:28:20.276)
+ 8회 wrong8  → HTTP 401 INVALID_CREDENTIALS  (09:28:20.584)
+ 9회 wrong9  → HTTP 401 INVALID_CREDENTIALS  (09:28:20.887)
+10회 wrong10 → HTTP 401 INVALID_CREDENTIALS  (09:28:21.198)
+10회 실패 직후 정상 비밀번호 → HTTP 200
+
+결론: 존재 계정에 10회 연속 실패해도 잠금·지연 없음(423 없음) → 발견. 조치는 T-027(5회 잠금).
+응답 본문 예: {"success":false,"data":null,"message":"이메일 또는 비밀번호가 올바르지 않습니다","statusCode":401,"code":"INVALID_CREDENTIALS"}
