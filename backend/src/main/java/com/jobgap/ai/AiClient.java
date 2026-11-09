@@ -1,16 +1,9 @@
 package com.jobgap.ai;
 
-import com.jobgap.common.BusinessException;
-import com.jobgap.common.ErrorCode;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 import reactor.core.publisher.Flux;
 
 /**
@@ -27,46 +20,12 @@ public class AiClient {
 
     public record IngestResult(String documentId, int chunks) {}
 
-    private static final String TOKEN_HEADER = "X-Internal-Token";
-
-    private final RestClient restClient;
-
-    /** Boot 4는 RestClient.Builder 빈이 별도 스타터(restclient)에 있어 정적 builder()를 쓴다 — Jackson 3 변환기는 클래스패스로 자동 등록 */
-    public AiClient(AiProperties props) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofMillis(props.connectTimeoutMs()));
-        factory.setReadTimeout(Duration.ofMillis(props.readTimeoutMs()));
-        this.restClient = RestClient.builder()
-                .baseUrl(props.baseUrl())
-                .requestFactory(factory)
-                .defaultHeader(TOKEN_HEADER, props.internalToken())
-                .build();
-    }
-
-    /** SPEC §6.1 POST /internal/ingest → 201 · 같은 documentId면 AI가 지우고 다시 넣는다(멱등) */
     public IngestResult ingest(String documentId, String ownerUuid, String docType, String title, String text) {
-        Map<String, String> body = Map.of("documentId", documentId, "ownerUuid", ownerUuid,
-                "docType", docType, "title", title, "text", text);
-        try {
-            return restClient.post().uri("/internal/ingest")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(body)
-                    .retrieve()
-                    .body(IngestResult.class);
-        } catch (RestClientException e) {
-            throw new BusinessException(ErrorCode.AI_UNAVAILABLE);
-        }
+        throw new UnsupportedOperationException("T-024 미구현");
     }
 
-    /** SPEC §6.4 DELETE /internal/documents/{id}?ownerUuid=… → 204 (없어도 204 — 멱등) */
     public void deleteDocument(String documentId, String ownerUuid) {
-        try {
-            restClient.delete().uri("/internal/documents/{id}?ownerUuid={owner}", documentId, ownerUuid)
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (RestClientException e) {
-            throw new BusinessException(ErrorCode.AI_UNAVAILABLE);
-        }
+        throw new UnsupportedOperationException("T-024 미구현");
     }
 
     /** mode = REPORT | FOLLOWUP · history = [{role, content}] 최근 historySize개(이번 질문 제외) */
