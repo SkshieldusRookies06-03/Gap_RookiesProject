@@ -12,6 +12,7 @@ import com.jobgap.document.DocumentDtos.DocumentDetail;
 import com.jobgap.document.DocumentDtos.DocumentSummary;
 import com.jobgap.security.AuditLog;
 import com.jobgap.security.AuthUser;
+import com.jobgap.security.PiiMasker;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CodingErrorAction;
@@ -106,10 +107,11 @@ public class DocumentService {   // 클래스 단위 @Transactional 없음 — u
         User owner = userRepository.findByUuid(me.uuid())
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
-        // e. [T-028 기술 리드] PiiMasker 연결 자리 — 마스킹한 title·text·maskedCount로 바꾼다(S-03)
-        String maskedTitle = title;
-        String maskedText = text;
-        int maskedCount = 0;
+        // e. [S-03] 저장·ingest 전에 마스킹 — 제목은 마스킹 뒤 100자로 자르고, 중복 검사도 마스킹한 값으로(SPEC §6.5)
+        PiiMasker.Result body = PiiMasker.mask(text);
+        String maskedTitle = PiiMasker.maskAndTrim(title, 100).text();
+        String maskedText = body.text();
+        int maskedCount = body.count();
 
         // f. 같은 소유자·같은 제목 → 409 (동시 요청은 DB UNIQUE가 2차로 막고 GlobalExceptionHandler가 409로 바꾼다)
         if (documentRepository.existsByOwnerIdAndTitle(owner.getId(), maskedTitle)) {
@@ -156,7 +158,7 @@ public class DocumentService {   // 클래스 단위 @Transactional 없음 — u
     @Transactional
     public DocumentSummary updateTitle(AuthUser me, Long id, String title) {
         Document d = findOwned(me, id);
-        d.changeTitle(title);
+        d.changeTitle(PiiMasker.maskAndTrim(title, 100).text());   // [S-03] 수정 제목도 마스킹
         documentRepository.flush();
         return toSummary(d);
     }
