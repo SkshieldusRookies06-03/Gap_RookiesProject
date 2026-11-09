@@ -19,7 +19,7 @@ import java.util.UUID;
 /**
  * SPEC §2 users (V1__schema.sql) · 오너: BE-인증 T-015 (팀장 합의로 BE-기능이 먼저 작성)
  * 상태 변경은 엔티티 메서드로만 한다(서비스 setter 금지).
- * 남은 메서드: clearRefresh()(T-058) · recordFailure·recordSuccess·isLocked(T-027 — fix(security) 커밋으로 따로)
+ * Refresh 회전(T-058) 및 로그인 잠금(T-027) 상태 변경을 엔티티 메서드로 처리한다.
  */
 @Entity
 @Table(name = "users")
@@ -85,6 +85,28 @@ public class User {
     public void clearRefresh() {
         this.refreshTokenHash = null;
         this.refreshExpiresAt = null;
+    }
+
+    /** 로그인 실패 횟수 누적. 다섯 번째 실패에서는 401을 반환하면서 잠금 상태를 저장한다. */
+    public boolean recordFailure(int maxFailures, java.time.Duration lockDuration) {
+        this.failedLoginCount++;
+        if (this.failedLoginCount >= maxFailures) {
+            this.failedLoginCount = 0;
+            this.lockedUntil = OffsetDateTime.now(ZoneId.of("Asia/Seoul")).plus(lockDuration);
+            return true;
+        }
+        return false;
+    }
+
+    /** 성공하면 실패 횟수와 잠금 기록을 초기화한다. */
+    public void recordSuccess() {
+        this.failedLoginCount = 0;
+        this.lockedUntil = null;
+    }
+
+    /** 잠긴 상태에서는 올바른 비밀번호를 입력해도 로그인할 수 없다. */
+    public boolean isLocked(OffsetDateTime now) {
+        return this.lockedUntil != null && this.lockedUntil.isAfter(now);
     }
 
     @PrePersist

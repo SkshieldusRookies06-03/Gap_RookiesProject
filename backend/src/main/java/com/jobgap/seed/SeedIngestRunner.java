@@ -1,19 +1,46 @@
 package com.jobgap.seed;
 
+import com.jobgap.ai.AiClient;
+import com.jobgap.document.Document;
+import com.jobgap.document.DocumentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 프로파일 seed로 기동하면 DB의 모든 문서를 AI에 delete → ingest (멱등) — SPEC §2 시드.
- * 오너: BE-인증 · 티켓 T-027 (BF의 AiClient를 쓴다). 데모 직전: SPRING_PROFILES_ACTIVE=seed 로 1회 기동.
- */
+/** seed 프로파일로 기동할 때 DB 시드 문서를 AI에 delete → ingest 한다. (T-027) */
 @Component
 @Profile("seed")
 public class SeedIngestRunner implements ApplicationRunner {
+    private static final Logger log = LoggerFactory.getLogger(SeedIngestRunner.class);
+
+    private final DocumentRepository documentRepository;
+    private final AiClient aiClient;
+
+    public SeedIngestRunner(DocumentRepository documentRepository, AiClient aiClient) {
+        this.documentRepository = documentRepository;
+        this.aiClient = aiClient;
+    }
+
     @Override
+    @Transactional(readOnly = true)
     public void run(ApplicationArguments args) {
-        // TODO T-027: documentRepository.findAll() → aiClient.deleteDocument → aiClient.ingest (실패는 로그만, 기동은 계속)
+        for (Document doc : documentRepository.findAll()) {
+            String documentId = doc.getId().toString();
+            try {
+                String ownerUuid = doc.getOwner().getUuid();
+                aiClient.deleteDocument(documentId, ownerUuid);
+                aiClient.ingest(documentId, ownerUuid, doc.getDocType().name(),
+                        doc.getTitle(), doc.getContent());
+                log.info("Seed ingest 완료: documentId={}", documentId);
+            } catch (RuntimeException ex) {
+                // AI 서버가 일시 중단돼도 Spring Boot 기동은 계속한다.
+                log.warn("Seed ingest 실패: documentId={}, error={}",
+                        documentId, ex.getClass().getSimpleName());
+            }
+        }
     }
 }
