@@ -2,27 +2,25 @@ package com.jobgap.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import java.util.TimeZone;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 응답 봉투 JSON 모양 — SPEC §1 응답 봉투·JSON·시간 행. 오너: 기술 리드.
- * application.yml의 spring.jackson 두 줄(write-dates-as-timestamps: false · time-zone: Asia/Seoul)과 같은 설정으로 직렬화해
- * 키·시각 형식을 고정한다. 주의: Jackson2ObjectMapperBuilder만으로는 날짜가 숫자로 나간다 — 날짜 문자열화는 Boot 자동 설정이 켠다. DB 없이 돈다.
+ * application.yml의 spring.jackson 두 줄(datatype.datetime.write-dates-as-timestamps: false · time-zone: Asia/Seoul)과 같은 설정으로 직렬화해
+ * 키·시각 형식을 고정한다. Jackson 3은 날짜 문자열화가 기본값이다. DB 없이 돈다.
  */
 @DisplayName("[기술 리드 T-005] ApiResponse — 성공/에러 봉투 키 · data 항상 · +09:00")
 class ApiResponseJsonTest {
 
-    private final ObjectMapper om = Jackson2ObjectMapperBuilder.json()
-            .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)   // = spring.jackson.serialization.write-dates-as-timestamps: false
-            .timeZone(TimeZone.getTimeZone("Asia/Seoul"))                       // = spring.jackson.time-zone: Asia/Seoul
+    private final ObjectMapper om = JsonMapper.builder()
+            .defaultTimeZone(TimeZone.getTimeZone("Asia/Seoul"))                // = spring.jackson.time-zone: Asia/Seoul
             .build();
 
     private JsonNode write(Object o) throws Exception {
