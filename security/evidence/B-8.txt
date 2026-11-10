@@ -1,0 +1,64 @@
+# B-8 예외 노출 — 실제 HTTP 500 응답에 스택 트레이스가 없는가
+# 점검: 2026-11-10 KST · surim/frontend(HEAD 6b1bc66) · backend 소스 수정 없음
+# 실서버: Docker Compose · http://localhost/api/… (nginx → backend:8080)
+# 이미지 확인: 실행 중 jar의 GlobalExceptionHandler·ApiResponse .class SHA-256 = 오늘 HEAD 로컬 빌드 · jar 안 application.yml의 server.error 설정 = 저장소 값
+
+## A. 정적 분석 (소스)
+backend/src/main/resources/application.yml:28-30  server.error.include-stacktrace: never · include-message: never
+backend/src/main/java/com/jobgap/common/GlobalExceptionHandler.java
+  :94-98   @ExceptionHandler(Exception.class) → log.error("처리되지 않은 예외", e) · 응답 respond(INTERNAL_SERVER_ERROR, null, null) — 스택은 로그에만
+  :74-81   모르는 무결성 위반 → 500 INTERNAL_SERVER_ERROR (DB 메시지는 로그에만)
+  :51-57   깨진 JSON·타입 불일치 등 → 400 VALIDATION_ERROR
+  :89-92   없는 경로·허용 안 된 메서드 → 404 NOT_FOUND
+  :118-120 응답은 항상 application/json 봉투
+backend/src/main/java/com/jobgap/common/ApiResponse.java:33-35 봉투 필드만(예외 클래스·스택 필드 없음)
+
+## B. 단위 테스트 (2026-11-10 실행)
+$ cd backend && ./mvnw -B test -Dtest='PageRequestsTest,GlobalExceptionHandlerTest,MalformedJsonTest,JwtProviderTest' -Dsurefire.failIfNoSpecifiedTests=false
+GlobalExceptionHandlerTest: Tests run 6, Failures 0, Errors 0
+  otherIntegrityViolationIs500 — 500 · INTERNAL_SERVER_ERROR · JSON 봉투 · message에 제약 이름(fk_documents_owner) 없음
+MalformedJsonTest: Errors 1 — 실행 환경 문제(코드 결함 아님)
+  @SpringBootTest 컨텍스트가 Flyway DB 연결에서 실패: "Unable to obtain connection from database: GSS-API authentication exception"
+  (호스트에서 접속할 테스트 DB가 없음 · compose MariaDB는 3306을 호스트에 노출하지 않음)
+  → 같은 입력(깨진 JSON)을 아래 C에서 실서버로 확인함
+전체: Tests run 17, Failures 0, Errors 1 · BUILD FAILURE · mvnw exit 1
+
+## C. 실제 HTTP — 오류 응답 노출 (2026-11-10 14:14 KST 실행 · 응답 원문)
+노출 검사 패턴: Exception|at com.|at org.|java.|.java:|springframework|hibernate|SQL|stack|trace|/app/|BOOT-INF
+
+| 요청 | 상태 | 응답 본문 | 노출 |
+|---|---|---|---|
+| POST /api/auth/login 본문 '{' (깨진 JSON) | 400 | {"success":false,"data":null,"message":"입력값을 확인하세요",…,"statusCode":400,"code":"VALIDATION_ERROR"} | 0 |
+| GET /api/documents?page=abc | 400 | 같은 모양 · VALIDATION_ERROR | 0 |
+| GET /api/documents/abc | 400 | 같은 모양 · VALIDATION_ERROR | 0 |
+| GET /api/documents/99999999999999999999 | 400 | 같은 모양 · VALIDATION_ERROR | 0 |
+| GET /api/nope | 404 | {"success":false,"data":null,"message":"없는 경로입니다",…,"code":"NOT_FOUND"} | 0 |
+| DELETE /api/auth/login | 404 | 같은 모양 · NOT_FOUND | 0 |
+| POST /api/documents 에 Content-Type: application/json | 400 | message "Content-Type을 확인하세요" · VALIDATION_ERROR | 0 |
+모두 application/json 봉투 · 스택·예외 클래스·내부 경로 노출 0
+
+## D. 실제 HTTP 500 — PASS (사용자 실행 · 2026-11-10 16:29:34 KST)
+- 환경: 개인 로컬 Docker Compose (nginx → backend → MariaDB)
+- 방법: 정상 로그인 → 개인 로컬 DB 컨테이너 일시 중지 → 유효한 Access Token으로 인증된 GET /api/documents
+  (DB 일시 중지는 사용자가 개인 로컬 환경에서 직접 수행 · 데이터 삭제·코드 변경 없음)
+- 실행: curl -i --max-time 45 "http://localhost/api/documents" -H "Authorization: Bearer $T"   (토큰 값 비기록)
+
+응답 원문:
+HTTP/1.1 500
+Content-Type: application/json
+{"success":false,"data":null,"message":"잠시 후 다시 시도해 주세요","timestamp":"2026-11-10T16:29:34.0101433+09:00","statusCode":500,"code":"INTERNAL_SERVER_ERROR"}
+
+노출 검사:
+- HTTP 상태 500 · 본문 statusCode 500 · code INTERNAL_SERVER_ERROR — application/json 공통 봉투
+- 스택 트레이스·예외 클래스명 미노출
+- SQL 쿼리·DB 연결 정보(호스트·포트·드라이버 메시지) 미노출
+- 내부 파일 경로 미노출
+- 일반화된 오류 문구만 반환 — A의 Exception.class 처리(스택은 로그에만)와 응답 형식 일치
+
+## 판정: PASS
+- 정적 분석: 응답에 내부 예외 정보를 싣는 경로 없음 (include-stacktrace/message: never)
+- 단위 테스트: GlobalExceptionHandlerTest 6건 통과
+- 실서버 4xx 오류 응답 7종(C): 노출 0
+- 실서버 HTTP 500 응답(D): 상태 코드·JSON 봉투 확인 · 내부 정보 노출 0
+- 참고(그대로 유지): MalformedJsonTest 1건은 로컬 DB 연결 환경 문제로 ERROR — Maven 17 run / 0 fail / 1 error · exit 1
+- 참고: docs/9 B-8 행의 "잘못된 JSON 본문 등 500 유발" 문구는 코드(400)와 다르다 — 이번 500은 DB 일시 중지로 재현
