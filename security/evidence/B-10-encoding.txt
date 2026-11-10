@@ -1,0 +1,21 @@
+# B-10 [파일 업로드] 인코딩 경계 — UTF-8만 (SPEC §1 업로드 행 "UTF-8만 · 엄격 디코딩 실패 415")
+# 환경: docker compose (dev · nginx 경유 http://localhost) · 2026-11-10 17:45 KST · 측정: 기술 리드 · 결과: 미발견
+# 계기: 사용자 업로드 실패 문의 → 원인 확인 중 측정 (FE-분석 B-10 증거 evidence/B-10.txt의 보완 — 인코딩 항목)
+
+## 1. 같은 한글 본문을 인코딩만 바꿔 준비 ("# 테스트 이력서\n기술: 자바, 스프링")
+$ printf '...' > utf8.txt                                  # 23 20 ed 85 …
+$ printf '\xEF\xBB\xBF...' > utf8bom.txt                   # ef bb bf 23 …
+$ iconv -f UTF-8 -t CP949 utf8.txt > cp949.txt             # 23 20 c5 d7 …  (Windows 메모장 'ANSI')
+$ iconv -f UTF-8 -t UTF-16 utf8.txt > utf16.txt            # fe ff 00 23 …  (Windows 메모장 '유니코드')
+
+## 2. 업로드 (lee 토큰 · type=RESUME · Content-Type text/plain)
+$ curl -X POST http://localhost/api/documents -H "Authorization: Bearer $T" -F "file=@<파일>;type=text/plain" -F type=RESUME -F title=enc-<이름>
+utf8     → 201 "업로드되었습니다"
+utf8bom  → 201 "업로드되었습니다"
+cp949    → 415 {"success":false,...,"code":"UNSUPPORTED_FILE","message":".md 또는 .txt(UTF-8) 파일만 올릴 수 있습니다"}
+utf16    → 415 {"success":false,...,"code":"UNSUPPORTED_FILE","message":".md 또는 .txt(UTF-8) 파일만 올릴 수 있습니다"}
+
+## 3. 정리
+- 측정용 업로드(201 두 건 · 별도 upload-test 한 건)는 `DELETE /api/documents/{id}` 200으로 바로 지웠다 → 문서 수 시드 상태(4)로 복귀
+- 415 응답은 JSON 봉투 · 화면 문구 = ErrorMessage `UNSUPPORTED_FILE` "(UTF-8)" 안내와 같다
+- 사용성 참고: Windows 메모장 기본 저장(ANSI)으로 만든 한글 .txt는 올라가지 않는다 → 시연 파일은 UTF-8로 준비
