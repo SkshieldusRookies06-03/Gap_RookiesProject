@@ -1,0 +1,27 @@
+# F-4 번들 민감정보 — 프론트 빌드 산출물 · VITE_* 목록 (키 값은 출력·기록하지 않는다 — 개수와 위치만)
+# 환경: 2026-11-09 KST · frontend/ · npm run build (mode production → .env.development는 읽지 않음)
+
+$ cd frontend && npm run build
+dist/index.html · dist/assets/index-r4nxtiDt.js(222,132B) · dist/assets/index-B5s_iIud.css · 소스맵(*.map) 0개
+
+$ grep -rn "sk-\|tvly-\|OPENAI" dist | wc -l
+0
+
+$ grep -roE "sk-|tvly-" dist | wc -l          (접두어만, 길이 조건 없이)
+0
+
+$ grep -rnoE "TAVILY|ANTHROPIC|api[_-]?key|secret|password" dist
+password만 14건 — 전부 로그인·회원가입 폼의 필드 이름/속성(type:"password", htmlFor:"login-password", autoComplete:"current-password",
+요청 본문 키 {email, password}) · 값(비밀번호·키) 아님
+
+$ grep -roE "VITE_[A-Z_]+|localhost:[0-9]+" dist
+0건 — 배포 빌드에 개발용 API 주소(localhost:8080)도 들어가지 않음
+
+## VITE_* 사용
+$ grep -rnoh "import\.meta\.env\.[A-Z_]*" frontend/src | sort | uniq -c
+      1 import.meta.env.VITE_API_URL          (frontend/src/api/client.js:10)
+frontend/.env.development: VITE_API_URL=http://localhost:8080 (공개값 · npm run dev 전용)
+frontend/Dockerfile: ENV VITE_API_URL=""  (배포는 같은 출처 nginx 프록시)
+LLM·검색 키는 frontend에 없음 — AI 컨테이너 환경변수(SPEC §1)
+
+## 판정: 미발견
