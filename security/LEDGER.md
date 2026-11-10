@@ -20,13 +20,13 @@
 | B-12 | [비밀번호 저장] `SELECT LEFT(password_hash,4), LENGTH(password_hash) FROM users` → kim·lee `$2a$` · 60자 | 미발견 |  |  | evidence/B-12.txt |  |
 | B-13 | [의존성 취약점] `./mvnw org.cyclonedx:cyclonedx-maven-plugin:2.9.0:makeAggregateBom` → bom.json(구성 요소 141) · purl 전부 OSV querybatch 조회 · 조치 전(Spring Boot 3.3.5) 150건(CRITICAL 12 · HIGH 52 · MODERATE 67 · LOW 19) | 발견 | 95dc5bb | 11/10 같은 방법 재조회 0건 · 대조군(조치 전 SBOM) 150건 그대로 | evidence/bom.json · evidence/B-13-scan.txt · evidence/B-13-before-bom.json |  |
 | B-14 | [역직렬화 무결성] 클라이언트가 직렬화 값을 보내는 경로 유무 확인 | 해당 없음(클라이언트가 직렬화 객체를 보내는 경로 없음 — JSON DTO만) |  |  |  |  |
-| F-1 | [XSS] 문서 제목·질문·AI 응답에 `<img src=x onerror=alert(1)>` · CSP 헤더 |  |  |  |  |  |
-| F-2 | [토큰 저장 위치] Access 메모리 · Refresh localStorage 확인(DevTools) |  |  |  |  |  |
-| F-3 | [토큰 위변조 / 라우트 접근 제어] 변조 토큰 · 비로그인으로 /documents 직접 접근 |  |  |  |  |  |
-| F-4 | [민감정보 노출] 빌드 산출물·소스맵에서 키 grep · VITE_* 목록 |  |  |  |  |  |
-| F-5 | [의존성 취약점] npm audit --json → security/evidence/npm-audit.json |  |  |  |  |  |
-| F-6 | [외부 입력 검증] 업로드 확장자·크기 클라이언트 안내 (서버 검증이 정본) |  |  |  |  |  |
-| F-7 | [에러 처리] 에러 봉투 → 사용자 문구 변환 확인(SPEC §4.4) |  |  |  |  |  |
+| F-1 | [XSS] (FA T-039) 위험 렌더 API grep 0 · `ReportText.test.jsx` 4 green · 목+headless Chrome에서 제목·질문·가로챈 SSE AI 응답·출처에 `<img onerror>`·`<script>`·`javascript:` · compose `curl -sI http://localhost/` CSP | 미발견 |  | 전부 글자로 표시 · alert 0 · `javascript:` 링크 0 · 실제 CSP 헤더 = nginx 설정값 | evidence/F-1.txt · F-1-csp.txt · F-1.png · F-1-documents.png |  |
+| F-2 | [토큰 저장 위치] (FA T-039) `authStore.js` partialize · 로그인 후 localStorage·sessionStorage·cookie 키 확인(값은 가림) · 새로고침 | 미발견 |  | `jobgap-auth`에 `refreshToken`·`user`만 · access는 저장소 어디에도 없음 · 새로고침 시 refresh로 복구 · refresh localStorage 보관은 점검서 §7 | evidence/F-2.txt · F-2.png |  |
+| F-3 | [토큰 위변조 / 라우트 접근 제어] (FA T-039) 새 프로필로 보호 라우트 4개 직접 접근 · refresh 임의 값 · 변조·만료·없는 Bearer(목) · compose 서명 1글자 변조 JWT `GET /api/documents` | 미발견 |  | 4개 모두 `/login` · 가짜 refresh → 세션 비움 → `/login` · 실제 백엔드 변조 JWT 401 `UNAUTHORIZED` · (FA 미실행분) `JwtProviderTest` 6/6 은 TL B-3에서 실행 | evidence/F-3.txt · evidence/B-3.txt |  |
+| F-4 | [민감정보 노출] (FA T-039) `npm run build` 뒤 `grep -rn "sk-\|tvly-\|OPENAI" dist` · 추가 패턴 · `import.meta.env` 목록 · 소스맵 | 미발견 |  | 키 형태 0줄 · `VITE_*`는 `VITE_API_URL` 하나 · 소스맵 0 | evidence/F-4.txt |  |
+| F-5 | [의존성 취약점] (FA T-039) `cd frontend && npm audit --json > ../security/evidence/npm-audit.json`(fix 미실행) | 미발견 |  | 0건(critical·high·moderate·low·info 0 · 의존성 280) | evidence/npm-audit.json |  |
+| F-6 | [외부 입력 검증] (FA T-039) 화면에서 `.exe`·300KB 업로드 · 질문 `maxlength` · 목·실제 백엔드에 curl 직접 `a.exe`·`big.md`(307,206B)·`a.txt.exe` | 미발견 |  | 화면이 먼저 막고 요청 0 · 실제 백엔드 415 `UNSUPPORTED_FILE` / 413 `FILE_TOO_LARGE` / 415 · (FA 미검증분) 실제 질문 1001자 → backend·ai 400은 TL A-4에서 확인 · nginx 1MB 413은 B-10(T-063) | evidence/F-6.txt · evidence/A-4.txt |  |
+| F-7 | [에러 처리] (FA T-039) 브라우저에서 응답을 가로채 500(스택 message)·503·비봉투 502·스트림 `event: error` · 목 423 · `ErrorMessage.test.jsx` 5 green | 미발견 |  | 화면은 `messageFor` 사용자 문구 + 다시 시도만 · 스택·내부 주소·nginx 문구 0 · 423은 해제 시각만 · 실제 백엔드 500 응답 본문은 B-8(T-063)·BF T-038에서 확인 | evidence/F-7.txt · F-7.png · F-7-stream.png · F-7-lock.png |  |
 | A-1 | [AI 모듈 외부 직접 접근] 배포 compose `config` → ports는 frontend만(ai-service는 내부 `app` 네트워크) · `/internal/ingest`·`DELETE /internal/documents/1`·`/internal/analyze/stream` 토큰 없음·틀린 토큰 → 401 ×6 · `/health` 200 · 대조: backend 경유 호출 200 · 외부 EC2:8000은 T-042 뒤 추가 | 미발견 |  |  | evidence/A-1.txt |  |
 | A-2 | [Prompt Injection] 공고 본문에 숨긴 지시 (예비) |  |  |  |  |  |
 | A-3 | [민감정보 유출] 가짜 연락처 이력서 `POST /api/documents` → `GET /api/documents/{id}` 제목·본문 원문 · maskedCount 0 (조치 전 ec1ddc3) | 발견 | c7fa960 · ecf2f31(질문) | 같은 업로드 → 제목·본문 마스킹본만 · maskedCount 2 · DocumentAcceptanceTest 7/7 · titlesAreMasked · questionIsMasked green(질문은 USER 저장·AI 전송 둘 다 마스킹본) | evidence/S-03/ | S-03 |
