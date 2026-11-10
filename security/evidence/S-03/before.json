@@ -1,0 +1,34 @@
+{
+  "_note": "S-03 (A-3) 조치 전 재현 — PiiMasker 미연결. 가짜 연락처 이력서 업로드 → 제목·본문 원문 저장 · maskedCount 0",
+  "_commit": "ec1ddc3 (feature/security · dev 병합 후 · T-028 전)",
+  "_date": "2026-11-09 KST",
+  "_env": "docker compose (ai-service LLM_PROVIDER=fake)",
+  "request": "POST /api/documents (multipart) file=resume-pii.txt type=RESUME title=\"S-03 resume 010-1234-5678\"",
+  "uploadResponse": {
+    "success": true,
+    "data": {
+      "id": "6",
+      "type": "RESUME",
+      "title": "S-03 resume 010-1234-5678",
+      "charCount": 95,
+      "createdAt": "2026-11-09T10:53:35.125155378+09:00"
+    },
+    "message": "업로드되었습니다",
+    "timestamp": "2026-11-09T10:53:35.130150905+09:00"
+  },
+  "detailRequest": "GET /api/documents/6",
+  "detailResponse": {
+    "success": true,
+    "data": {
+      "id": "6",
+      "type": "RESUME",
+      "title": "S-03 resume 010-1234-5678",
+      "charCount": 95,
+      "createdAt": "2026-11-09T10:53:35.125155+09:00",
+      "content": "이름: 테스트지원자\n연락처: 010-1234-5678\n이메일: applicant@example.com\n경력: Java · Spring Boot 3년 (2021~2024)\n",
+      "maskedCount": 0
+    },
+    "message": "문서를 조회했습니다",
+    "timestamp": "2026-11-09T10:53:35.517752132+09:00"
+  }
+}

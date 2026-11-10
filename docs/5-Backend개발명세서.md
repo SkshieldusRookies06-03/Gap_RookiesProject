@@ -161,7 +161,7 @@ List<Analysis> findAllUsing(@Param("docId") Long docId);
 - Actuator: 노출 `health,info` · `/actuator/**` ADMIN(health만 공개)
 - 감사 로그(로거 `AUDIT`): 로그인 성공·실패(`SecurityAuditListener`) · 401(`RestAuthenticationEntryPoint` — IP·URI) · 403(`RestAccessDeniedHandler` · `AuditLog.forbidden`) · 잠금(`AuditLog.locked`). 이메일은 `PiiMasker.maskEmail`로 가린다 — 예: `LOGIN_FAILURE account=k***@e.com reason=BadCredentialsException`. 토큰·비밀번호·질문 본문은 로그에 남기지 않는다.
 - 500: `GlobalExceptionHandler.unknown`이 스택을 서버 로그에만 남기고 응답은 `INTERNAL_SERVER_ERROR` 일반 메시지
-<!-- TODO(D3·기술 리드): 감사 로그 4줄 실제 캡처 경로 security/evidence/B-9-audit.txt 를 여기 링크 -->
+- 감사 로그 실제 캡처(로그인 성공·실패·401·403 4줄): [`security/evidence/B-9-audit.txt`](../security/evidence/B-9-audit.txt)
 
 ## 6. AI 모듈 연동
 
@@ -208,4 +208,5 @@ List<Analysis> findAllUsing(@Param("docId") Long docId);
 ./mvnw org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom && cp target/bom.json ../security/evidence/bom.json   # SBOM(B-13)
 ```
 Dockerfile(`backend/Dockerfile`): 빌드 `maven:3.9.9-eclipse-temurin-17` → 실행 `eclipse-temurin:17-jre-jammy` · 비root(uid 1001) · `TZ=Asia/Seoul` · HEALTHCHECK `curl -fsS http://localhost:8080/actuator/health`.
-<!-- TODO(D4·기술 리드): SBOM 결과 요약(구성요소 수 · High 이상 CVE 건수) — 상세는 9번 점검서 -->
+
+SBOM 결과(2026-11-10 · CycloneDX 1.6 · OSV 조회): 구성 요소 **141개** · 알려진 취약점 **0건**(High 이상 0). Spring Boot 3.3.5 시절 150건(CRITICAL 12 · HIGH 52)은 4.1.2 전환(`95dc5bb`)으로 해소 — 산출물 [`security/evidence/bom.json`](../security/evidence/bom.json) · 조회 기록 [`B-13-scan.txt`](../security/evidence/B-13-scan.txt) · 상세는 9번 점검서 B-13.

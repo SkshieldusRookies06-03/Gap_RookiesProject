@@ -19,3 +19,15 @@ B-13 의존성 취약점 — 백엔드 SBOM 조치 전후 (2026-11-06 · 조회 
 
 한계
   조회 건수이며 실제 악용 가능 여부 판정이 아니다. 새 공개 취약점이 나오면 달라지므로 D4(T-034)에 bom.json을 다시 만들어 재조회한다.
+
+D4 재조회 (2026-11-10 09:45 KST · T-034) — dev(e38b0f7 + #34 · #35) 백엔드
+  1) cd backend && ./mvnw org.cyclonedx:cyclonedx-maven-plugin:2.9.0:makeAggregateBom → target/bom.json → security/evidence/bom.json
+     CycloneDX 1.6 · jobgap-backend@0.1.0 · 구성 요소 141개
+     주요: spring-boot 4.1.2 · spring-security-core 7.1.2 · tomcat-embed-core 11.0.27 · mariadb-java-client 3.5.11 ·
+           jjwt-api 0.12.6 · jackson-databind 3.1.7(tools.jackson) / 2.21.7 · netty-handler 4.2.19.Final
+  2) purl 141개 → OSV querybatch (같은 방법)
+     결과: 0건
+  대조군: 같은 날 같은 스크립트로 조치 전 SBOM(B-13-before-bom.json) 재조회 → 150건 (CRITICAL 12 · HIGH 52 · MODERATE 67 · LOW 19)
+          = 11/6 수치와 동일 → 조회 방법 정상 · 현재 0건은 실제 결과
+  조치 커밋: 95dc5bb fix(security): B-13 Spring Boot 4.1.2 전환 — 의존성 취약점 150건 → 0건
+  남은 것: 프론트 npm audit(F-5 · FE-분석 → npm-audit.json) · AI는 uv.lock(I-4) — OSV 재조회는 D6 제출 전 1회 더

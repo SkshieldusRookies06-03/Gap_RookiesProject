@@ -1,0 +1,32 @@
+# A-5 [API Key 관리] 코드·로그·이미지 키 grep · 서비스별 env
+# 환경: docker compose · 2026-11-09 15:45 KST · 결과: 미발견
+# 값은 출력하지 않는다 — 변수 이름과 건수만 기록
+
+## 1. 서비스별 환경변수 (이름만)
+$ docker exec <서비스> printenv | cut -d= -f1 | grep -E "OPENAI|TAVILY|API_KEY"
+jobgap-backend-1     : (없음)
+jobgap-ai-service-1  : OPENAI_API_KEY TAVILY_API_KEY
+jobgap-frontend-1    : (없음)
+jobgap-database-1    : (없음)
+$ grep -n -E "OPENAI_API_KEY|TAVILY_API_KEY" docker-compose*.yml
+docker-compose.yml:28:      OPENAI_API_KEY: ${OPENAI_API_KEY}      # ai-service 블록에만 · 기본값 없음
+docker-compose.yml:29:      TAVILY_API_KEY: ${TAVILY_API_KEY}
+
+## 2. 코드 (추적 파일 · .md 제외)
+$ git grep -c -E "sk-[A-Za-z0-9_-]{20,}|tvly-[A-Za-z0-9]{10,}" -- . ':!*.md' | wc -l
+0
+$ node scripts/check-sec-deploy.mjs      # I-1 키 형태 문자열 · 이력 포함
+(무출력)
+
+## 3. 로그
+$ docker logs jobgap-backend-1 2>&1 | grep -c -E "sk-...|tvly-..."      → 0
+$ docker logs jobgap-ai-service-1 2>&1 | grep -c -E "sk-...|tvly-..."   → 0
+
+## 4. 이미지
+$ docker image inspect <이미지> --format '{{range .Config.Env}}...' | grep -E "OPENAI|TAVILY|API_KEY|SECRET|PASSWORD"
+jobgap-backend / jobgap-ai-service / jobgap-frontend : (없음 — 키는 이미지에 굽지 않고 실행 시 env로만 주입)
+$ docker exec jobgap-ai-service-1 grep -rlE "sk-[A-Za-z0-9_-]{20,}" /app (site-packages 제외)
+(0건)
+
+## 참고
+- 프론트 번들의 키 노출(VITE_*)은 F-4(FE-분석) 행

@@ -1,0 +1,18 @@
+# I-2 [컨테이너 권한] backend · ai 비root 실행
+# 환경: docker compose · 2026-11-09 15:45 KST · 결과: 미발견
+
+$ docker exec jobgap-backend-1 id
+uid=1001(app) gid=999(app) groups=999(app)
+$ docker exec jobgap-ai-service-1 id
+uid=1001(app) gid=999(app) groups=999(app)
+
+$ grep -n -E "^FROM|^\s*USER" backend/Dockerfile ai-module/Dockerfile
+backend/Dockerfile:9:FROM eclipse-temurin:17-jre-jammy     # 실행 스테이지
+backend/Dockerfile:15:USER app
+ai-module/Dockerfile:2:FROM python:3.12-slim
+ai-module/Dockerfile:12:USER app
+
+$ node scripts/check-sec-deploy.mjs      # I-2: 마지막 스테이지 비root USER 검사
+(무출력)
+
+참고: frontend는 nginx 공식 이미지(master root · worker nginx) — 게이트 예외 · 정적 파일만 서빙

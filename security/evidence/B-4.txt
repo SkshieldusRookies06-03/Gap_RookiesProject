@@ -1,0 +1,23 @@
+# B-4 [Refresh Token 관리] DB에 해시만 · 재발급 후 이전 토큰 401 · 로그아웃 후 401
+# 환경: docker compose backend·database (feature/security · dev 병합 후) · 2026-11-09 11:26 KST · 결과: 미발견
+
+## 발급 refresh 토큰 길이 (클라이언트에 주는 원문)
+43자 (32바이트 base64url)
+
+## DB에는 SHA-256 해시만 (원문 아님)
+$ SELECT email, LENGTH(refresh_token_hash), refresh_token_hash REGEXP '^[0-9a-f]{64}$' FROM users WHERE email='kim@example.com';
+email            hash_len  is_hex64
+kim@example.com  64        1
+
+## 회전 — POST /api/auth/refresh {refreshToken: 원래 값}
+{"success":true,"data":{"accessToken":"eyJhbGciOiJIUzI1NiJ9...","refreshToken":"(새 값)"}}  HTTP 200
+
+## 이전 refresh 재사용 → 즉시 무효
+{"success":false,"data":null,"message":"다시 로그인하세요","statusCode":401,"code":"INVALID_REFRESH_TOKEN"}  HTTP 401
+
+## 로그아웃 → 해시 삭제
+POST /api/auth/logout (Bearer 새 access)
+{"success":true,"data":null,"message":"로그아웃되었습니다"}  HTTP 200
+
+## 로그아웃 뒤 새 refresh 사용
+{"success":false,"data":null,"message":"다시 로그인하세요","statusCode":401,"code":"INVALID_REFRESH_TOKEN"}  HTTP 401

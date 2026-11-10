@@ -1,0 +1,73 @@
+# F-3 라우트 접근 제어 · 변조 토큰
+
+# 환경: 2026-11-09 KST · mock 8090 + Vite 5174 · headless Chrome(새 프로필 — localStorage 비어 있음)
+# 추가 검증 환경: 2026-11-09 KST · Docker Compose (nginx → 실제 backend)
+# 주의: 최초 점검은 목 서버(mock/server.mjs) 기준으로 수행했으며, 이후 Docker Compose 통합 환경에서 실제 백엔드 JWT 서명 변조 검증을 추가 수행했다(아래 4).
+
+## 1) 비로그인 직접 접근 (프론트 라우트 보호 — App.jsx Protected: refreshToken 없으면 /login)
+
+/documents    → /login  
+/analyses     → /login  
+/analyses/new → /login  
+/analyses/7   → /login
+
+## 2) localStorage refresh를 임의 값으로 바꾸고 새로고침
+
+설정: jobgap-auth = { state: { refreshToken: 'forged-refresh-token', user: {…} }, version: 0 } → /documents 열기
+
+네트워크: 401 /api/auth/refresh (문서 목록 요청은 나가지 않음)
+
+결과: 화면 /login · 저장소 refreshToken=null, user 비어 있음 (client.js refreshOrClear → clear())
+
+## 3) 변조 Access로 API 직접 호출 (curl 상당 · Node fetch → mock 8090 GET /api/documents)
+
+Authorization: Bearer forged.jwt.token → 401 UNAUTHORIZED  
+Authorization: Bearer mock-expired → 401 TOKEN_EXPIRED  
+(헤더 없음) → 401 UNAUTHORIZED
+
+## 4) 실제 백엔드 — JWT 변조 검증 완료 (Docker Compose)
+
+### 4-1) 정적 코드 확인
+
+backend/src/main/java/com/jobgap/security/JwtProvider.java:53  
+Jwts.parser().verifyWith(key).build().parseSignedClaims(token)
+
+:55 ExpiredJwtException → TOKEN_EXPIRED  
+:57 JwtException|IllegalArgumentException → UNAUTHORIZED
+
+회귀 테스트 JwtProviderTest에는 다른 키로 서명 · 서명 변조 · 페이로드 변조 · 형식 오류 · 빈 값에 대한 UNAUTHORIZED 검증이 포함되어 있음.
+
+단, 회귀 테스트 직접 실행은 완료하지 못함.
+
+./mvnw -o test -Dtest=JwtProviderTest → spring-boot-starter-parent 4.1.2가 로컬 저장소에 없음(오프라인)
+
+최초 점검 시 통합 테스트는 MariaDB(Docker) 환경이 준비되지 않아 실행하지 못했음.
+
+### 4-2) 실제 백엔드 JWT 변조 검증
+
+- 검증일: 2026-11-09
+- 환경: Docker Compose (nginx → backend)
+- 요청: GET http://localhost/api/documents
+- 정상 accessToken: HTTP 200
+- 서명 중간 문자 1개를 변경한 accessToken: HTTP 401
+- 오류 코드: UNAUTHORIZED
+- 오류 메시지: 로그인이 필요합니다
+- 판정: **PASS**
+- 확인 사항: 정상 토큰은 접근을 허용하고, 서명이 변조된 토큰은 접근을 거부함
+- 보안 유의: 실제 토큰 값은 증거에 기록하지 않음
+
+### 4-3) 검증 결과
+
+정상적으로 발급된 JWT로 요청하면 HTTP 200이 반환되었으며, 동일한 JWT의 서명 중간 문자 1개를 변경한 후 요청하면 HTTP 401 및 UNAUTHORIZED 오류 코드가 반환되었음.
+
+따라서 실제 백엔드에서 JWT 서명 변조를 탐지하고 해당 요청을 거부하는 것을 확인함.
+
+판정: **PASS**
+
+단, JwtProviderTest 회귀 테스트의 직접 실행 여부는 별도 미실행 상태로 유지함.
+
+## 구분
+
+프론트 라우트 보호 = 화면을 안 보여 주는 편의(우회 가능 — localStorage에 아무 값이나 넣으면 화면 껍데기는 열린다).
+
+최종 방어선 = 서버 401/403. 위 2)에서 가짜 refresh는 목 서버 401로 끊겨 데이터 요청까지 가지 못했으며, 4)에서는 실제 백엔드가 변조된 JWT 요청을 HTTP 401로 거부하는 것을 확인함.
