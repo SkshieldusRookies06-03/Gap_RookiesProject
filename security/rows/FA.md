@@ -93,7 +93,7 @@
 | 행 | 기대 결과 | 판정 | 남은 것 → 후속 |
 |---|---|---|---|
 | B-1 | 결합 grep 0 · sort 허용 목록 밖 400 봉투 | **PASS** | — |
-| B-8 | 500 응답 본문에 `Exception`·`at com.` 없음 | **PASS**(정적·단위·실서버 4xx 7종 노출 0 · 실제 500(DB 일시 중지 · 16:29:34) JSON 봉투 · 내부 정보 노출 0) | `docs/9` B-8 "깨진 JSON → 500" 문구와 코드(400) 불일치 정리(기술 리드) |
+| B-8 | 500 응답 본문에 `Exception`·`at com.` 없음 | **PASS**(정적·단위·실서버 4xx 7종 노출 0 · 실제 500(DB 일시 중지 · 16:29:34) JSON 봉투 · 내부 정보 노출 0) | `docs/9` B-8 문구 정정 완료(기술 리드 · 깨진 JSON은 400 · T-037) |
 | B-10 | 300KB 413 봉투 · 1MB 초과 nginx 413 · `.exe`·`.html`·`.md.exe` 415 | **PASS** | — |
 | B-11 | 가입 형식 오류 → 400 + `fields[]`에 그 필드 | **PASS** | DB 있는 환경에서 `AuthAcceptanceTest`·`BoundaryAcceptanceTest` (선택) |
 
