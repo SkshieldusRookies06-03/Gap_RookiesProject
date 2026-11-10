@@ -109,11 +109,20 @@ export default function AnalysisPage() {
   const [load, setLoad] = useState({ loading: false, error: null });
   const lastReq = useRef(null);
   const run = (req) => { lastReq.current = req; start(req); };
+  // 재시도 = 실패한 요청 그대로(새 분석은 {postingId, resumeId}, 후속은 {analysisId, question}).
+  // 후속 질문이면 실패로 남은 USER 말풍선을 먼저 걷어 낸다 — start()가 같은 질문을 다시 붙이므로 화면에 두 번 보이지 않게
+  const retry = () => {
+    const req = lastReq.current;
+    const last = messages.at(-1);
+    if (req.question && last?.role === 'USER' && last.content === req.question) hydrate(messages.slice(0, -1));
+    run(req);
+  };
 
   // 새 분석이 analysis 이벤트를 받으면 URL만 바꾼다(SPEC §5) · 내비 "새 분석"으로 돌아오면 이전 대화를 비운다
   // URL 교체는 analysisId가 새로 발급된 순간에만 — id가 바뀔 때 다시 돌면 reset() 전의 옛 id로 되돌아간다
+  // 새 분석이 analysis 뒤 error로 끝나 /analyses/N에서 재시도하면 새 id M이 온다 — 그때도 URL을 M으로 맞춘다
   useEffect(() => {
-    if (!id && streaming && analysisId) navigate(ROUTES.analysis(analysisId), { replace: true });
+    if (streaming && analysisId && analysisId !== id) navigate(ROUTES.analysis(analysisId), { replace: true });
   }, [analysisId]);
   useEffect(() => { if (!id) { reset(); setLoad({ loading: false, error: null }); } }, [id, reset]);
 
@@ -145,14 +154,15 @@ export default function AnalysisPage() {
       <h1 className={styles.title}>갭 분석</h1>
       {!id && <DocumentPicker onStart={run} disabled={streaming} />}
       <MessageList messages={messages} />
-      {error && <ErrorMessage error={error} onRetry={streaming ? null : () => run(lastReq.current)} />}
+      {error && <ErrorMessage error={error} onRetry={streaming ? null : retry} />}
       {streaming && (
         <div className={styles.bar}>
           <LoadingSpinner label="생성 중…" />
           <Button variant="secondary" onClick={stop}>중단</Button>
         </div>
       )}
-      {!streaming && analysisId && <FollowUpForm onSubmit={(question) => run({ analysisId, question })} />}
+      {/* 새 분석이 리포트 없이 실패하면(messages 비어 있음) 이어 쓸 대화가 없다 — 재시도로만 다시 시작 */}
+      {!streaming && analysisId && messages.length > 0 && <FollowUpForm onSubmit={(question) => run({ analysisId, question })} />}
     </div>
   );
 }
