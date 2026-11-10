@@ -1,0 +1,41 @@
+# F-7 에러 처리 — 서버 message·스택이 화면에 나오지 않는가
+# 환경: 2026-11-09 KST · mock 8090 + Vite 5174 · headless Chrome
+# 목은 500을 내지 않으므로, 테스트 브라우저 안에서만 fetch를 가로채 아래 응답을 돌려줬다(프로젝트 코드 수정 없음).
+#   STACK = 'java.lang.NullPointerException: Cannot invoke "String.length()"\n\tat com.jobgap.analysis.AnalysisService.stream(AnalysisService.java:88)'
+# 검사 문자열: NullPointerException · at com. · java. · WebClientRequestException · 172.18 · nginx · Bad Gateway
+
+| 상황 | 가로챈 응답 | 화면(role=alert) | 노출 |
+|---|---|---|---|
+| 내 문서 목록 500 | {success:false, code:INTERNAL_SERVER_ERROR, message:STACK} | "잠시 후 다시 시도해 주세요" + 다시 시도 | 0 (F-7.png) |
+| 내 문서 목록 503 | {code:AI_UNAVAILABLE, message:'WebClientRequestException: Connection refused: ai/172.18.0.4:8000'} | "분석 서버가 응답하지 않습니다" + 다시 시도 | 0 |
+| 내 문서 목록 502 HTML | '<html>…502 Bad Gateway…nginx/1.27.0</html>' (봉투 아님) | "서버에 연결할 수 없습니다" + 다시 시도 | 0 |
+| 분석 스트림 event: error | token '부분 ' → error {code:AI_UNAVAILABLE, message:STACK} | "분석 서버가 응답하지 않습니다" + 다시 시도 | 0 (F-7-stream.png) |
+| 로그인 423 | 목 실제 응답(틀린 비밀번호 5회 → 6회째) message '…해제: HH:MM:SS' | "로그인 5회 실패로 잠겼습니다. 14:53:02에 해제됩니다" — 서버 문장은 안 쓰고 시각만 | 0 (F-7-lock.png) |
+1~5회째 문구: "이메일 또는 비밀번호가 올바르지 않습니다"
+
+## 판정 테스트 (기술 리드 T-009)
+$ cd frontend && npx vitest run src/components/ErrorMessage.test.jsx --reporter=verbose
+ ✓ 423 ACCOUNT_LOCKED — 서버 message에서 해제 시각만 뽑아 보여 준다 (SPEC §4.4 "해제 시각 표시")
+ ✓ 423인데 시각이 없으면 기본 문구
+ ✓ (지킴) 다른 코드는 서버 message를 쓰지 않는다 — 스택·HTML이 화면에 나오지 않는다 (F-7)
+ ✓ ABORTED·NETWORK_ERROR·모르는 코드·null도 문구가 있다
+ ✓ role=alert로 렌더하고, onRetry가 있으면 "다시 시도" 버튼이 부른다
+
+## 코드
+frontend/src/components/ErrorMessage.jsx — messageFor(error): BY_CODE[code] ?? '잠시 후 다시 시도해 주세요' (423만 message에서 시각 정규식으로 추출)
+분석 화면 스트림 error UI(T-039 1단계 bcc1eb2): <ErrorMessage error={error} onRetry={retry} />
+
+## 실제 백엔드 500 — 미검증
+점검서 방법 "500 유발 시 화면 문구"를 실제 서버로는 하지 못했다.
+- 최초 점검: Docker 데몬 미기동.
+- compose 기동 뒤(2026-11-09): 코드·DB를 바꾸지 않고 실제 500을 내는 승인된 방법이 없다.
+  - backend common/GlobalExceptionHandler는 문서화된 오류 경로를 400·409·415·413·503 등으로 매핑하고, 500은 처리되지 않은 예외(Exception.class)뿐이다 — 스택은 로그에만, 응답 message는 null.
+  - application.yml server.error.include-stacktrace: never · include-message: never (정적 확인).
+  - 점검서·onboarding B-8 방법(깨진 JSON `{`으로 로그인)은 실제 백엔드에서 400 VALIDATION_ERROR — 500 재현이 아니므로 이 행의 500 검증으로 보지 않는다.
+  - DB 컨테이너 중지·데이터 주입·코드 변경 등 임의로 500을 만드는 방법은 쓰지 않았다.
+- 실제 백엔드 503(AI 중지) 화면도 이번에 실행하지 않았다 — 위 표의 503은 가로챈 응답(목 환경) 결과다.
+→ B-8(T-063)에서 실제 오류 응답 본문에 스택이 없는지 확인하고, 실제 500 재현 방법은 기술 리드 승인 후 진행한다.
+
+## 최종 판정
+- 프론트 오류 문구 안전 렌더링(가로챈 500·503·502·스트림 error · 목 423 · ErrorMessage.test.jsx 5 green): PASS
+- 실제 백엔드 500: 미검증
