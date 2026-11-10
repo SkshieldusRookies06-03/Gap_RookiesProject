@@ -1,0 +1,25 @@
+# F-2 토큰 저장 위치 — 코드 확인 + 브라우저 관찰 (토큰 원문은 남기지 않는다: 키 이름·접두·길이만)
+# 환경: 2026-11-09 KST · mock 8090 + Vite 5174 · headless Chrome · 로그인은 실제 LoginPage 화면으로(kim@example.com)
+
+## 1) 코드
+frontend/src/stores/authStore.js — zustand persist(name 'jobgap-auth') · partialize: (s) => ({ refreshToken: s.refreshToken, user: s.user })
+  → accessToken은 메모리(스토어)에만, localStorage에는 refreshToken·user만
+frontend/src/api/client.js — 새로고침 뒤 access가 없으면 요청 전에 /api/auth/refresh 1회로 복구(ensureAccess)
+
+## 2) 로그인 직후 (브라우저 저장소 읽기)
+localStorage 키: ["jobgap-auth"]
+jobgap-auth 구조: { state: { refreshToken, user }, version }
+  state 키: ["refreshToken","user"] · accessToken 키 없음(hasAccessKey=false)
+  refreshToken: "mock-refresh-…(len 26)"   ← 값은 가림
+  user 키: ["uuid","email","name"]
+sessionStorage 키: [] · document.cookie: 빈 값
+access 토큰 접두('mock-access-')가 localStorage·sessionStorage·cookie 어디에도 없음: true
+
+## 3) 새로고침(/documents 다시 열기)
+네트워크: 200 /api/auth/refresh → 200 /api/documents … · 화면 /documents 유지
+새로고침 뒤에도 저장소에 access 없음: true
+
+## 판정
+기대 조치(점검서 F-2)대로 저장됨 — 미발견
+남는 위험(SPEC §7 잔여 위험 · 점검서 §7): refresh를 localStorage에 둠 → XSS가 나면 탈취 가능. 완화 = CSP · 텍스트 렌더(F-1) · refresh 회전.
+점검서 증거 형식 F-2.png(DevTools Application 캡처)는 headless로 만들 수 없어 사람이 찍는다 — 절차는 rows/FA.md 'F-2 수동 확인'.

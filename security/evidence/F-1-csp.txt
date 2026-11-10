@@ -1,0 +1,38 @@
+# F-1 XSS — 정적 검사 · 판정 테스트 · CSP 설정
+# 환경: 로컬 Windows · surim/frontend(사용자 보고 HEAD bcc1eb2, frontend 미커밋 변경 없음) · 2026-11-09 KST
+# 화면 재현(브라우저)은 F-1.txt · F-1.png · F-1-documents.png
+
+## 1) 위험 렌더 API grep (frontend/src · 테스트 제외)
+$ grep -rnE "dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(|new Function" frontend/src --include=*.js --include=*.jsx | grep -v "\.test\."
+(출력 0줄 · grep exit=1)
+
+$ grep -rn "href=" frontend/src --include=*.jsx | grep -v "\.test\."
+frontend/src/pages/analysis/SourceChips.jsx:22:      {href ? <a href={href} target="_blank" rel="noopener noreferrer">{title}</a> : <span>{title}</span>}
+→ 동적 href는 SourceChips 한 곳뿐 — href는 http(s)일 때만 만든다(아래 판정 테스트 4번)
+
+## 2) 판정 테스트 (기술 리드 T-054 · T-009)
+$ cd frontend && npx vitest run src/pages/analysis/ReportText.test.jsx src/components/ErrorMessage.test.jsx --reporter=verbose
+ ✓ ReportText.test.jsx > 리포트의 제목·표·목록을 요소로 그린다 (기본 리포트 형식 SPEC §4.3)
+ ✓ ReportText.test.jsx > 응답 속 HTML·스크립트는 요소가 아니라 글자로 보인다 — 표 칸 안에서도 (F-1)
+ ✓ ReportText.test.jsx > 스트리밍 중 덜 온 마크다운(표 머리만 · 줄 중간)도 깨지지 않고 글자를 잃지 않는다
+ ✓ ReportText.test.jsx > SourceChips — doc/web을 구분하고 웹은 http(s)만 새 탭 링크(noopener) · 그 밖 스킴은 링크로 만들지 않는다
+ (ErrorMessage.test.jsx 5건은 F-7.txt)
+ Test Files  2 passed (2) · Tests  9 passed (9)
+
+## 3) CSP — nginx/default.conf (설정 파일 정적 확인)
+server 블록 + location = /index.html 두 곳에 같은 값 (location 안 add_header는 상속이 끊기므로 다시 적어 둠):
+  add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "no-referrer" always;
+→ script-src 미지정 = default-src 'self' (인라인 스크립트·외부 스크립트 차단) · 'unsafe-inline'·'unsafe-eval' 없음
+
+## 4) CSP 실제 응답 헤더 — Docker Compose 검증 (사용자 직접 실행 · 2026-11-09 KST)
+환경: Docker Compose (nginx → frontend) · http://localhost/
+$ curl.exe -sI http://localhost/ | findstr /i "content-security"
+Content-Security-Policy: default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'
+→ 위 3)의 nginx/default.conf 설정값과 일치 · 'unsafe-inline'·'unsafe-eval' 없음 → PASS
+(최초 점검 시점에는 Docker 데몬 미기동으로 실행하지 못했고, 이후 compose 기동 뒤 위 명령으로 확인했다)
+
+확인한 경로: / 하나. 아래는 이번에 실행하지 않았다(후속 · 판정에는 넣지 않음):
+- /index.html · /documents · /assets/*.js 의 CSP 헤더
+- API 응답 CSP default-src 'none'(점검서 기대 조치): curl.exe -sI http://localhost/api/documents | findstr /i "content-security"

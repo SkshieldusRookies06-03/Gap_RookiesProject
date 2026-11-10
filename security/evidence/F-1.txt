@@ -1,0 +1,68 @@
+# F-1 XSS — 화면 재현 및 CSP 실서버 검증
+
+# 최초 검증 환경: 2026-11-09 KST · node mock/server.mjs 8090 + Vite 5174(VITE_API_URL=http://localhost:8090 환경변수로만) · Chrome headless(CDP)
+# 추가 검증 환경: 2026-11-09 KST · Docker Compose (nginx → frontend)
+# 최초 XSS 테스트에서는 프로젝트 파일 수정 없음. AI 응답은 목이 고정 문구라, 테스트 브라우저 안에서만 fetch를 가로채 XSS가 든 SSE를 흘렸다(아래 ③).
+# alert/confirm 대화상자는 CDP Page.javascriptDialogOpening 이벤트로 감시.
+
+## ① 문서 제목 (내 문서 화면)
+
+입력: 목 시드 문서 16 제목 '내 이력서 <img src=x onerror=alert(1)>' · 화면에서 업로드한 제목 '<script>alert("t")</script> 제목'(ok.md)
+
+관찰: 두 제목이 글자 그대로 보임 → F-1-documents.png
+
+DOM: img[src="x"] 0개 · #root 안 script 0개 · javascript: href 0개
+
+## ② 분석 화면 select option · 후속 질문
+
+option 텍스트: '<script>alert("t")</script> 제목' · '내 이력서 <img src=x onerror=alert(1)>' — 글자로 보임
+
+질문 '<img src=x onerror=alert("q")> 질문' 전송 → USER 말풍선에 글자 그대로 (F-1.png 가운데)
+
+## ③ AI 응답(ReportText) · 출처(SourceChips) — 가로챈 SSE
+
+token: '## XSS 점검\n<img src=x onerror=alert(1)> <script>alert(2)</script>\n'
+
+token: '[링크](javascript:alert(3)) <a href="javascript:alert(4)">a</a>\n'
+
+sources: [{type:web, url:'javascript:alert(5)', title:'자바스크립트 링크'}, {type:web, url:'https://example.com/ok', title:'정상 링크'}]
+
+관찰(F-1.png):
+- 제목만 <h2>로, 나머지 HTML·마크다운 링크는 글자 그대로
+- 출처 링크(<a>)는 '정상 링크|https://example.com/ok|_blank|noopener noreferrer' 뿐 · '자바스크립트 링크'는 링크가 아닌 글자(span)
+- DOM: img[src="x"] 0 · script 0 · javascript: href 0
+
+## ④ CSP 응답 헤더 — 실제 Docker Compose 환경
+
+검증일: 2026-11-09
+
+검증 환경: Docker Compose (nginx → frontend)
+
+실행 명령:
+
+`curl.exe -sI http://localhost/ | findstr /i "content-security"`
+
+실제 응답:
+
+`Content-Security-Policy: default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'`
+
+기대값:
+
+`default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'`
+
+검증 결과:
+- Content-Security-Policy 헤더 존재 확인
+- 실제 응답값과 기대값 일치
+- 판정: **PASS**
+- 상세 증거: `security/evidence/F-1-csp.txt`
+
+## 최종 결과
+
+- XSS 화면 재현: 대화상자(alert) 발생 0회 · 콘솔 에러 0 → 테스트한 입력에서 XSS 실행 미발견
+- 문서 제목·질문·AI 응답의 HTML 문자열이 실행되지 않고 텍스트로 표시됨
+- 위험한 `javascript:` 출처 URL이 클릭 가능한 링크로 생성되지 않음
+- 실제 nginx 응답의 CSP 헤더가 프로젝트 기대값과 일치함
+
+**최종 판정: PASS**
+
+단, 본 결과는 위에 명시한 XSS 입력과 응답 헤더에 대한 검증 결과이며, 모든 XSS 공격 가능성이 제거되었음을 의미하지는 않음.

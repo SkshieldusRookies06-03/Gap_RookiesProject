@@ -1,4 +1,5 @@
 # JobGap — 취업 갭 분석 리포트 · SPEC (정본 v1 · D1 동결 대상)
+동결 v1 · 2026-11-05
 
 > **이 파일이 정본이다.** 코드·문서 9종·발표 수치가 이 파일과 다르면 이 파일이 이긴다. 바꿀 때는 이 파일을 먼저 고치는
 > PR(`docs(spec): … [T-###]`)로 `dev`에 반영하고, 팀장·기술 리드 및 영향받는 담당자에게 변경 내용을 공유한다(§9 변경 규약).
@@ -46,7 +47,7 @@
 - 헬스: `GET /actuator/health` 토큰 없이 200 `{"status":"UP"}`
 - 메트릭: `GET /actuator/metrics` 토큰 없음 401 `UNAUTHORIZED` · USER 토큰 403 `FORBIDDEN` 봉투(로그인 미구현이라 USER 토큰은 서버와 같은 secret으로 직접 서명)
 - CSP: `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`
-- JWT alg: 실서버 미관측 — `POST /api/auth/login`이 T-015 전이라 500. T-015 머지 뒤 발급 토큰으로 관측해 이 줄을 `HS256` 결과로 바꾼다
+- JWT alg: `HS256` — 2026-11-09 compose(dev 병합 코드)에서 `POST /api/auth/login` 발급 토큰 헤더 디코드 · alg none·서명 교체 토큰은 401 `UNAUTHORIZED`(`security/evidence/B-3.txt`)
 
 ## 2. 범위 세트 (상한 — 늘리지 않는다)
 

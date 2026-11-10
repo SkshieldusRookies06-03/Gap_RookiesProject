@@ -1,0 +1,29 @@
+# B-3 [인증 / JWT] 만료·변조 토큰 · alg 확인 · secret 하드코딩 grep
+# 환경: docker compose backend (feature/security · dev 병합 후) · 2026-11-09 11:26 KST · 결과: 미발견
+
+## alg — 로그인 발급 토큰 헤더
+$ node -e 'console.log(JSON.parse(Buffer.from(TOKEN.split(".")[0],"base64url")).alg)'
+HS256
+
+## 변조 토큰 (서명 부분 교체) → GET /api/documents
+{"success":false,"data":null,"message":"로그인이 필요합니다","statusCode":401,"code":"UNAUTHORIZED"}  HTTP 401
+
+## alg none 토큰 (헤더 {"alg":"none"} · 서명 없음) → GET /api/documents
+{"success":false,"data":null,"message":"로그인이 필요합니다","statusCode":401,"code":"UNAUTHORIZED"}  HTTP 401
+
+## 정상 토큰 → GET /api/documents
+HTTP 200
+
+## 만료 토큰 — 판정·단위 테스트 (Access 15분이라 실서버 대기 대신 테스트로)
+$ cd backend && ./mvnw test -Dtest='SecurityAcceptanceTest,JwtProviderTest'
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0   (SecurityAcceptanceTest: actuator · tokens · headersAndErrors)
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0   (JwtProviderTest: shortSecretIsRejected · roundTrip · refreshTokenAndHash · expiredIsTokenExpired · forgedIsUnauthorized · algNoneIsRejected)
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+- tokens: 토큰 없음 401 UNAUTHORIZED · 만료 401 TOKEN_EXPIRED · 위조 401 UNAUTHORIZED (전부 봉투)
+
+## secret 하드코딩
+$ grep -rnE "secret" backend/src/main/resources
+backend/src/main/resources/application.yml:39:    secret: ${JWT_SECRET:}                       # 32바이트 이상 — 비어 있으면 기동 실패(의도)
+$ grep -rnE '(secret|SECRET)\s*=\s*"' backend/src/main/java
+(0건)

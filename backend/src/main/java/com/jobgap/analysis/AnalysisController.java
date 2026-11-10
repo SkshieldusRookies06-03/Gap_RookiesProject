@@ -34,11 +34,6 @@ public class AnalysisController {
         this.analysisService = analysisService;
     }
 
-    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<String>> stream(@AuthenticationPrincipal AuthUser me, @Valid @RequestBody StreamRequest req) {
-        return analysisService.stream(me, req);
-    }
-
     @GetMapping
     public ApiResponse<PageResponse<AnalysisSummary>> list(@AuthenticationPrincipal AuthUser me,
                                                            @RequestParam(defaultValue = "0") int page,
@@ -52,4 +47,11 @@ public class AnalysisController {
                                                                @RequestParam(defaultValue = "50") int size) {
         return ApiResponse.ok(analysisService.messages(me, id, page, size), "메시지를 조회했습니다");
     }
+
+    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> stream(@AuthenticationPrincipal AuthUser me, @Valid @RequestBody StreamRequest req) {
+        return analysisService.stream(me, req);
+    }
+
+
 }
