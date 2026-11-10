@@ -18,7 +18,7 @@
 | B-10 | [파일 업로드] 200KB 경계(봉투 413) · 1MB 초과(nginx 413 · SPEC §1 업로드 행) · .exe/.html · 이중 확장자 |  |  |  |  |  |
 | B-11 | [입력값 검증] DTO @Valid 경로별 400 fields[] |  |  |  |  |  |
 | B-12 | [비밀번호 저장] `SELECT LEFT(password_hash,4), LENGTH(password_hash) FROM users` → kim·lee `$2a$` · 60자 | 미발견 |  |  | evidence/B-12.txt |  |
-| B-13 | [의존성 취약점] CycloneDX SBOM → security/evidence/bom.json |  |  |  |  |  |
+| B-13 | [의존성 취약점] `./mvnw org.cyclonedx:cyclonedx-maven-plugin:2.9.0:makeAggregateBom` → bom.json(구성 요소 141) · purl 전부 OSV querybatch 조회 · 조치 전(Spring Boot 3.3.5) 150건(CRITICAL 12 · HIGH 52 · MODERATE 67 · LOW 19) | 발견 | 95dc5bb | 11/10 같은 방법 재조회 0건 · 대조군(조치 전 SBOM) 150건 그대로 | evidence/bom.json · evidence/B-13-scan.txt · evidence/B-13-before-bom.json |  |
 | B-14 | [역직렬화 무결성] 클라이언트가 직렬화 값을 보내는 경로 유무 확인 | 해당 없음(클라이언트가 직렬화 객체를 보내는 경로 없음 — JSON DTO만) |  |  |  |  |
 | F-1 | [XSS] 문서 제목·질문·AI 응답에 `<img src=x onerror=alert(1)>` · CSP 헤더 |  |  |  |  |  |
 | F-2 | [토큰 저장 위치] Access 메모리 · Refresh localStorage 확인(DevTools) |  |  |  |  |  |
@@ -27,10 +27,10 @@
 | F-5 | [의존성 취약점] npm audit --json → security/evidence/npm-audit.json |  |  |  |  |  |
 | F-6 | [외부 입력 검증] 업로드 확장자·크기 클라이언트 안내 (서버 검증이 정본) |  |  |  |  |  |
 | F-7 | [에러 처리] 에러 봉투 → 사용자 문구 변환 확인(SPEC §4.4) |  |  |  |  |  |
-| A-1 | [AI 모듈 외부 직접 접근] 외부에서 EC2:8000 · 내부 토큰 없는 호출 401 |  |  |  |  |  |
+| A-1 | [AI 모듈 외부 직접 접근] 배포 compose `config` → ports는 frontend만(ai-service는 내부 `app` 네트워크) · `/internal/ingest`·`DELETE /internal/documents/1`·`/internal/analyze/stream` 토큰 없음·틀린 토큰 → 401 ×6 · `/health` 200 · 대조: backend 경유 호출 200 · 외부 EC2:8000은 T-042 뒤 추가 | 미발견 |  |  | evidence/A-1.txt |  |
 | A-2 | [Prompt Injection] 공고 본문에 숨긴 지시 (예비) |  |  |  |  |  |
 | A-3 | [민감정보 유출] 가짜 연락처 이력서 `POST /api/documents` → `GET /api/documents/{id}` 제목·본문 원문 · maskedCount 0 (조치 전 ec1ddc3) | 발견 | c7fa960 · ecf2f31(질문) | 같은 업로드 → 제목·본문 마스킹본만 · maskedCount 2 · DocumentAcceptanceTest 7/7 · titlesAreMasked · questionIsMasked green(질문은 USER 저장·AI 전송 둘 다 마스킹본) | evidence/S-03/ | S-03 |
-| A-4 | [과도한 사용] 질문 1000자 상한 · 반복 호출 |  |  |  |  |  |
+| A-4 | [과도한 사용] 1001자 질문 → backend 400 `VALIDATION_ERROR` fields · ai 직접도 400 · 1000자 200 · 상한 REPORT 청크 12·FOLLOWUP_K 4·Tavily 3·이력 6 · 반복 호출 20회 6초 → 200 ×20 · 429 0 · Rate Limit 코드 0건 | 미조치(→ §7 잔여 위험) |  |  | evidence/A-4.txt |  |
 | A-5 | [API Key 관리] 서비스별 `printenv` 이름만 → 키는 ai-service에만 · `git grep` 키 형태 0 · backend·ai `docker logs` 키 형태 0 · 이미지 `Config.Env`에 키 없음 | 미발견 |  |  | evidence/A-5.txt |  |
 | I-1 | [비밀정보 분리] `check-sec-deploy` 무출력(이력 포함) · `.gitignore` `.env`·`.env.*` · 추적 env 파일은 `.env.example`·`frontend/.env.development`(비밀 아님)뿐 · `.env` 커밋 이력 0 | 미발견 |  |  | evidence/I-1.txt |  |
 | I-2 | [컨테이너 권한] `docker exec jobgap-backend-1 id` · `jobgap-ai-service-1 id` → 둘 다 `uid=1001(app)` · Dockerfile 실행 스테이지 `USER app` | 미발견 |  |  | evidence/I-2.txt |  |

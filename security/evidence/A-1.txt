@@ -1,0 +1,33 @@
+# A-1 [AI 모듈 외부 직접 접근] 포트 비공개 + 내부 토큰 2중 방어
+# 환경: docker compose (dev c4b3344 · ai LLM_PROVIDER=fake) · 2026-11-10 09:56 KST · 결과: 미발견(로컬)
+# 외부 접속(http://<EC2>:8000)은 DevOps T-042 EC2 배포 뒤 이 파일에 덧붙인다(I-3과 같이)
+
+## 1. 1차 방어 — 배포 compose에서 ai-service 포트 공개 없음
+$ docker compose -f docker-compose.yml config | (ports: 가진 서비스)
+frontend:                      # 80만 공개 · backend·ai-service·database는 ports 없음
+$ docker compose -f docker-compose.yml config | (ai-service networks)
+    networks:
+      app: null                # backend와 같은 내부 네트워크만 (data 네트워크는 internal: true)
+참고: 로컬 docker-compose.dev.yml만 `ports: ["127.0.0.1:8000:8000"]`(루프백 · 개발 확인용) — 배포에 쓰지 않는다
+
+## 2. 2차 방어 — X-Internal-Token 검사 (/health만 예외)
+$ grep -n require_internal_token ai-module/app/http.py ai-module/app/main.py
+http.py:18  def require_internal_token(x_internal_token = Header(alias="X-Internal-Token"))
+http.py:22      if not expected or not x_internal_token or not hmac.compare_digest(...)   # 상수 시간 비교 · 토큰 미설정이면 전부 거부
+main.py:47  @app.post("/internal/ingest", dependencies=[Depends(require_internal_token)])
+main.py:53  @app.delete("/internal/documents/{document_id}", dependencies=[Depends(require_internal_token)])
+main.py:59  @app.post("/internal/analyze/stream", dependencies=[Depends(require_internal_token)])
+
+$ curl localhost:8000/health                                                   → 200 {"status":"UP"}
+$ curl -X POST localhost:8000/internal/ingest                                  → 401 UNAUTHORIZED
+$ curl -X DELETE localhost:8000/internal/documents/1                           → 401 UNAUTHORIZED
+$ curl -X POST localhost:8000/internal/analyze/stream                          → 401 UNAUTHORIZED
+$ (같은 3개 · -H 'X-Internal-Token: wrong-token')                               → 401 UNAUTHORIZED ×3
+{"success":false,"data":null,"statusCode":401,"code":"UNAUTHORIZED","message":"UNAUTHORIZED",...}
+
+## 3. 대조 — 정상 경로(backend → ai)는 토큰을 실어 성공
+$ docker exec <서비스> printenv | cut -d= -f1 | grep -i internal     # 이름만
+backend: AI_INTERNAL_TOKEN · ai-service: AI_INTERNAL_TOKEN
+$ docker logs jobgap-ai-service-1 | grep '/internal/analyze/stream'
+"POST /internal/analyze/stream HTTP/1.1" 200   (backend 경유 후속 질문 22건)
+"POST /internal/analyze/stream HTTP/1.1" 401   (토큰 없음·틀림 직접 호출)
