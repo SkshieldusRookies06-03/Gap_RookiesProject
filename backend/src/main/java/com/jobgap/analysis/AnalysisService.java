@@ -171,15 +171,14 @@ public class AnalysisService {   // 클래스 단위 @Transactional 없음 — s
     public PageResponse<AnalysisSummary> list(AuthUser me, int page, int size) {
         var pageable = PageRequests.of(page, size, Sort.unsorted());   // 형식 400 먼저(SPEC §4 공통 순서) · size>50 → 50
         User owner = userRepository.findByUuid(me.uuid()).orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-        return PageResponse.of(analysisRepository.findByOwnerIdOrderByCreatedAtDesc(owner.getId(), pageable), this::toSummary);
+        return PageResponse.of(analysisRepository.findSummaries(owner.getId(), pageable), this::toSummary);
     }
 
-    /** DTO 변환은 트랜잭션 안에서(posting·resume LAZY) · 분석당 쿼리 2개(N+1 감수 — size 50 상한) */
-    private AnalysisSummary toSummary(Analysis a) {
-        String lastStatus = messageRepository.findTopByAnalysisIdOrderByIdDesc(a.getId())
-                .filter(m -> "ASSISTANT".equals(m.getRole())).isPresent() ? "DONE" : "INCOMPLETE";
-        return new AnalysisSummary(String.valueOf(a.getId()), a.getTitle(), a.getPosting().getTitle(), a.getResume().getTitle(),
-                (int) messageRepository.countByAnalysisId(a.getId()), lastStatus, a.getCreatedAt());
+    /** [T-038] 행마다 추가 쿼리 없음 — 개수·마지막 역할·제목은 findSummaries 한 쿼리에서 온다 */
+    private AnalysisSummary toSummary(AnalysisRepository.SummaryRow r) {
+        String lastStatus = "ASSISTANT".equals(r.getLastRole()) ? "DONE" : "INCOMPLETE";
+        return new AnalysisSummary(String.valueOf(r.getId()), r.getTitle(), r.getPostingTitle(), r.getResumeTitle(),
+                r.getMessageCount().intValue(), lastStatus, r.getCreatedAt());
     }
 
     /** 대화 내역 — 오래된 순 · sources는 DB 문자열 그대로(@JsonRawValue로 배열) */

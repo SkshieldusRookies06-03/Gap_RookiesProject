@@ -1,0 +1,46 @@
+# B-1 SQL Injection — 쿼리 문자열 결합 · sort 인젝션 400
+# 점검: 2026-11-10 KST · surim/frontend(HEAD 6b1bc66 · origin/dev 반영) · backend 소스 수정 없음
+# 실서버: Docker Compose · nginx(frontend 컨테이너, 호스트 80) → backend:8080 (backend는 호스트 미노출 — 모든 요청은 http://localhost/api/… 경유)
+# 이미지 확인: backend 이미지 2026-11-09 15:50 KST 빌드. 실행 중 jar의 PageRequests·DocumentService·DocumentController·GlobalExceptionHandler·ApiResponse
+#            .class SHA-256이 오늘 HEAD로 컴파일한 로컬 클래스와 같음 → 이 행이 거치는 코드는 최신 소스와 동일 (자세한 건 FA.md T-063 상세)
+# 인증: 시드 계정 kim@example.com 로그인으로 받은 accessToken (값은 기록하지 않음 · 길이 191)
+
+## A. 정적 분석 (소스)
+$ grep -rn '" *+ *[a-z]' backend/src/main --include=*Repository.java | wc -l
+0
+$ grep -rnE 'createQuery|createNativeQuery|nativeQuery *= *true|@Query|JdbcTemplate|EntityManager' backend/src/main --include=*.java
+backend/src/main/java/com/jobgap/document/DocumentRepository.java:25:    @Query("select d from Document d join fetch d.owner where d.id = :id")
+(그 밖은 주석 1줄) → JPQL 1개는 바인딩 파라미터(:id) · 네이티브 쿼리·JdbcTemplate·문자열 결합 없음
+
+sort 허용 목록:
+backend/src/main/java/com/jobgap/common/PageRequests.java:13    DOCUMENT_SORT_KEYS = Set.of("createdAt", "title")
+backend/src/main/java/com/jobgap/common/PageRequests.java:23-30 documentSort — "키,방향" 2조각 · 키 ∈ {createdAt,title} · 방향 ∈ {asc,desc} 아니면 400 VALIDATION_ERROR
+backend/src/main/java/com/jobgap/document/DocumentService.java:66 list()는 반드시 PageRequests.documentSort(sort)를 거친다
+
+## B. 단위 테스트 (2026-11-10 실행)
+$ cd backend && ./mvnw -B test -Dtest='PageRequestsTest,GlobalExceptionHandlerTest,MalformedJsonTest,JwtProviderTest' -Dsurefire.failIfNoSpecifiedTests=false
+PageRequestsTest: Tests run 4, Failures 0, Errors 0
+  "허용 목록 밖 정렬은 400" — password,asc · ownerId,desc · content,asc · title · title,up · title,ASC · createdAt,desc,id · ,desc · title;drop table users,asc
+
+## C. 실제 HTTP (2026-11-10 14:14 KST 실행 · 응답 원문)
+$ curl -s "http://localhost/api/documents?sort=title,asc" -H "Authorization: Bearer $T"          (대조군)
+200 application/json · {"success":true,"data":{"content":[…시드 문서 2건…],"page":{…"totalElements":2…}}}
+
+$ curl -s "http://localhost/api/documents?sort=title%27%20OR%20%271%27=%271" -H "Authorization: Bearer $T"
+400 application/json
+{"success":false,"data":null,"message":"sort는 createdAt|title,asc|desc 중 하나입니다","timestamp":"2026-11-10T14:14:04.406348637+09:00","statusCode":400,"code":"VALIDATION_ERROR"}
+
+$ curl -s "http://localhost/api/documents?sort=title%3Bdrop%20table%20users,asc" -H "Authorization: Bearer $T"
+400 application/json · code VALIDATION_ERROR · 같은 message
+
+$ curl -s "http://localhost/api/documents?sort=password,asc" -H "Authorization: Bearer $T"
+400 application/json · code VALIDATION_ERROR · 같은 message
+
+$ curl -s "http://localhost/api/documents?sort=(select%201),asc" -H "Authorization: Bearer $T"
+400 application/json · code VALIDATION_ERROR · 같은 message
+
+노출 검사(응답 본문에 Exception|at com.|java.|springframework|hibernate|SQL|stack|trace|/app/ 등): 5건 모두 0
+
+## 판정: PASS
+- 문자열 결합 0 · 허용 목록 밖 sort 4종 모두 실제 HTTP 400 봉투(SQL·내부 정보 노출 0) · 정상 sort는 200
+- 범위: 문서 목록 sort 파라미터 기준. 분석 목록은 Sort.unsorted() 고정(사용자 sort 입력 없음)
