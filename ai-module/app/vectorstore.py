@@ -110,5 +110,16 @@ def load_chunks(document_id: str, owner_uuid: str, limit: int) -> list[dict]:
 
 
 def search(owner_uuid: str, document_ids: list[str], query: str, k: int) -> list[dict]:
-    """FOLLOWUP 모드 — as_retriever 또는 similarity_search_with_relevance_scores(0~1, 높을수록 유사)"""
-    raise NotImplementedError("T-029 미구현 — search")
+    """FOLLOWUP 검색 — 내 문서 중 고른 문서에서만, 질문과 비슷한 조각 k개 (점수 0~1, 높은 순)"""
+    store = _load_store()
+    if store is None or store.index.ntotal == 0:
+        return []
+    ids = set(document_ids)
+
+    def mine(meta: dict) -> bool:
+        return meta.get("owner_uuid") == owner_uuid and meta.get("document_id") in ids
+
+    hits = store.similarity_search_with_relevance_scores(
+        query, k=k, filter=mine, fetch_k=store.index.ntotal)
+    return [{"documentId": d.metadata["document_id"], "docType": d.metadata["doc_type"],
+             "chunk": d.page_content, "score": float(s)} for d, s in hits]
