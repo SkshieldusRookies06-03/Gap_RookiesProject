@@ -37,11 +37,28 @@ MalformedJsonTest: Errors 1 — 실행 환경 문제(코드 결함 아님)
 | POST /api/documents 에 Content-Type: application/json | 400 | message "Content-Type을 확인하세요" · VALIDATION_ERROR | 0 |
 모두 application/json 봉투 · 스택·예외 클래스·내부 경로 노출 0
 
-## D. 실제 HTTP 500 — BLOCKED
-- 위 C의 요청은 모두 4xx로 매핑된다 — 500 응답 본문은 관측하지 못했다.
-- onboarding §9.3의 B-8 방법(깨진 JSON 로그인)은 현재 코드에서 400이다. docs/9 B-8 행 "잘못된 JSON 본문 등 500 유발"과 코드가 다르다.
-- 코드·DB를 바꾸지 않고 500을 내는 승인된 방법이 없다. DB 컨테이너 중지·데이터 조작·코드 변경 등 임의 재현은 하지 않았다.
+## D. 실제 HTTP 500 — PASS (사용자 실행 · 2026-11-10 16:29:34 KST)
+- 환경: 개인 로컬 Docker Compose (nginx → backend → MariaDB)
+- 방법: 정상 로그인 → 개인 로컬 DB 컨테이너 일시 중지 → 유효한 Access Token으로 인증된 GET /api/documents
+  (DB 일시 중지는 사용자가 개인 로컬 환경에서 직접 수행 · 데이터 삭제·코드 변경 없음)
+- 실행: curl -i --max-time 45 "http://localhost/api/documents" -H "Authorization: Bearer $T"   (토큰 값 비기록)
 
-## 판정: BLOCKED
-- 정적·단위 테스트·실서버 4xx 오류 응답 7종: 노출 미발견
-- 실제 HTTP 500 응답 본문: 미관측 → 기술 리드가 500 재현 방법을 정해 주면 같은 노출 검사로 확정
+응답 원문:
+HTTP/1.1 500
+Content-Type: application/json
+{"success":false,"data":null,"message":"잠시 후 다시 시도해 주세요","timestamp":"2026-11-10T16:29:34.0101433+09:00","statusCode":500,"code":"INTERNAL_SERVER_ERROR"}
+
+노출 검사:
+- HTTP 상태 500 · 본문 statusCode 500 · code INTERNAL_SERVER_ERROR — application/json 공통 봉투
+- 스택 트레이스·예외 클래스명 미노출
+- SQL 쿼리·DB 연결 정보(호스트·포트·드라이버 메시지) 미노출
+- 내부 파일 경로 미노출
+- 일반화된 오류 문구만 반환 — A의 Exception.class 처리(스택은 로그에만)와 응답 형식 일치
+
+## 판정: PASS
+- 정적 분석: 응답에 내부 예외 정보를 싣는 경로 없음 (include-stacktrace/message: never)
+- 단위 테스트: GlobalExceptionHandlerTest 6건 통과
+- 실서버 4xx 오류 응답 7종(C): 노출 0
+- 실서버 HTTP 500 응답(D): 상태 코드·JSON 봉투 확인 · 내부 정보 노출 0
+- 참고(그대로 유지): MalformedJsonTest 1건은 로컬 DB 연결 환경 문제로 ERROR — Maven 17 run / 0 fail / 1 error · exit 1
+- 참고: docs/9 B-8 행의 "잘못된 JSON 본문 등 500 유발" 문구는 코드(400)와 다르다 — 이번 500은 DB 일시 중지로 재현
