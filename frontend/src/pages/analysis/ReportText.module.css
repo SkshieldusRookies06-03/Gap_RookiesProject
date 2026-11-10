@@ -1,7 +1,15 @@
-.report { color: var(--color-text); font-size: var(--font-size-md); overflow-wrap: anywhere; }
-.heading { margin: var(--space-4) 0 var(--space-2); font-size: var(--font-size-lg); }
+/* 디자인 Message/Assistant 본문 (Figma GAP 7:197 · Body/Report 15/26) — 색·간격은 토큰만 (ADR-07)
+   제안 토큰(--color-subtle)은 tokens.css에 없으면 기존 --color-bg로 대체된다 */
+.report {
+  color: var(--color-text); font-size: var(--font-size-md); line-height: calc(26 / 15);
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.report > :first-child { margin-top: 0; }
+.report > :last-child { margin-bottom: 0; }
+.heading { margin: var(--space-4) 0 var(--space-1); font-size: var(--font-size-md); font-weight: 700; line-height: calc(26 / 15); }
 .paragraph { margin: 0 0 var(--space-3); white-space: pre-wrap; }
 .list { margin: 0 0 var(--space-3); padding-left: var(--space-6); }
-.tableWrap { margin-bottom: var(--space-3); overflow-x: auto; }
-.table { width: 100%; border-collapse: collapse; }
-.table th, .table td { padding: var(--space-2); border: 1px solid var(--color-border); text-align: left; }
+.tableWrap { margin: 0 0 var(--space-3); overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); line-height: calc(20 / 13); }
+.table th, .table td { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); text-align: left; vertical-align: top; overflow-wrap: normal; }   /* 좁은 화면: 칸 안 단어를 쪼개지 않고 표를 가로 스크롤(.tableWrap) */
+.table th { background: var(--color-subtle, var(--color-bg)); font-weight: 500; white-space: nowrap; }

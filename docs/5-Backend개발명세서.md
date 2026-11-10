@@ -266,4 +266,5 @@ this.streamTimeoutSeconds = props.streamTimeoutSeconds();
 ./mvnw org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom && cp target/bom.json ../security/evidence/bom.json   # SBOM(B-13)
 ```
 Dockerfile(`backend/Dockerfile`): 빌드 `maven:3.9.9-eclipse-temurin-17` → 실행 `eclipse-temurin:17-jre-jammy` · 비root(uid 1001) · `TZ=Asia/Seoul` · HEALTHCHECK `curl -fsS http://localhost:8080/actuator/health`.
+
 SBOM 결과(2026-11-10 · CycloneDX 1.6 · OSV 조회): 구성 요소 **141개** · 알려진 취약점 **0건**(High 이상 0). Spring Boot 3.3.5 시절 150건(CRITICAL 12 · HIGH 52)은 4.1.2 전환(`95dc5bb`)으로 해소 — 산출물 [`security/evidence/bom.json`](../security/evidence/bom.json) · 조회 기록 [`B-13-scan.txt`](../security/evidence/B-13-scan.txt) · 상세는 9번 점검서 B-13.

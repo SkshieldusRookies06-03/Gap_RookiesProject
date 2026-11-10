@@ -1,0 +1,34 @@
+# B-7 [보안 설정 오류] Actuator 노출 · CORS Origin · 배포 게이트
+# 환경: docker compose (dev a675472 + feature/security) · 2026-11-09 15:43 KST · 결과: 미발견
+
+## 1. 정적 — 게이트
+$ node scripts/check-sec-deploy.mjs
+(무출력 · exit 0)  — Actuator '*' · show-values=always · H2 콘솔 · CORS '*' · nginx ACAO '*' 0건
+
+$ grep -n exposure backend/src/main/resources/application.yml
+33:  endpoints.web.exposure.include: ${ACTUATOR_EXPOSURE:health,info}
+$ grep -n actuator backend/src/main/java/com/jobgap/security/SecurityConfig.java
+49:                .requestMatchers("/actuator/health").permitAll()
+50:                .requestMatchers("/actuator/**").hasRole("ADMIN")
+63:            throw new IllegalStateException("CORS_ALLOWED_ORIGINS에 '*'를 쓸 수 없습니다 (점검서 B-7) ...");   # '*'면 기동 실패
+$ docker exec jobgap-backend-1 printenv CORS_ALLOWED_ORIGINS ACTUATOR_EXPOSURE
+http://localhost:5173
+health,info
+
+## 2. 동적 — Actuator (USER 토큰 = lee 로그인)
+$ curl localhost:8080/actuator/health                               → 200 {"status":"UP"}
+$ curl localhost:8080/actuator/metrics                              → 401 {"success":false,...,"statusCode":401,"code":"UNAUTHORIZED"}
+$ curl localhost:8080/actuator/metrics -H "Authorization: Bearer $USER"  → 403 {"success":false,...,"statusCode":403,"code":"FORBIDDEN"}
+$ curl localhost:8080/actuator/env                                  → 401 UNAUTHORIZED
+$ curl localhost:8080/actuator/env -H "Authorization: Bearer $USER"      → 403 FORBIDDEN
+
+## 3. 동적 — CORS preflight
+$ curl -X OPTIONS localhost:8080/api/documents -H 'Origin: http://evil.example' -H 'Access-Control-Request-Method: GET' -D -
+HTTP/1.1 403
+(Access-Control-Allow-Origin 없음)
+$ curl -X OPTIONS localhost:8080/api/documents -H 'Origin: http://localhost:5173' -H 'Access-Control-Request-Method: GET' -D -
+HTTP/1.1 200
+Access-Control-Allow-Origin: http://localhost:5173
+
+## 재확인 예정
+- EC2 배포(D5) 뒤 CORS_ALLOWED_ORIGINS 값이 배포 Origin 하나인지 · 외부에서 /actuator/metrics 401
