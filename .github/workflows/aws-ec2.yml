@@ -1,0 +1,35 @@
+
+name: aws-ec2-build-push
+
+on:
+  workflow_run:
+    workflows: ["dockerhub-build-push"] # dockerhub-build-push 워크플로우가 끝날 때 트리거
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # 빌드가 성공적으로 끝났을 때만 배포 실행
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/app
+            
+            # Docker Hub 로그인
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            
+            # 최신 이미지 풀링 및 컨테이너 재시작
+            docker compose pull
+            docker compose up -d --remove-orphans
+            
+            # 불필요한 로컬 찌꺼기 이미지 청소
+            docker image prune -f
+            echo "> Production Deployment Successful!"

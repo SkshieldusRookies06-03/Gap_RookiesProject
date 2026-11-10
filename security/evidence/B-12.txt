@@ -1,0 +1,7 @@
+# B-12 [비밀번호 저장] DB 값 BCrypt 접두($2a$) 확인
+# 환경: docker compose database (MariaDB 10.11) · 2026-11-09 KST · 결과: 미발견
+
+$ SELECT email, LEFT(password_hash,4) AS prefix, LENGTH(password_hash) AS len FROM users WHERE email IN ('kim@example.com','lee@example.com');
+email            prefix  len
+kim@example.com  $2a$    60
+lee@example.com  $2a$    60

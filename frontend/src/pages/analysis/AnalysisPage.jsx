@@ -59,15 +59,21 @@ function DocumentPicker({ onStart, disabled }) {
 DocumentPicker.propTypes = { onStart: PropTypes.func.isRequired, disabled: PropTypes.bool.isRequired };
 
 function MessageList({ messages }) {
-  return messages.map((m, i) => (m.role === 'USER'
-    ? <p key={i} className={styles.user}>{m.content}</p>
-    : (
-      <article key={i} className={styles.card}>
-        <ReportText text={m.content} />
-        {m.stopped && <p className={styles.note}>중단됨 — 여기까지의 답변은 화면에만 남고 기록에는 저장되지 않습니다</p>}
-        <SourceChips sources={m.sources} />
-      </article>
-    )));
+  return (
+    <>
+      {messages.map((m, i) => (m.role === 'USER'
+        ? <p key={i} className={styles.user}>{m.content}</p>
+        : (
+          <article key={i} className={styles.card}>
+            <ReportText text={m.content} />
+            {m.stopped && <p className={styles.note}>중단됨 — 여기까지의 답변은 화면에만 남고 기록에는 저장되지 않습니다</p>}
+            <SourceChips sources={m.sources} />
+          </article>
+        )))}
+      {/* 마지막이 USER면 그 질문의 답변은 저장되지 않았다(SPEC §4.3 — ASSISTANT는 완주했을 때만 저장) */}
+      {messages.at(-1)?.role === 'USER' && <p className={styles.note}>답변 없음(중단됨)</p>}
+    </>
+  );
 }
 MessageList.propTypes = {
   messages: PropTypes.arrayOf(PropTypes.shape({
@@ -99,30 +105,64 @@ FollowUpForm.propTypes = { onSubmit: PropTypes.func.isRequired };
 export default function AnalysisPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { messages, streaming, error, analysisId, start, stop, reset } = useChatStream();
+  const { messages, streaming, error, analysisId, start, stop, hydrate, reset } = useChatStream();
+  const [load, setLoad] = useState({ loading: false, error: null });
   const lastReq = useRef(null);
   const run = (req) => { lastReq.current = req; start(req); };
+  // 재시도 = 실패한 요청 그대로(새 분석은 {postingId, resumeId}, 후속은 {analysisId, question}).
+  // 후속 질문이면 실패로 남은 USER 말풍선을 먼저 걷어 낸다 — start()가 같은 질문을 다시 붙이므로 화면에 두 번 보이지 않게
+  const retry = () => {
+    const req = lastReq.current;
+    const last = messages.at(-1);
+    if (req.question && last?.role === 'USER' && last.content === req.question) hydrate(messages.slice(0, -1));
+    run(req);
+  };
 
   // 새 분석이 analysis 이벤트를 받으면 URL만 바꾼다(SPEC §5) · 내비 "새 분석"으로 돌아오면 이전 대화를 비운다
   // URL 교체는 analysisId가 새로 발급된 순간에만 — id가 바뀔 때 다시 돌면 reset() 전의 옛 id로 되돌아간다
+  // 새 분석이 analysis 뒤 error로 끝나 /analyses/N에서 재시도하면 새 id M이 온다 — 그때도 URL을 M으로 맞춘다
   useEffect(() => {
-    if (!id && streaming && analysisId) navigate(ROUTES.analysis(analysisId), { replace: true });
+    if (streaming && analysisId && analysisId !== id) navigate(ROUTES.analysis(analysisId), { replace: true });
   }, [analysisId]);
-  useEffect(() => { if (!id) reset(); }, [id, reset]);
+  useEffect(() => { if (!id) { reset(); setLoad({ loading: false, error: null }); } }, [id, reset]);
 
+  // /analyses/:id 진입 — 지난 대화를 불러와 hydrate한다. 방금 만든 분석으로 URL만 바뀐 경우(id === analysisId)는
+  // 진행 중인 스트림을 덮지 않게 건너뛴다(SPEC §5). 다른 분석이면 이전 대화·스트림을 먼저 버린다.
+  // id가 바뀔 때만 돈다 — analysisId 변화(hydrate·reset)로 다시 돌면 같은 요청이 두 번 나간다
+  useEffect(() => {
+    if (!id || id === analysisId) return undefined;
+    let alive = true;
+    reset();
+    setLoad({ loading: true, error: null });
+    api.get(`/api/analyses/${id}/messages?page=0&size=50`)
+      .then((d) => { if (alive) { hydrate(d.content, id); setLoad({ loading: false, error: null }); } })
+      .catch((e) => alive && setLoad({ loading: false, error: e }));   // 남의 분석 403 · 없음 404
+    return () => { alive = false; };
+  }, [id]);
+
+  if (load.loading) return <div className={styles.chat}><LoadingSpinner /></div>;
+  if (load.error) {
+    return (
+      <div className={styles.chat}>
+        <ErrorMessage error={load.error} />
+        <Link to={ROUTES.ANALYSES}>기록으로</Link>
+      </div>
+    );
+  }
   return (
     <div className={styles.chat}>
       <h1 className={styles.title}>갭 분석</h1>
       {!id && <DocumentPicker onStart={run} disabled={streaming} />}
       <MessageList messages={messages} />
-      {error && <ErrorMessage error={error} onRetry={streaming ? null : () => run(lastReq.current)} />}
+      {error && <ErrorMessage error={error} onRetry={streaming ? null : retry} />}
       {streaming && (
         <div className={styles.bar}>
           <LoadingSpinner label="생성 중…" />
           <Button variant="secondary" onClick={stop}>중단</Button>
         </div>
       )}
-      {!streaming && analysisId && <FollowUpForm onSubmit={(question) => run({ analysisId, question })} />}
+      {/* 새 분석이 리포트 없이 실패하면(messages 비어 있음) 이어 쓸 대화가 없다 — 재시도로만 다시 시작 */}
+      {!streaming && analysisId && messages.length > 0 && <FollowUpForm onSubmit={(question) => run({ analysisId, question })} />}
     </div>
   );
 }
