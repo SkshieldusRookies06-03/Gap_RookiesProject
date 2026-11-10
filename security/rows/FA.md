@@ -18,10 +18,10 @@
 
 | 행 | 점검 방법(실행한 명령·도구) | 결과 | 재확인 명령·결과 | 증거 | 티켓 |
 |---|---|---|---|---|---|
-| B-1 |  |  |  |  | T-063 |
-| B-8 |  |  |  |  | T-063 |
-| B-10 |  |  |  |  | T-063 |
-| B-11 |  |  |  |  | T-063 |
+| B-1 | `grep -rn '" *+ *[a-z]' backend/src/main --include=*Repository.java \| wc -l` · `@Query` grep · `PageRequests.documentSort` 정적 확인 · `./mvnw test -Dtest=PageRequestsTest` · compose에서 `curl -s "http://localhost/api/documents?sort=…" -H "Authorization: Bearer $T"` 4종 + 대조군 | 미발견 — 0줄 · JPQL 1개는 `:id` 바인딩 · 단위 4 green · 실서버 `title' OR '1'='1` · `title;drop table users,asc` · `password,asc` · `(select 1),asc` 모두 400 `VALIDATION_ERROR` 봉투 · 대조군 `title,asc` 200 · 노출 0 | 같은 curl → 400 4건 (2026-11-10) | `B-1.txt` | T-063 |
+| B-8 | `application.yml` · `GlobalExceptionHandler` 정적 확인 · `./mvnw test -Dtest=GlobalExceptionHandlerTest,MalformedJsonTest` · compose에서 오류 유발 요청 7종(깨진 JSON 로그인 · `page=abc` · id 문자/범위 초과 · 없는 경로 · 허용 안 된 메서드 · 업로드에 JSON) · **실제 500**: 정상 로그인 → 개인 로컬 DB 일시 중지 → 인증된 `GET /api/documents`(2026-11-10 16:29:34 KST · 사용자 실행) | 미발견 — `include-stacktrace/message: never` · 단위 6 green(500 봉투 · 제약 이름 미노출) · 실서버 4xx 7종 모두 JSON 봉투 · 노출 0 · 실제 500: `HTTP/1.1 500` `application/json` 봉투 `INTERNAL_SERVER_ERROR` "잠시 후 다시 시도해 주세요" · 스택·예외 클래스·SQL·DB 연결 정보·내부 경로 노출 0 → **PASS**. `MalformedJsonTest`는 로컬 DB 연결 실패로 ERROR(환경) — 같은 입력을 실서버로 확인 | 같은 curl · DB 일시 중지 500 (개인 로컬) | `B-8.txt` | T-063 |
+| B-10 | `DocumentService.readText` · multipart 한도 · nginx 정적 확인 · compose `POST http://localhost/api/documents`에 직접(클라이언트 우회) 8건 · 전후 문서 수 | 미발견 — `a.exe`(octet-stream·text/plain 위장) · `a.html`(text/html·text/plain 위장) · `a.md.exe` · `a.txt.exe` → 415 `UNSUPPORTED_FILE` · `big.md` 307,201B → 413 `FILE_TOO_LARGE` 봉투 · `huge.md` 1,228,800B → nginx 413(HTML · 버전 없음) · 문서 수 2 → 2 | 같은 curl 8건 → 415×6 · 413×2 (2026-11-10) | `B-10.txt` | T-063 |
+| B-11 | `AuthDtos.RegisterRequest` · `@Valid` · 핸들러 정적 확인 · compose `POST http://localhost/api/auth/register` 형식 오류 4종 | 미발견 — 이메일 형식 틀림+비밀번호 3자 → 400 `fields`=email·password · 이름 공백+비밀번호 65자 → password·name · `{}` → name·email·password · 모두 `VALIDATION_ERROR` · 계정 생성 없음. 참고: `@NotBlank` 기본 문구가 영어 | 같은 curl 4건 → 400 + `fields[]` (2026-11-10) | `B-11.txt` | T-063 |
 | F-1 | grep 위험 렌더 API 0줄 · `ReportText.test.jsx` 4 green · 목+headless Chrome에서 문서 제목·질문·(가로챈 SSE) AI 응답·출처에 `<img onerror>`·`<script>`·`javascript:` 입력 · nginx CSP 설정 정적 확인 · compose에서 `curl.exe -sI http://localhost/` CSP 헤더 | 미발견 — 전부 글자로 보임 · alert 0 · `javascript:` 링크 0 · 실제 CSP 헤더가 설정값과 일치 | `curl.exe -sI http://localhost/ \| findstr /i "content-security"` → `default-src 'self'; …` 일치 | `F-1.txt` · `F-1-csp.txt` · `F-1.png` · `F-1-documents.png` | T-039 |
 | F-2 | `authStore.js` partialize 확인 · 화면 로그인 후 localStorage·sessionStorage·cookie 키 읽기(값은 가림) · 새로고침 | 미발견 — `jobgap-auth`에 `refreshToken`·`user`만 · access는 저장소 어디에도 없음 · 새로고침 시 refresh로 복구. 잔여 위험: refresh의 localStorage 보관(§7) | DevTools 캡처 `F-2.png` — 사람이 찍을 것(아래 수동 확인) | `F-2.txt` | T-039 |
 | F-3 | 새 프로필로 보호 라우트 4개 직접 접근 · localStorage refresh를 임의 값으로 바꾸고 새로고침 · 변조·만료·없는 Bearer로 API 호출(목) · `JwtProvider` 정적 확인 · compose에서 서명 1글자 바꾼 JWT로 `GET /api/documents` | 미발견 — 4개 모두 `/login` · 가짜 refresh는 401 → 세션 비움 → `/login` · 변조 Access 401(목) · 실제 백엔드: 정상 JWT 200 · 서명 변조 JWT 401 `UNAUTHORIZED` | compose 변조 JWT → 401 `UNAUTHORIZED` · `JwtProviderTest`는 미실행(Maven 의존성 오프라인 없음) | `F-3.txt` | T-039 |
@@ -75,3 +75,24 @@
 3. **F-3 실제 백엔드** — 완료(2026-11-09 · `F-3.txt` 4)).
 4. **F-6 실서버** — 업로드 3건 완료(`F-6.txt` 3)). nginx 1MB 413은 B-10(T-063)에서 확인한다.
 5. **F-7 실서버 500** — 승인된 재현 방법이 없어 미실행. B-8(T-063)과 기술 리드 승인 뒤 확인한다.
+
+## B-1·B-8·B-10·B-11 상세 (T-063 · 2026-11-10)
+
+**환경** — `surim/frontend` HEAD `6b1bc66`(origin/dev 반영) · backend 소스·판정 테스트·설정 수정 없음 · 컨테이너 재생성·재빌드 없음.
+- compose(사용자가 기동): frontend(nginx, 호스트 80) · backend(healthy, 8080 호스트 미노출) · ai-service · database(MariaDB 10.11.10). 모든 요청은 `http://localhost/api/…`(nginx 프록시).
+- 이미지가 최신 코드인지:
+  - backend 이미지 2026-11-09 15:50 KST 빌드 · 그 뒤 `backend/`에 들어온 커밋: `58ac397`(Dockerfile HEALTHCHECK timeout 5s→10s) · `AnalysisService.java`(S-01·S-03).
+  - 실행 중 jar에서 꺼낸 `.class` SHA-256을 오늘 HEAD 로컬 컴파일과 비교: `PageRequests` · `GlobalExceptionHandler` · `ApiResponse` · `DocumentService` · `DocumentController` · `AuthController` · `AuthDtos$RegisterRequest` **같음** · `AnalysisService` **다름**(이미지가 S-01·S-03 이전 — B 행 경로가 아님).
+  - jar 안 `application.yml`의 multipart·`server.error` 값 = 저장소 · 컨테이너 nginx `default.conf` = 저장소(diff 없음).
+  - → B-1·B-8·B-10·B-11이 거치는 코드는 최신과 같다. 분석 기능을 실서버로 볼 때는 재빌드가 필요(사용자 확인 뒤).
+- 인증: 시드 계정 kim 로그인 accessToken(값 비기록). 데이터 영향: GET·거절되는 요청만 · kim 문서 수 2 → 2 · 가입은 전부 400이라 계정 생성 없음 · 삭제한 데이터 없음.
+- Maven(2026-11-10 · 재실행 안 함): PageRequests 4 · GlobalExceptionHandler 6 · JwtProvider 6 green · MalformedJsonTest 1 ERROR(로컬 DB 연결 실패 `GSS-API authentication exception` — 환경 · 코드 결함 아님) · 17 run / 0 fail / 1 error · exit 1.
+
+| 행 | 기대 결과 | 판정 | 남은 것 → 후속 |
+|---|---|---|---|
+| B-1 | 결합 grep 0 · sort 허용 목록 밖 400 봉투 | **PASS** | — |
+| B-8 | 500 응답 본문에 `Exception`·`at com.` 없음 | **PASS**(정적·단위·실서버 4xx 7종 노출 0 · 실제 500(DB 일시 중지 · 16:29:34) JSON 봉투 · 내부 정보 노출 0) | `docs/9` B-8 "깨진 JSON → 500" 문구와 코드(400) 불일치 정리(기술 리드) |
+| B-10 | 300KB 413 봉투 · 1MB 초과 nginx 413 · `.exe`·`.html`·`.md.exe` 415 | **PASS** | — |
+| B-11 | 가입 형식 오류 → 400 + `fields[]`에 그 필드 | **PASS** | DB 있는 환경에서 `AuthAcceptanceTest`·`BoundaryAcceptanceTest` (선택) |
+
+**발견 0건** — FAIL·BLOCKED 없음. B-8 실제 500은 사용자가 개인 로컬 compose에서 DB를 일시 중지해 확인(2026-11-10 16:29:34 KST).

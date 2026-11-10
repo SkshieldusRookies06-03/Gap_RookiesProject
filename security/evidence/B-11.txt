@@ -1,0 +1,38 @@
+# B-11 입력 검증 — 잘못된 입력 → 400 + fields[] 필드별 항목
+# 점검: 2026-11-10 KST · surim/frontend(HEAD 6b1bc66) · backend 소스 수정 없음
+# 실서버: Docker Compose · POST http://localhost/api/auth/register (nginx 경유 · 인증 불필요 경로)
+# 이미지 확인: 실행 중 jar의 AuthController·AuthDtos$RegisterRequest·GlobalExceptionHandler·ApiResponse .class SHA-256 = 오늘 HEAD 로컬 빌드
+
+## A. 정적 분석 (소스)
+backend/src/main/java/com/jobgap/auth/AuthDtos.java:11-14 RegisterRequest
+  email @NotBlank @Pattern(이메일, "이메일 형식이 아닙니다") @Size(max=100) · password @NotBlank @Size(8~64, "비밀번호는 8~64자입니다") · name @NotBlank @Size(max=20)
+backend/src/main/java/com/jobgap/auth/AuthController.java:33 register(@Valid @RequestBody …)
+backend/src/main/java/com/jobgap/common/GlobalExceptionHandler.java:44-49 MethodArgumentNotValidException → 400 VALIDATION_ERROR + fields[{field,message}]
+
+## B. 실제 HTTP (2026-11-10 14:14 KST 실행 · 응답 원문)
+1) 이메일 형식 틀림 + 비밀번호 3자 (본문은 UTF-8 파일로 전송 · name "테스트")
+$ curl -s -X POST http://localhost/api/auth/register -H 'Content-Type: application/json' --data-binary @reg1.json
+   reg1.json = {"email":"not-an-email","password":"abc","name":"테스트"}
+400 application/json
+{"success":false,"data":null,"message":"입력값을 확인하세요","timestamp":"2026-11-10T14:14:27.106419756+09:00","statusCode":400,"code":"VALIDATION_ERROR","fields":[{"field":"email","message":"이메일 형식이 아닙니다"},{"field":"password","message":"비밀번호는 8~64자입니다"}]}
+
+2) 같은 입력 · name "tester"(ASCII) · -d 인라인
+400 · fields = email "이메일 형식이 아닙니다" · password "비밀번호는 8~64자입니다"
+
+3) 이름 공백 + 비밀번호 65자
+$ curl -s -X POST http://localhost/api/auth/register -H 'Content-Type: application/json' -d '{"email":"t063-x@example.com","password":"a…(65자)","name":" "}'
+400 · "fields":[{"field":"password","message":"비밀번호는 8~64자입니다"},{"field":"name","message":"must not be blank"}]
+
+4) 필드 전부 누락 {}
+400 · "fields":[{"field":"name","message":"must not be blank"},{"field":"email","message":"must not be blank"},{"field":"password","message":"must not be blank"}]
+
+노출 검사(Exception|at com.|java.|SQL|stack 등): 4건 모두 0 · 모두 400이라 계정은 만들어지지 않음
+
+실행 메모: 첫 시도에서 1)을 curl -d 인라인(한글 name)으로 보냈을 때 400인데 fields가 없었다.
+          Windows 명령줄에서 한글 인자가 UTF-8로 전달되지 않아 서버가 JSON 형식 오류(400, fields 없음)로 본 것 — 같은 내용을 UTF-8 파일(1)과
+          ASCII 이름(2)으로 보내면 fields가 나온다. 서버 결함이 아니라 클라이언트 인코딩 문제로 판단.
+
+## 판정: PASS
+- 가입 형식 오류 4종 모두 400 VALIDATION_ERROR + fields[]에 틀린 필드만 정확히 담김
+- 참고(보안 아님 · 백엔드 협조): @NotBlank 기본 메시지가 영어 "must not be blank" — 다른 필드 문구(한국어)와 다름
+- 판정 테스트 AuthAcceptanceTest·BoundaryAcceptanceTest는 DB가 필요해 로컬에서 실행하지 않음
