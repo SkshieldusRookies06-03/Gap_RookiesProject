@@ -21,10 +21,37 @@ cd frontend && npm test
 cd ai-module && uv run pytest -q                     # 키 없이 돈다
 ```
 
-## 실행 (D3부터 · DevOps가 채운다)
-1. `cp .env.example .env` 후 값 채우기
-2. `docker compose up -d --build` → http://localhost
-3. 디버깅: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up`
+## 로컬 실행 방법
+
+### 1. 환경변수 설정
+```bash
+cp .env.example .env
+```
+`.env` 파일에 DB_PASSWORD, DB_ROOT_PASSWORD, JWT_SECRET,
+AI_INTERNAL_TOKEN, OPENAI_API_KEY, TAVILY_API_KEY 등을 설정한다.
+실제 비밀번호 및 API 키는 Git에 커밋하지 않는다.
+
+### 2. 전체 서비스 실행
+```bash
+docker compose config -q
+docker compose up -d --build
+docker compose ps
+```
+정상 기동 시 브라우저에서 http://localhost 로 접속한다.
+
+### 3. 테스트 및 점검
+```bash
+node seams/check-api.mjs http://localhost
+node scripts/check-sec-deploy.mjs
+```
+
+### 4. 오류 확인 및 종료
+```bash
+docker compose logs --tail=80 backend
+docker compose logs --tail=80 ai-service
+docker compose down
+```
+로컬 디버깅 시에는 `docker-compose.dev.yml`을 함께 사용한다.
 
 ## 팀
 | 레인 | 이름 |
