@@ -1,0 +1,34 @@
+# A-4 [(선택) 과도한 사용] 질문 길이 상한 · 검색 상한 · 반복 호출
+# 환경: docker compose (dev c4b3344 · ai LLM_PROVIDER=fake) · 2026-11-10 09:56 KST
+# 결과: 미조치(→ §7 잔여 위험) — 입력·검색 상한은 있으나 반복 호출 제한(Rate Limit)이 없다
+
+## 1. 질문 길이 상한 1000자 — backend · ai 둘 다
+$ grep -n "Size(max" backend/src/main/java/com/jobgap/analysis/AnalysisDtos.java
+16:  @Size(max = 1000, message = "질문은 1000자 이하입니다") String question
+$ grep -n max_length ai-module/app/schemas.py
+26:    question: str = Field(default="", max_length=1000)
+
+$ curl -X POST localhost:8080/api/analyses/stream -H "Authorization: Bearer $LEE" -d '{"analysisId":"1","question":"a"×1001}'
+400 {"success":false,...,"statusCode":400,"code":"VALIDATION_ERROR","fields":[{"field":"question","message":"질문은 1000자 이하입니다"}]}
+$ (같은 요청 · "a"×1000)
+200 text/event-stream · event 52개 · 마지막 event:done
+$ curl -X POST localhost:8000/internal/analyze/stream -H "X-Internal-Token: <정상>" -d '{...,"question":"a"×1001}'   # backend 우회 가정
+400 {"success":false,...,"code":"VALIDATION_ERROR",...}
+
+## 2. 1회 호출당 비용 상한 (ai-module/app/config.py · graph.py)
+REPORT_CHUNKS_PER_DOC = 12      # 문서당 청크 상한
+FOLLOWUP_K            = 4       # 후속 질문 검색 청크
+TAVILY_RESULTS        = 3       # 웹 검색 결과 상한 (tavily_enabled()일 때만)
+graph.py:69  for h in req.history[-6:]   # 대화 이력 최근 6개만
+
+## 3. 반복 호출 — 제한 없음 (발견 · 미조치)
+$ for i in 1..20: curl -X POST localhost:8080/api/analyses/stream -H "Authorization: Bearer $LEE" -d '{"analysisId":"1","question":"repeat i"}'
+codes: 200 ×20 · 429 0건 · 6,078ms · 메시지 6 → 46 (+40 = USER 20 + ASSISTANT 20)
+$ grep -rli -E "ratelimit|rate_limit|bucket4j|limit_req|slowapi" backend/src/main ai-module/app frontend/nginx.conf
+(0건)
+
+영향: 로그인한 사용자 1명이 질문을 계속 보내면 그만큼 OpenAI·Tavily 호출이 일어난다(비용·쿼터 소모). fake 모드에서 측정해 실비용은 0.
+완화 요소: 로그인 필수 · 질문 1000자 · 청크/검색 상한 · 로그인 5회 잠금(S-02)
+잔여 위험(점검서 §7): 사용자별 분석 요청 Rate Limit 미적용 — 적용안: nginx limit_req(/api/analyses/stream) 또는 Spring 필터(사용자별 분당 N회 → 429)
+
+참고: Windows Git Bash curl로 한글 질문을 보내면 인코딩이 깨져 400(입력 검증)이 난다 — 측정은 영문 질문으로 했다
