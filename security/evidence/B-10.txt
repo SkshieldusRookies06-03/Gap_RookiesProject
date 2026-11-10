@@ -1,0 +1,41 @@
+# B-10 업로드 — 용량 · 확장자 · 이중 확장자
+# 점검: 2026-11-10 KST · surim/frontend(HEAD 6b1bc66) · backend 소스 수정 없음
+# 실서버: Docker Compose · POST http://localhost/api/documents (nginx 경유 · 클라이언트 검사를 거치지 않고 curl로 직접)
+# 이미지 확인: 실행 중 jar의 DocumentService·DocumentController·GlobalExceptionHandler .class SHA-256 = 오늘 HEAD 로컬 빌드 ·
+#            jar 안 application.yml multipart 한도 = 저장소 값 · 컨테이너 /etc/nginx/conf.d/default.conf = 저장소 nginx/default.conf (diff 없음)
+# 인증: 시드 계정 kim accessToken (값 비기록)
+# 테스트 파일(무해한 더미): a.exe 8B · a.html 9B · a.md.exe 4B · a.txt.exe 3B · big.md 307,201B · huge.md 1,228,800B
+
+## A. 정적 분석 (소스)
+backend/src/main/java/com/jobgap/document/DocumentService.java
+  :43-45 MAX_FILE_BYTES = 200KB · ALLOWED_MIME = text/markdown · text/x-markdown · text/plain · application/octet-stream · ""
+  :138   이름이 .md/.txt로 끝나지 않거나 MIME 허용 밖 → 415 UNSUPPORTED_FILE (endsWith → 이중 확장자 .md.exe도 415)
+  :141   > 200KB → 413 FILE_TOO_LARGE · :142 빈 파일 → 400 · :144-149 UTF-8 엄격 디코딩 실패 → 415
+  참고: MIME 허용 목록에 application/octet-stream·""가 있어 MIME만으로는 막지 못한다 — 확장자 검사가 실질 방어선(아래 C에서 MIME 위장도 415 확인)
+backend/src/main/resources/application.yml:20-22 multipart max-file-size 200KB · max-request-size 1MB
+nginx/default.conf:6 client_max_body_size 1m
+
+## B. 실제 HTTP (2026-11-10 14:14 KST 실행 · 응답 원문)
+$ cd files && curl -s -X POST http://localhost/api/documents -H "Authorization: Bearer $T" -F "file=@<파일>;type=<MIME>" -F type=RESUME -F "title=t063-…"
+
+| 파일 (보낸 MIME) | 기대 | 상태 | 응답 |
+|---|---|---|---|
+| a.exe (application/octet-stream) | 415 | 415 | {"success":false,"data":null,"message":".md 또는 .txt(UTF-8) 파일만 올릴 수 있습니다",…,"statusCode":415,"code":"UNSUPPORTED_FILE"} |
+| a.exe (text/plain로 위장) | 415 | 415 | 같은 봉투 · UNSUPPORTED_FILE |
+| a.html (text/html) | 415 | 415 | 같은 봉투 · UNSUPPORTED_FILE |
+| a.html (text/plain로 위장) | 415 | 415 | 같은 봉투 · UNSUPPORTED_FILE |
+| a.md.exe (text/markdown로 위장) | 415 | 415 | 같은 봉투 · UNSUPPORTED_FILE |
+| a.txt.exe (text/plain로 위장) | 415 | 415 | 같은 봉투 · UNSUPPORTED_FILE |
+| big.md 307,201B (text/markdown) | 413 봉투 | 413 | {"success":false,"data":null,"message":"200KB 이하 파일만 올릴 수 있습니다",…,"statusCode":413,"code":"FILE_TOO_LARGE"} |
+| huge.md 1,228,800B (text/markdown) | nginx 413 | 413 | text/html "<title>413 Request Entity Too Large</title> … <center>nginx</center>" (버전 표기 없음 · server_tokens off) |
+봉투 응답 노출 검사(Exception|at com.|java.|SQL|stack 등): 0
+
+데이터 영향: 업로드 전후 kim 문서 수 totalElements 2 → 2 (거절된 요청은 저장되지 않음 · 삭제한 데이터 없음)
+
+실행 메모: 첫 시도는 curl -F file=@<절대 경로>가 Windows curl에서 파일을 못 찾아 요청이 나가지 않았다(status 000 · 서버 응답 없음).
+          파일 폴더로 이동해 상대 경로로 다시 보낸 결과가 위 표다.
+
+## 판정: PASS
+- 티켓 요구 입력(300KB → 413 봉투 · 1MB 초과 → nginx 413 · a.exe·a.html·a.md.exe → 415) 모두 기대와 일치 + .txt.exe·MIME 위장도 415
+- 1MB 초과 nginx 413은 HTML(비봉투) — 프론트 client.js가 FILE_TOO_LARGE로 바꾼다(F-6)
+- 범위: 위 8건. 모든 파일 형식·인코딩·경계값(정확히 200KB 등)을 검증한 것은 아님
