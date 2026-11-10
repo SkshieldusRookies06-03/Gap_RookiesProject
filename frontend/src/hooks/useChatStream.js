@@ -24,10 +24,15 @@ export function useChatStream() {
     const c = new AbortController();
     ctrl.current = c;
     setStreaming(true);
+    let onAbort;
     try {
       const res = await streamPost('/api/analyses/stream', req, c.signal);
       const reader = res.body.getReader();
       const dec = new TextDecoder();
+      onAbort = () => {
+        try { reader.cancel(new DOMException('Aborted', 'AbortError')); } catch {}
+      };
+      c.signal.addEventListener('abort', onAbort, { once: true });
       const parser = createSseParser((event, data) => {
         if (ctrl.current !== c) return;   // 이전 요청의 남은 이벤트는 버린다
         if (event === 'analysis') setAnalysisId(JSON.parse(data).analysisId);
@@ -40,11 +45,15 @@ export function useChatStream() {
         if (done) break;
         parser.feed(dec.decode(value, { stream: true }));
       }
+      if (ctrl.current === c && c.signal.aborted) {
+        patchLast((x) => ({ ...x, stopped: true }));
+      }
     } catch (e) {
       if (ctrl.current !== c) return;   // reset()으로 버린 요청 — 비운 messages에 stopped를 남기지 않는다
-      if (isAbort(e)) patchLast((x) => ({ ...x, stopped: true }));   // 부분 답변은 화면에만 남는다(서버 저장 안 됨)
+      if (isAbort(e) || c.signal.aborted) patchLast((x) => ({ ...x, stopped: true }));   // 부분 답변은 화면에만 남는다(서버 저장 안 됨)
       else { setError(e); setMessages(dropEmpty); }
     } finally {
+      if (onAbort) c.signal.removeEventListener('abort', onAbort);
       if (ctrl.current === c) setStreaming(false);   // 이전 요청의 finally가 새 요청의 streaming을 끄지 않게
     }
   }, []);

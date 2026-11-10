@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import LoginPage from './LoginPage.jsx';
+import RegisterPage from './RegisterPage.jsx';
 import { server } from '../test/server.js';
 import { API, fail, ok } from '../test/handlers.js';
 import { useAuthStore } from '../stores/authStore.js';
@@ -55,3 +56,21 @@ describe('LoginPage', () => {
     await expect.poll(() => useAuthStore.getState().refreshToken).toBe('test-refresh');
   });
 });
+
+describe('RegisterPage', () => {
+  it('초기 진입 시 잠시 후 다시 시도해 주세요 에러가 없고, 비밀번호·이름 안내 문구가 표시된다', () => {
+    render(
+      <MemoryRouter>
+        <RegisterPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('잠시 후 다시 시도해 주세요')).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('비밀번호 8~64자')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('이름 최대 20자')).toBeInTheDocument();
+    expect(screen.getByText('비밀번호 8~64자')).toBeInTheDocument();
+    expect(screen.getByText('이름 최대 20자')).toBeInTheDocument();
+  });
+});
+

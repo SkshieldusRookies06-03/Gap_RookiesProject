@@ -16,7 +16,7 @@ export default function RegisterPage() {
 
   const fieldErrors = Object.fromEntries(error?.fields?.map((f) => [f.field, f.message]) ?? []);
   const emailError = fieldErrors.email || (error?.code === 'DUPLICATE_EMAIL' ? messageFor(error) : null);
-  const generalError = !error?.fields && error?.code !== 'DUPLICATE_EMAIL' ? messageFor(error) : null;
+  const generalError = error && !error.fields?.length && error.code !== 'DUPLICATE_EMAIL' ? messageFor(error) : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,28 +33,74 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className={styles.card}>
-      <h1 className={styles.title}>회원가입</h1>
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <div className={styles.field}>
-          <label htmlFor="reg-email">이메일</label>
-          <input id="reg-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
-          {emailError && <p className={styles.fieldError}>{emailError}</p>}
+    <div className={styles.container}>
+      <div className={styles.card}>
+        {/* GAP 로고 및 설명 문구 */}
+        <div className={styles.brand}>
+          <h1 className={styles.logo}>GAP</h1>
+          <p className={styles.tagline}>채용공고와 이력서의 역량 차이를 근거와 함께 분석합니다</p>
         </div>
-        <div className={styles.field}>
-          <label htmlFor="reg-password">비밀번호</label>
-          <input id="reg-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password" />
-          {fieldErrors.password && <p className={styles.fieldError}>{fieldErrors.password}</p>}
+        <h2 className={styles.title}>회원가입</h2>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <div className={styles.field}>
+            <label htmlFor="reg-email">이메일</label>
+            <input
+              id="reg-email"
+              type="email"
+              placeholder="이메일 (example@email.com)"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+            {emailError && <p className={styles.fieldError}>{emailError}</p>}
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="reg-password">비밀번호</label>
+            <input
+              id="reg-password"
+              type="password"
+              placeholder="비밀번호 8~64자"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              maxLength={64}
+              autoComplete="new-password"
+            />
+            {fieldErrors.password && <p className={styles.fieldError}>{fieldErrors.password}</p>}
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="reg-name">이름</label>
+            <input
+              id="reg-name"
+              type="text"
+              placeholder="이름 최대 20자"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              maxLength={20}
+              autoComplete="name"
+            />
+            {fieldErrors.name && <p className={styles.fieldError}>{fieldErrors.name}</p>}
+          </div>
+
+          {generalError && <p className={styles.fieldError} role="alert">{generalError}</p>}
+
+          {/* 비밀번호 8~64자 · 이름 최대 20자 안내 문구 */}
+          <p className={styles.helperText}>
+            <span>비밀번호 8~64자</span> · <span>이름 최대 20자</span>
+          </p>
+
+          <Button type="submit" disabled={loading}>{loading ? '가입 중…' : '회원가입'}</Button>
+        </form>
+        <div className={styles.footer}>
+          <span>이미 계정이 있으신가요?</span>
+          <Link to={ROUTES.LOGIN}>로그인</Link>
         </div>
-        <div className={styles.field}>
-          <label htmlFor="reg-name">이름</label>
-          <input id="reg-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required maxLength={20} autoComplete="name" />
-          {fieldErrors.name && <p className={styles.fieldError}>{fieldErrors.name}</p>}
-        </div>
-        {generalError && <p className={styles.fieldError} role="alert">{generalError}</p>}
-        <Button type="submit" disabled={loading}>{loading ? '가입 중…' : '회원가입'}</Button>
-      </form>
-      <div className={styles.footer}>이미 계정이 있으신가요? <Link to={ROUTES.LOGIN}>로그인</Link></div>
+      </div>
     </div>
   );
 }
