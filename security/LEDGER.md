@@ -8,16 +8,16 @@
 |---|---|---|---|---|---|---|
 | B-1 | [SQL Injection] Repository 전수 grep(문자열 이어붙인 쿼리) · 문서 목록 sort·type에 `' OR '1'='1` |  |  |  |  |  |
 | B-2 | [접근 제어 / IDOR] 토큰 A로 B의 문서·분석 메시지 GET/PUT/DELETE (S-01) |  |  |  |  |  |
-| B-3 | [인증 / JWT] 만료·변조 토큰 · alg 확인 · secret 하드코딩 grep |  |  |  |  |  |
-| B-4 | [Refresh Token 관리] DB에 해시만 있는지 · 재발급 후 이전 토큰 401 |  |  |  |  |  |
-| B-5 | [로그인 Brute Force] Burp Intruder 10회 (S-02) |  |  |  |  |  |
-| B-6 | [CSRF] 쿠키 인증 0 확인 · 사유 문장(SPEC §1) |  |  |  |  |  |
+| B-3 | [인증 / JWT] 발급 토큰 헤더 alg 디코드 → HS256 · 서명 교체 토큰·alg none 토큰으로 `GET /api/documents` → 401 봉투 · 만료는 `./mvnw test -Dtest='SecurityAcceptanceTest,JwtProviderTest'` 9/9(만료 401 `TOKEN_EXPIRED`) · `grep -rnE '(secret\|SECRET)\s*=\s*"' backend/src/main/java` 0건 | 미발견 |  |  | evidence/B-3.txt |  |
+| B-4 | [Refresh Token 관리] DB `LENGTH(refresh_token_hash)` 64 · hex64 · `POST /api/auth/refresh` 회전 후 이전 refresh 401 `INVALID_REFRESH_TOKEN` · 로그아웃 후 새 refresh 401 | 미발견 |  |  | evidence/B-4.txt |  |
+| B-5 | [로그인 Brute Force] Burp Intruder `POST /api/auth/login` kim · password 위치 페이로드 10개 → 10건 전부 401, 잠금 없음 (조치 전 0b81eba) | 발견 | e19c06a · a1ffb36(태그) | 같은 Burp 공격(동시 1) → 요청 0~4 401 · 6번째부터 423 `ACCOUNT_LOCKED` + 해제 시각 · 잠긴 kim 올바른 비밀번호도 423 · 없는 계정 401 · AUDIT `LOCK` 1줄 · AuthAcceptanceTest 6/6 | evidence/S-02/ | S-02 |
+| B-6 | [CSRF] `grep -rn Cookie backend/src/main` 0건 · 사유: 인증은 Authorization 헤더로만 전달(SPEC §1 · docs/5 §5.2) | 해당 없음(쿠키 인증 없음 — Authorization 헤더만) |  |  | evidence/B-6.txt |  |
 | B-7 | [보안 설정 오류] `check-sec-deploy` · USER 토큰 `/actuator/metrics` · CORS Origin |  |  |  |  |  |
 | B-8 | [예외 / 로그] 500 유발 요청 → 응답에 스택 없음 |  |  |  |  |  |
-| B-9 | [감사 로그] 로그인 성공·실패·401·403 로그 4줄 · 이메일 마스킹 |  |  |  |  |  |
+| B-9 | [감사 로그] 로그인 성공 → 실패 → 토큰 없이 `GET /api/documents` → kim 토큰으로 lee 문서 → `docker logs jobgap-backend-1 \| grep AUDIT` 4줄 · 이메일 `k***@e.com` | 미발견 |  |  | evidence/B-9-audit.txt |  |
 | B-10 | [파일 업로드] 200KB 경계(봉투 413) · 1MB 초과(nginx 413 · SPEC §1 업로드 행) · .exe/.html · 이중 확장자 |  |  |  |  |  |
 | B-11 | [입력값 검증] DTO @Valid 경로별 400 fields[] |  |  |  |  |  |
-| B-12 | [비밀번호 저장] DB 값 BCrypt 접두($2a$) 확인 |  |  |  |  |  |
+| B-12 | [비밀번호 저장] `SELECT LEFT(password_hash,4), LENGTH(password_hash) FROM users` → kim·lee `$2a$` · 60자 | 미발견 |  |  | evidence/B-12.txt |  |
 | B-13 | [의존성 취약점] CycloneDX SBOM → security/evidence/bom.json |  |  |  |  |  |
 | B-14 | [역직렬화 무결성] 클라이언트가 직렬화 값을 보내는 경로 유무 확인 | 해당 없음(클라이언트가 직렬화 객체를 보내는 경로 없음 — JSON DTO만) |  |  |  |  |
 | F-1 | [XSS] 문서 제목·질문·AI 응답에 `<img src=x onerror=alert(1)>` · CSP 헤더 |  |  |  |  |  |
@@ -29,7 +29,7 @@
 | F-7 | [에러 처리] 에러 봉투 → 사용자 문구 변환 확인(SPEC §4.4) |  |  |  |  |  |
 | A-1 | [AI 모듈 외부 직접 접근] 외부에서 EC2:8000 · 내부 토큰 없는 호출 401 |  |  |  |  |  |
 | A-2 | [Prompt Injection] 공고 본문에 숨긴 지시 (예비) |  |  |  |  |  |
-| A-3 | [민감정보 유출] PII 든 이력서 업로드 → ingest 본문 · 남의 문서 질의 (S-03) |  |  |  |  |  |
+| A-3 | [민감정보 유출] 가짜 연락처 이력서 `POST /api/documents` → `GET /api/documents/{id}` 제목·본문 원문 · maskedCount 0 (조치 전 ec1ddc3) | 발견 | c7fa960 · ecf2f31(질문) | 같은 업로드 → 제목·본문 마스킹본만 · maskedCount 2 · DocumentAcceptanceTest 7/7 · titlesAreMasked · questionIsMasked green(질문은 USER 저장·AI 전송 둘 다 마스킹본) | evidence/S-03/ | S-03 |
 | A-4 | [과도한 사용] 질문 1000자 상한 · 반복 호출 |  |  |  |  |  |
 | A-5 | [API Key 관리] 코드·로그·이미지 키 grep · compose 서비스별 env |  |  |  |  |  |
 | I-1 | [비밀정보 분리] `check-sec-deploy` I-1 (이력 포함) |  |  |  |  |  |

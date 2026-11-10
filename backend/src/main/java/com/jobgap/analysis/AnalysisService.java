@@ -16,6 +16,7 @@ import com.jobgap.document.DocumentRepository;
 import com.jobgap.document.DocumentType;
 import com.jobgap.security.AuditLog;
 import com.jobgap.security.AuthUser;
+import com.jobgap.security.PiiMasker;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -96,8 +97,8 @@ public class AnalysisService {   // 클래스 단위 @Transactional 없음 — s
             history.add(Map.of("role", m.getRole(), "content", m.getContent()));
         }
         Collections.reverse(history);
-        // [T-028 기술 리드] PiiMasker 연결 자리 — 마스킹한 질문으로 저장·전송한다(S-03)
-        String question = req.question();
+        // [S-03] 질문은 마스킹한 값으로 USER 저장·AI 전송 둘 다 한다(원문은 어디에도 남기지 않는다)
+        String question = PiiMasker.maskAndTrim(req.question(), 1000).text();
         messageRepository.save(a.addMessage("USER", question, "[]"));
         return new Prepared(a.getId(), false, String.valueOf(a.getPosting().getId()), String.valueOf(a.getResume().getId()),
                 a.getPosting().getTitle(), "FOLLOWUP", question, history);
