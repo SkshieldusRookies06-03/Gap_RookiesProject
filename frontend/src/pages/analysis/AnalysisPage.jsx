@@ -30,10 +30,11 @@ function DocumentPicker({ onStart, disabled }) {
     return () => { alive = false; };
   }, [tries]);
 
-  if (docs.loading) return <LoadingSpinner />;
-  if (docs.error) return <ErrorMessage error={docs.error} onRetry={() => setTries((n) => n + 1)} />;
+  // 로딩·오류·빈 상태도 같은 카드 안에 — 화면 골격이 상태마다 흔들리지 않게(Figma States 01b)
+  if (docs.loading) return <section className={styles.card}><LoadingSpinner /></section>;
+  if (docs.error) return <section className={styles.card}><ErrorMessage error={docs.error} onRetry={() => setTries((n) => n + 1)} /></section>;
   if (!docs.postings.length || !docs.resumes.length) {
-    return <EmptyState message="공고 1개와 이력서 1개를 고르세요" action={<Link to={ROUTES.DOCUMENTS}>문서 올리러 가기</Link>} />;
+    return <section className={styles.card}><EmptyState message="공고 1개와 이력서 1개를 고르세요" action={<Link to={ROUTES.DOCUMENTS}>문서 올리러 가기</Link>} /></section>;
   }
   // 기억한 선택이 지금 목록에 없으면(삭제됨) 고르지 않은 것으로 본다
   const valid = (list, id) => (list.some((d) => d.id === id) ? id : '');
@@ -49,10 +50,18 @@ function DocumentPicker({ onStart, disabled }) {
     </label>
   );
   return (
-    <section className={`${styles.card} ${styles.picker}`}>
-      {select('채용공고', 'postingId', postingId, docs.postings)}
-      {select('이력서', 'resumeId', resumeId, docs.resumes)}
-      <Button disabled={disabled || !postingId || !resumeId} onClick={() => onStart({ postingId, resumeId })}>분석 시작</Button>
+    <section className={`${styles.card} ${styles.picker}`} aria-labelledby="picker-title">
+      <div>
+        <h2 id="picker-title" className={styles.pickerTitle}>분석할 문서 선택</h2>
+        <p className={styles.pickerHint}>채용공고 1개와 이력서 1개를 고르면 요구 기술과 보유 여부를 비교한 리포트를 만들어요</p>
+      </div>
+      <div className={styles.fields}>
+        {select('채용공고', 'postingId', postingId, docs.postings)}
+        {select('이력서', 'resumeId', resumeId, docs.resumes)}
+      </div>
+      <div className={styles.actions}>
+        <Button disabled={disabled || !postingId || !resumeId} onClick={() => onStart({ postingId, resumeId })}>분석 시작</Button>
+      </div>
     </section>
   );
 }
@@ -110,7 +119,7 @@ function FollowUpForm({ onSubmit }) {
   return (
     <form className={styles.bar} onSubmit={submit}>
       <div className={styles.inputBox}>
-        <textarea value={question} maxLength={1000} rows={2} aria-label="후속 질문" aria-describedby="followup-meta"
+        <textarea value={question} maxLength={1000} rows={1} aria-label="후속 질문" aria-describedby="followup-meta"
           placeholder="후속 질문을 입력하세요 (예: 부족한 것부터 뭘 공부해?)" onChange={(e) => setQuestion(e.target.value)} />
         <Button type="submit" disabled={!question.trim()}>보내기</Button>
       </div>
@@ -186,8 +195,8 @@ export default function AnalysisPage() {
     <div className={styles.chat}>
       <header className={styles.head}>
         <div>
-          <h1 className={styles.title}>분석</h1>
-          <p className={styles.sub}>리포트와 후속 질문 대화 · 이어서 질문할 수 있어요</p>
+          <h1 className={styles.title}>{id ? '분석' : '새 분석'}</h1>
+          <p className={styles.sub}>{id ? '리포트와 후속 질문 대화 · 이어서 질문할 수 있어요' : '채용공고와 이력서를 비교해 부족한 기술과 준비 순서를 알려 드려요'}</p>
         </div>
         <Link className={styles.back} to={ROUTES.ANALYSES}><span aria-hidden="true">‹</span> 분석 기록</Link>
       </header>
