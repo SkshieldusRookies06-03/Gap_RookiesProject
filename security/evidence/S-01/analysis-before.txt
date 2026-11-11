@@ -1,0 +1,16 @@
+HTTP/1.1 200 
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Content-Length: 531
+Date: Wed, 11 Nov 2026 01:32:57 GMT
+
+{"success":true,"data":{"content":[{"id":"1","role":"USER","content":"갭 분석 리포트","sources":[],"createdAt":"2026-11-11T10:05:07.239883+09:00"},{"id":"2","role":"ASSISTANT","content":"## 요구 기술\n| 기술 | 보유 |\n|---|---|\n| Airflow | 없음 |","sources":[],"createdAt":"2026-11-11T10:05:07.239883+09:00"}],"page":{"number":0,"size":50,"totalElements":2,"totalPages":1,"first":true,"last":true,"numberOfElements":2}},"message":"메시지를 조회했습니다","timestamp":"2026-11-11T10:32:57.807279835+09:00"}
