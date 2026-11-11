@@ -20,10 +20,10 @@ export default function Layout({ children }) {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <strong>JobGap</strong>
+        <strong>Gap</strong>
         <nav className={styles.nav}>
-          <NavLink to={ROUTES.DOCUMENTS}>내 문서</NavLink>
-          <NavLink to={ROUTES.ANALYSIS_NEW}>새 분석</NavLink>
+          <NavLink to={ROUTES.DOCUMENTS}>내문서</NavLink>
+          <NavLink to={ROUTES.ANALYSIS_NEW}>새분석</NavLink>
           <NavLink to={ROUTES.ANALYSES}>분석 기록</NavLink>
         </nav>
         <span className={styles.user}>{user?.name}</span>
