@@ -124,7 +124,12 @@ function UploadForm({ onUploaded }) {
                 className={styles.hiddenFileInput}
                 type="file"
                 accept=".md,.txt"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const picked = e.target.files?.[0] ?? null;
+                  setFile(picked);
+                  // 제목이 비어 있으면 파일 이름(확장자 제외)으로 채운다 — 제목 없이 올리기를 눌러 막히는 일을 줄인다
+                  if (picked && !title.trim()) setTitle(picked.name.replace(/\.(md|txt)$/i, '').slice(0, 100));
+                }}
               />
             </div>
           </div>
@@ -144,7 +149,8 @@ function UploadForm({ onUploaded }) {
 
         {error && (
           <p className={styles.formError} role="alert">
-            {messageFor(error)}
+            {/* 브라우저 검사(status 0)는 useUpload의 구체 문구 · 서버 응답은 SPEC §4.4 문구 */}
+            {error.status === 0 ? error.message : messageFor(error)}
           </p>
         )}
       </form>
