@@ -40,11 +40,22 @@ async function doRefresh() {
     await useAuthStore.persist?.rehydrate?.();
     const current = useAuthStore.getState().refreshToken;
     if (!current) throw new ApiError({ status: 401, code: 'INVALID_REFRESH_TOKEN', message: '다시 로그인하세요' });
-    const res = await fetch(`${BASE}/api/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken: current }),
-    });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);   // 10초가 지나면 기다리지 않고 끊는다
+    let res;
+    try {
+      res = await fetch(`${BASE}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: current }),
+        signal: ctrl.signal,
+      });
+    } catch (e) {
+      throw networkError(e, undefined, true);   // 연결 실패·시간 초과 → NETWORK_ERROR (로그아웃 안 됨)
+    } finally {
+      clearTimeout(timer);
+    }
+
     const data = await parse(res);
     useAuthStore.getState().setSession(data);
   };
@@ -59,8 +70,14 @@ const PUBLIC_PATHS = ['/api/auth/login', '/api/auth/register', '/api/auth/refres
 
 /** refresh 실패면 세션을 비우고 그 에러를 던진다 (6번 명세 §7 — refresh 실패 = 로그인으로) */
 async function refreshOrClear() {
-  try { await doRefresh(); } catch (e) { useAuthStore.getState().clear(); throw e; }
+  try {
+    await doRefresh();
+  } catch (e) {
+    if (e?.status === 401) useAuthStore.getState().clear();
+    throw e;
+  }
 }
+
 
 /**
  * 새로고침 직후엔 Access(메모리)가 없고 Refresh(localStorage)만 있다 — 토큰 없이 보내면 401 UNAUTHORIZED로 세션이 지워지므로
