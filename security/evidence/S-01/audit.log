@@ -1,0 +1,7 @@
+backend-1  | 2026-11-11T10:53:39.937+09:00  WARN 1 --- [jobgap] [nio-8080-exec-1] AUDIT                                    : 403 owner-mismatch actor=11111111-1111-4111-8111-111111111111 resource=document id=3
+backend-1  | 2026-11-11T10:53:40.687+09:00  WARN 1 --- [jobgap] [nio-8080-exec-3] AUDIT                                    : 403 owner-mismatch actor=11111111-1111-4111-8111-111111111111 resource=analysis id=1
+backend-1  | 2026-11-11T10:54:23.384+09:00  WARN 1 --- [jobgap] [io-8080-exec-10] AUDIT                                    : 403 owner-mismatch actor=11111111-1111-4111-8111-111111111111 resource=document id=3
+backend-1  | 2026-11-11T10:54:23.746+09:00  WARN 1 --- [jobgap] [nio-8080-exec-2] AUDIT                                    : 403 owner-mismatch actor=11111111-1111-4111-8111-111111111111 resource=analysis id=1
+backend-1  | 2026-11-11T11:01:03.846+09:00  WARN 1 --- [jobgap] [nio-8080-exec-6] AUDIT                                    : 403 owner-mismatch actor=11111111-1111-4111-8111-111111111111 resource=document id=3
+backend-1  | 2026-11-11T11:03:39.697+09:00  WARN 1 --- [jobgap] [nio-8080-exec-3] AUDIT                                    : 403 owner-mismatch actor=11111111-1111-4111-8111-111111111111 resource=analysis id=1
+backend-1  | 2026-11-11T11:03:41.825+09:00  WARN 1 --- [jobgap] [nio-8080-exec-4] AUDIT                                    : 403 owner-mismatch actor=11111111-1111-4111-8111-111111111111 resource=analysis id=1

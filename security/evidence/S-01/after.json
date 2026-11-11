@@ -1,0 +1,41 @@
+{
+  "_note": "S-01 (B-2) 조치 후 재확인 — before.json과 같은 kim 계정·같은 요청 → 403 FORBIDDEN 봉투 · 데이터 없음. 응답 본문은 *-after.txt의 실제 curl 응답을 그대로 파싱(Authorization 값 미기록)",
+  "_commit": "927bcb5 (origin/dev · 2a3bf48·ecfc7bd 포함) — 임시 브랜치 demo/S-01-after",
+  "_actor": "kim@example.com (seed V2) · 대상 소유자: lee",
+  "_env": "docker compose (docker-compose.yml + docker-compose.dev.yml) · 127.0.0.1:8080 직접 호출",
+  "_audit": "audit.log — 두 리소스 모두 '403 owner-mismatch actor=11111111-… resource=document id=3' / 'resource=analysis id=1'",
+  "document": {
+    "request": "GET /api/documents/3",
+    "response": {
+      "status": 403,
+      "statusLine": "HTTP/1.1 403",
+      "date": "Wed, 11 Nov 2026 01:54:23 GMT",
+      "rawFile": "document-after.txt",
+      "body": {
+        "success": false,
+        "data": null,
+        "message": "접근 권한이 없습니다",
+        "timestamp": "2026-11-11T10:54:23.387945969+09:00",
+        "statusCode": 403,
+        "code": "FORBIDDEN"
+      }
+    }
+  },
+  "analysisMessages": {
+    "request": "GET /api/analyses/1/messages",
+    "response": {
+      "status": 403,
+      "statusLine": "HTTP/1.1 403",
+      "date": "Wed, 11 Nov 2026 01:54:23 GMT",
+      "rawFile": "analysis-after.txt",
+      "body": {
+        "success": false,
+        "data": null,
+        "message": "접근 권한이 없습니다",
+        "timestamp": "2026-11-11T10:54:23.750918897+09:00",
+        "statusCode": 403,
+        "code": "FORBIDDEN"
+      }
+    }
+  }
+}
