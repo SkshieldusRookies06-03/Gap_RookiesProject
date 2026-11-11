@@ -441,30 +441,43 @@ DocumentList.propTypes = {
 };
 
 /* 페이지네이션 */
-function Pager({ pageInfo, onPrev, onNext }) {
+function Pager({ pageInfo, onPage }) {
   const current = (pageInfo?.number ?? 0) + 1;
   const total = Math.max(1, pageInfo?.totalPages ?? 1);
+  // first·last가 빠져도 유효한 페이지 경계가 있으면 판단할 수 있다.
+  const hasBounds = Number.isInteger(pageInfo?.number) && pageInfo.number >= 0
+    && Number.isInteger(pageInfo?.totalPages) && pageInfo.totalPages > 0;
+  const start = Math.max(0, Math.min(current - 3, total - 5));
+  const pages = hasBounds ? Array.from({ length: Math.min(total, 5) }, (_, i) => start + i) : [];
 
   return (
     <nav className={styles.pager} aria-label="페이지 이동">
       <button
         type="button"
         className={styles.pageBtn}
-        disabled={pageInfo?.first ?? true}
-        onClick={onPrev}
+        disabled={!hasBounds}
+        onClick={() => onPage((current - 2 + total) % total)}
       >
         이전
       </button>
 
-      <span className={styles.pageText}>
-        {current} / {total}
-      </span>
-
+      {pages.map((number) => (
+        <button
+          key={number}
+          type="button"
+          className={`${styles.pageBtn} ${number === current - 1 ? styles.pageActive : ''}`}
+          aria-label={`${number + 1}페이지`}
+          aria-current={number === current - 1 ? 'page' : undefined}
+          onClick={() => onPage(number)}
+        >
+          {number + 1}
+        </button>
+      ))}
       <button
         type="button"
         className={styles.pageBtn}
-        disabled={pageInfo?.last ?? true}
-        onClick={onNext}
+        disabled={!hasBounds}
+        onClick={() => onPage(current % total)}
       >
         다음
       </button>
@@ -479,8 +492,7 @@ Pager.propTypes = {
     first: PropTypes.bool,
     last: PropTypes.bool,
   }),
-  onPrev: PropTypes.func.isRequired,
-  onNext: PropTypes.func.isRequired,
+  onPage: PropTypes.func.isRequired,
 };
 
 /* 내 문서 페이지 */
@@ -491,22 +503,27 @@ export default function DocumentsPage() {
   const [type, setType] = useState(null);
   const [sort, setSort] = useState('createdAt,desc');
   const [page, setPage] = useState(0);
+  const requestId = useRef(0);
 
   const fetchDocs = useCallback(async () => {
+    const id = ++requestId.current;
     setLoading(true);
     setError(null);
 
     try {
-      setDocs(await api.get(listPath({ type, page, sort })));
+      const result = await api.get(listPath({ type, page, sort }));
+      if (id === requestId.current) setDocs(result);
     } catch (e) {
-      setError(e);
+      if (id === requestId.current) setError(e);
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
   }, [type, page, sort]);
 
   useEffect(() => {
     fetchDocs();
+    // 필터·정렬·페이지 변경·언마운트 이후의 이전 응답은 버린다.
+    return () => { requestId.current += 1; };
   }, [fetchDocs]);
 
   const handleSaved = (saved) => {
@@ -580,13 +597,16 @@ export default function DocumentsPage() {
               onSaved={handleSaved}
               onDeleted={handleDeleted}
             />
-
-            <Pager
-              pageInfo={docs.page}
-              onPrev={() => setPage((p) => Math.max(0, p - 1))}
-              onNext={() => setPage((p) => p + 1)}
-            />
           </>
+        )}
+        {!loading && !error && docs && (docs.content.length > 0 || docs.page?.number > 0) && (
+          <Pager
+            pageInfo={docs.page}
+            onPage={(nextPage) => {
+              if (nextPage === page) fetchDocs();
+              else setPage(nextPage);
+            }}
+          />
         )}
       </section>
     </div>
