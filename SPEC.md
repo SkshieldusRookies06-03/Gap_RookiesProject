@@ -106,6 +106,8 @@ AI 내부 4       POST /internal/ingest · POST /internal/analyze/stream · DELE
 
 Access 만료 = 401 `TOKEN_EXPIRED`(이것만 refresh 대상) · 서명 오류·형식 오류 = 401 `UNAUTHORIZED`.
 
+refresh 실패 처리(프론트 · 11/11 추가 · 점검서 F-7 후속): **401이면 세션을 비우고 `/login`** · 그 밖(5xx · 네트워크 오류 · 응답 10초 초과)은 **세션(Refresh)을 유지**하고 §4.4 문구 + 재시도 — 서버 장애로 로그아웃시키지 않는다(가용성 · 토큰은 서버가 매 요청 검증하므로 보안 변화 없음) · refresh 요청 타임아웃은 일반 요청과 같은 10초.
+
 ### 4.2 문서
 
 | 메서드 · 경로 | 요청 | 응답 data | 비고 |

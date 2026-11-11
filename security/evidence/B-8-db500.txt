@@ -18,4 +18,12 @@ backend 원래 설정(override 제거)으로 재기동             → healthy �
 ## 참고 (같은 날 · 가용성)
 - AI 중지 상태 업로드: 503 AI_UNAVAILABLE "분석 서버가 응답하지 않습니다" 2.3s · 저장된 문서 0건(롤백)
 - AI 중지 상태 후속 질문: HTTP 200 스트림 안 event:error(503 AI_UNAVAILABLE) 14.3s
-- 브라우저 재현 방법(FE-분석 F-7 미검증 2건): 위 override로 실제 500 · `docker stop jobgap-ai-service-1`로 AI 503 — 화면을 연 채로, 새로고침 없이
+- 브라우저 재현 방법(FE-분석 F-7 미검증 2건) — 11/11 정정(처음 안내에 AI 503 경로 구분·주의사항이 빠졌음)
+  공통: **다시 로그인한 직후**(Access 15분 안 — 넘으면 요청 전에 refresh가 먼저 나가 DB 중지 시 /login으로 간다) · 새로고침 없이 ·
+        임시 compose override 파일은 **저장소 밖**에 만든다 · DevTools Network에서 **Response 본문**까지 기록
+  ① 실제 HTTP 500: 위 override(Hikari 3000ms)로 backend 재기동 → /documents 연 채로 DB 중지 → 필터 클릭 → 약 3초 500
+  ② AI 장애 — 두 경로가 다르다
+     - 분석 스트림: 시작 뒤에는 상태 코드를 바꾸지 않으므로(SPEC §1) **HTTP 200 + event:error(503 AI_UNAVAILABLE)** (약 14초)
+     - **HTTP 503 직접 응답은 업로드·삭제**: `docker stop jobgap-ai-service-1` → **UTF-8로 저장한** .md 업로드(ANSI면 인코딩 검사가 먼저라 415)
+       → 약 2초 503 · 목록에 남지 않음(롤백) / 기존 문서 삭제 → 503 · 문서 그대로(SPEC §6.4)
+  복구: `docker start` (AI·DB) · override 없이 backend 재기동 · override 파일 삭제 · 컨테이너 이름은 `docker ps`로 확인(폴더 이름이 다르면 앞부분이 다르다)
