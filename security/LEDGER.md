@@ -6,17 +6,17 @@
 
 | 행 | 점검 방법(실행한 명령·도구) | 결과 | 조치 커밋 | 재확인 명령·결과 | 증거 | S-ID |
 |---|---|---|---|---|---|---|
-| B-1 | [SQL Injection] Repository 전수 grep(문자열 이어붙인 쿼리) · 문서 목록 sort·type에 `' OR '1'='1` |  |  |  |  |  |
+| B-1 | [SQL Injection] (FA T-063) Repository 문자열 결합 grep 0줄 · `@Query` JPQL 1개는 `:id` 바인딩 · `PageRequests.documentSort` 허용 목록 · `PageRequestsTest` 4 green · 실서버 `sort=title' OR '1'='1` · `title;drop table users,asc` · `password,asc` · `(select 1),asc` | 미발견 |  | 4건 모두 400 `VALIDATION_ERROR` 봉투 · 대조군 `title,asc` 200 · 노출 0 (11/10) | evidence/B-1.txt |  |
 | B-2 | [접근 제어 / IDOR] 토큰 A로 B의 문서·분석 메시지 GET/PUT/DELETE (S-01) |  |  |  |  |  |
 | B-3 | [인증 / JWT] 발급 토큰 헤더 alg 디코드 → HS256 · 서명 교체 토큰·alg none 토큰으로 `GET /api/documents` → 401 봉투 · 만료는 `./mvnw test -Dtest='SecurityAcceptanceTest,JwtProviderTest'` 9/9(만료 401 `TOKEN_EXPIRED`) · `grep -rnE '(secret\|SECRET)\s*=\s*"' backend/src/main/java` 0건 | 미발견 |  |  | evidence/B-3.txt |  |
 | B-4 | [Refresh Token 관리] DB `LENGTH(refresh_token_hash)` 64 · hex64 · `POST /api/auth/refresh` 회전 후 이전 refresh 401 `INVALID_REFRESH_TOKEN` · 로그아웃 후 새 refresh 401 | 미발견 |  |  | evidence/B-4.txt |  |
 | B-5 | [로그인 Brute Force] Burp Intruder `POST /api/auth/login` kim · password 위치 페이로드 10개 → 10건 전부 401, 잠금 없음 (조치 전 0b81eba) | 발견 | e19c06a · a1ffb36(태그) | 같은 Burp 공격(동시 1) → 요청 0~4 401 · 6번째부터 423 `ACCOUNT_LOCKED` + 해제 시각 · 잠긴 kim 올바른 비밀번호도 423 · 없는 계정 401 · AUDIT `LOCK` 1줄 · AuthAcceptanceTest 6/6 | evidence/S-02/ | S-02 |
 | B-6 | [CSRF] `grep -rn Cookie backend/src/main` 0건 · 사유: 인증은 Authorization 헤더로만 전달(SPEC §1 · docs/5 §5.2) | 해당 없음(쿠키 인증 없음 — Authorization 헤더만) |  |  | evidence/B-6.txt |  |
 | B-7 | [보안 설정 오류] `check-sec-deploy` 무출력 · `/actuator/health` 200 · `/actuator/metrics`·`/env` 토큰 없음 401 · USER(lee) 토큰 403 · CORS preflight `Origin: http://evil.example` 403(ACAO 없음) · `http://localhost:5173` 200 · env `ACTUATOR_EXPOSURE=health,info` | 미발견 |  |  | evidence/B-7.txt |  |
-| B-8 | [예외 / 로그] 500 유발 요청 → 응답에 스택 없음 |  |  |  |  |  |
+| B-8 | [예외 / 로그] (FA T-063) `include-stacktrace/message: never` · `GlobalExceptionHandlerTest` 6 green · 실서버 오류 유발 7종(깨진 JSON · `page=abc` · id 형식 · 없는 경로 · 허용 안 된 메서드 · 업로드에 JSON) · **실제 500**: 로그인 뒤 DB 일시 중지 → `GET /api/documents` | 미발견 |  | 4xx 7종 모두 JSON 봉투 · 실제 500 = `INTERNAL_SERVER_ERROR` "잠시 후 다시 시도해 주세요" · 스택·예외 클래스·SQL·DB 정보·내부 경로 0 (FA 11/10 16:29 · TL 17:56 Hikari 3초로 같은 결과) | evidence/B-8.txt · evidence/B-8-db500.txt |  |
 | B-9 | [감사 로그] 로그인 성공 → 실패 → 토큰 없이 `GET /api/documents` → kim 토큰으로 lee 문서 → `docker logs jobgap-backend-1 \| grep AUDIT` 4줄 · 이메일 `k***@e.com` | 미발견 |  |  | evidence/B-9-audit.txt |  |
-| B-10 | [파일 업로드] 200KB 경계(봉투 413) · 1MB 초과(nginx 413 · SPEC §1 업로드 행) · .exe/.html · 이중 확장자 |  |  |  |  |  |
-| B-11 | [입력값 검증] DTO @Valid 경로별 400 fields[] |  |  |  |  |  |
+| B-10 | [파일 업로드] (FA T-063) 클라이언트 우회 curl 8건: `a.exe`(MIME 위장) · `a.html`(MIME 위장) · `a.md.exe` · `a.txt.exe` · 307KB · 1.2MB / (TL) 인코딩 4종 UTF-8 · BOM · CP949 · UTF-16 | 미발견 |  | 415 `UNSUPPORTED_FILE` ×6 · 307KB 413 `FILE_TOO_LARGE` 봉투 · 1.2MB nginx 413(버전 노출 없음) · 문서 수 변화 없음 · UTF-8·BOM 201 / CP949·UTF-16 415 | evidence/B-10.txt · evidence/B-10-encoding.txt |  |
+| B-11 | [입력값 검증] (FA T-063) `AuthDtos.RegisterRequest` `@Valid` · 실서버 `POST /api/auth/register` 형식 오류 4종(이메일 형식+비밀번호 3자 · 이름 공백+비밀번호 65자 · `{}` 등) | 미발견 |  | 4건 모두 400 `VALIDATION_ERROR` + `fields[]`에 해당 필드 · 계정 생성 없음 · 참고: `@NotBlank` 기본 문구가 영어 | evidence/B-11.txt |  |
 | B-12 | [비밀번호 저장] `SELECT LEFT(password_hash,4), LENGTH(password_hash) FROM users` → kim·lee `$2a$` · 60자 | 미발견 |  |  | evidence/B-12.txt |  |
 | B-13 | [의존성 취약점] `./mvnw org.cyclonedx:cyclonedx-maven-plugin:2.9.0:makeAggregateBom` → bom.json(구성 요소 141) · purl 전부 OSV querybatch 조회 · 조치 전(Spring Boot 3.3.5) 150건(CRITICAL 12 · HIGH 52 · MODERATE 67 · LOW 19) | 발견 | 95dc5bb | 11/10 같은 방법 재조회 0건 · 대조군(조치 전 SBOM) 150건 그대로 | evidence/bom.json · evidence/B-13-scan.txt · evidence/B-13-before-bom.json |  |
 | B-14 | [역직렬화 무결성] 클라이언트가 직렬화 값을 보내는 경로 유무 확인 | 해당 없음(클라이언트가 직렬화 객체를 보내는 경로 없음 — JSON DTO만) |  |  |  |  |
