@@ -8,7 +8,8 @@
 
 ## 0. 시작 전 준비 (발표 30분 전 · 체크)
 
-- [ ] 대상 서버: EC2 `http://<EC2>` (⏳ T-042) — 없으면 로컬 compose `http://localhost`
+- [ ] 대상 서버: EC2 `http://15.165.164.247` (11/11 80 공개 확인 · I-3) — 접속 안 되면 로컬 compose `http://localhost`
+  - EC2 proxy는 `/api/`에 요청 수 제한이 있다(동시 20건 넘으면 503) — Intruder는 **동시 1**로만 보낸다
 - [ ] 시드 상태: DB 초기화 + backend `SPRING_PROFILES_ACTIVE=seed` 1회 기동(시드 문서 AI 적재) — 안 하면 분석 답이 엉뚱하다
 - [ ] **kim 잠금 풀림 확인** — 리허설에서 잠갔다면 15분 기다리거나 DB 초기화. S-02 라이브는 kim, 그 밖 시연은 lee
 - [ ] Burp: 프록시 OFF(Repeater·Intruder만 씀) · 탭 3개 미리 준비
@@ -16,13 +17,13 @@
   - Repeater ②: `GET /api/analyses/1/messages` · kim 토큰 (lee 분석)
   - Intruder: `POST /api/auth/login` kim · password 위치 § · 페이로드 `wrong1`~`wrong10` · **Resource pool 동시 1**
 - [ ] kim 토큰은 시연 직전에 발급(Access 15분) — `POST /api/auth/login` 응답의 accessToken
-- [ ] 캡처 파일 열어 두기: `S-01/burp-before.png`(⏳) · `S-02/intruder-before.png` · `S-03/before.json` · `S-03/after.json`
+- [ ] 캡처 파일 열어 두기: `S-01/burp-before.png` · `S-02/intruder-before.png` · `S-03/before.json` · `S-03/after.json`
 
 ## 1. S-01 IDOR — 1분 30초
 
 | 화면 | 말할 것 |
 |---|---|
-| `S-01/burp-before.png` (⏳ FA T-062) | "kim으로 로그인한 토큰에 문서 번호만 lee 것(3)으로 바꿨습니다. 조치 전에는 **200으로 남의 이력서가 그대로** 나왔습니다." |
+| `S-01/burp-before.png` | "kim으로 로그인한 토큰에 문서 번호만 lee 것(3)으로 바꿨습니다. 조치 전에는 **200으로 남의 문서가 그대로** 나왔습니다. 분석 메시지도 마찬가지였습니다(`burp-analysis-before.png`)." |
 | Burp Repeater ① **라이브 Send** | "지금은 같은 요청이 **403 FORBIDDEN 봉투**입니다. 404로 숨기지 않고 403 + 감사 로그를 남깁니다(ADR-06)." |
 | Repeater ② 라이브 Send | "분석 메시지도 같은 방식으로 막았습니다." |
 | (말로) | "조치: `DocumentService.findOwned` · `AnalysisService.ownedAnalysis` — 커밋 `2a3bf48` · `ecfc7bd`, 회귀 테스트 `8411341`." |
@@ -53,12 +54,12 @@
 
 | 화면 | 말할 것 (11/10 현재값 · D6에 아래 명령으로 다시 센다) |
 |---|---|
-| `security/LEDGER.md` 표 | "OWASP Web·API·LLM 기준 **31개 항목**을 점검했습니다. **발견 4 · 조치 4 · 잔여 1(A-4)**, 미발견 21, 해당 없음 3(사유 기록)." (11/11 현재 · 빈칸 2 = B-2 · I-3) ⏳ FA·AI·EC2 7행 반영 후 갱신 |
-| 점검서 §7 | "고치지 않은 위험도 **14개를 잔여 위험으로 측정값과 함께** 남겼습니다 — 예: Rate Limit 없음(20회/6초 전부 통과), 잠금 응답 차이로 인한 계정 열거." |
+| `security/LEDGER.md` 표 | "OWASP Web·API·LLM 기준 **31개 항목**을 점검했습니다. **발견 5 · 조치 5(S-01~S-04 + 의존성 B-13) · 잔여 1(A-4)**, 미발견 22, 해당 없음 3(사유 기록)." (11/11 현재 · 빈칸 0) |
+| 점검서 §7 | "고치지 않은 위험도 **14개를 잔여 위험으로 측정값과 함께** 남겼습니다 — 예: 분석 스트림 Rate Limit 없음(로컬 20회/6초 전부 통과 · EC2도 스트림은 제한 밖), 잠금 응답 차이로 인한 계정 열거." |
 
 다시 세는 명령(D6):
 ```bash
-# 셀 안의 \| 를 먼저 치환해야 칸이 밀리지 않는다 · 11/11 결과: 발견 4 · 미조치 1 · 미발견 21 · 해당 없음 3 · 빈칸 2
+# 셀 안의 \| 를 먼저 치환해야 칸이 밀리지 않는다 · 11/11 결과: 발견 5 · 미조치 1 · 미발견 22 · 해당 없음 3 · 빈칸 0
 sed 's/[\]|/~/g' security/LEDGER.md | awk -F'|' '/^\| [BFAI]-[0-9]+ /{v=$4; gsub(/^ +| +$/,"",v); sub(/\(.*/,"",v); if(v=="") v="(빈칸)"; print v}' | sort | uniq -c
 node scripts/check-rubric-p3.mjs && node scripts/check-sec-deploy.mjs     # 무출력이어야 한다
 ```
@@ -67,7 +68,7 @@ node scripts/check-rubric-p3.mjs && node scripts/check-sec-deploy.mjs     # 무�
 
 | 상황 | 대체 |
 |---|---|
-| EC2 접속 실패 | 로컬 compose로 같은 순서 · 그것도 안 되면 "후" 캡처(`S-01/burp-after.png` ⏳ · `S-02/intruder-after.png` · `S-03/after.json`) |
+| EC2 접속 실패 | 로컬 compose로 같은 순서 · 그것도 안 되면 "후" 캡처(`S-01/burp-after.png` · `S-02/intruder-after.png` · `S-03/after.json`) |
 | kim이 이미 잠겨 있음 | S-02 라이브 생략 → `intruder-after.png` · 잠긴 상태 자체를 "맞는 비밀번호도 423" 시연으로 사용 |
 | 토큰 만료(401) | 로그인 다시 → Repeater Authorization 교체 (10초) |
 | Burp 실행 불가 | `curl` 같은 요청 · `S-02/curl-after.txt` |
@@ -77,7 +78,7 @@ node scripts/check-rubric-p3.mjs && node scripts/check-sec-deploy.mjs     # 무�
 | 질문 | 답 |
 |---|---|
 | 잠금을 악용해 남의 계정을 잠글 수 있지 않나? | 맞다. §7 잔여 위험 — 15분 자동 해제, 향후 IP 기준 제한·CAPTCHA |
-| 반복 호출로 AI 비용을 소모시킬 수 있나? | 측정했다(20회/6초 통과). 길이·검색 상한은 있으나 횟수 제한은 범위상 잔여 위험(A-4 · §7) — 적용안 nginx `limit_req` |
+| 반복 호출로 AI 비용을 소모시킬 수 있나? | 측정했다(로컬 20회/6초 통과). EC2 proxy가 `/api/`에는 요청 수 제한을 걸지만 분석 스트림은 빠져 있어 잔여 위험(A-4 · §7) — 적용안: 스트림에도 nginx `limit_req` |
 | 마스킹이 이름·주소도 가리나? | 정규식으로는 판별 불가 — §7 잔여 위험, 데모는 가짜 인물만 |
 | CSRF는 왜 해당 없음인가? | 쿠키 인증이 없다. 토큰은 Authorization 헤더로만 가고 브라우저가 자동으로 붙이지 않는다(B-6) |
 | 의존성 취약점은? | SBOM 141개 OSV 조회 0건 · Spring Boot 3.3.5 시절 150건을 4.1.2 전환으로 해소(B-13 · `95dc5bb`) |

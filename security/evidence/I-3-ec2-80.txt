@@ -1,0 +1,33 @@
+# I-3 [포트 노출] EC2 외부 80 접근 확인 (T-034 · 측정: 기술 리드)
+# 대상: EC2 http://15.165.164.247 · 측정 위치: 팀 밖 PC(외부망) · 2026-11-11 13:53 · 14:07 KST 두 번 같은 결과
+# EC2 구성(외부에서 본 것): proxy nginx(80) → frontend nginx / backend — 보안그룹 화면·docker ps는 DevOps T-042 (I-3-sg.png · I-3-docker-ps.txt)
+
+## 1. 화면 · API (80)
+$ curl -s -o /dev/null -w "%{http_code}" http://15.165.164.247/
+200                                                        # index.html (title "JobGap — 취업 갭 분석")
+$ curl -s http://15.165.164.247/api/documents
+{"success":false,"data":null,"message":"로그인이 필요합니다",...,"statusCode":401,"code":"UNAUTHORIZED"}   [401]
+→ proxy → backend 연결 정상 · 토큰 없는 요청은 공통 봉투 401
+$ curl -s -X POST http://15.165.164.247/api/auth/login -H 'Content-Type: application/json' -d '{"email":"nonexist@example.com","password":"x"}'
+{"success":false,...,"statusCode":401,"code":"INVALID_CREDENTIALS"}                                       [401]
+
+## 2. 내부 엔드포인트가 80으로 새지 않는가
+$ curl -s http://15.165.164.247/actuator/health     → index.html (SPA 폴백 · Spring actuator 아님)
+$ curl -s http://15.165.164.247/actuator/env        → index.html
+$ curl -s http://15.165.164.247/health              → index.html (AI /health 아님)
+→ proxy는 /api/ 만 backend로 보낸다 · actuator·AI 내부 경로 외부 노출 0
+
+## 3. 보안 헤더 (curl -I http://15.165.164.247/)
+HTTP/1.1 200 OK · Server: nginx(버전 없음 · server_tokens off)
+Content-Security-Policy: default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'
+X-Content-Type-Options: nosniff · Referrer-Policy: no-referrer · X-Frame-Options: SAMEORIGIN
+(참고) nginx가 두 겹이라 CSP·nosniff·Referrer가 같은 값으로 두 번 붙는다 — 값이 같아 정책 변화 없음
+
+## 4. 요청 수 제한 (참고 · A-4 · §7) — 토큰 없는 요청이라 데이터·AI 호출 영향 없음
+$ (40건 동시) curl http://15.165.164.247/api/documents
+     25 401
+     15 503      # nginx 기본 503 HTML "503 Service Temporarily Unavailable"(봉투 아님 · 버전 노출 없음)
+$ (40건 동시) curl -X POST http://15.165.164.247/api/analyses/stream
+     40 401      # 분석 스트림은 제한에서 빠져 있음
+→ EC2 proxy에 /api/ 요청 수 제한(limit_req)이 동작한다 · 분석 스트림(AI 비용 경로)은 제한 없음 → A-4 미조치 유지
+→ 설정 파일은 DevOps T-042 커밋 대기(저장소 deploy/ 설정과 EC2 실제 설정이 아직 다름)

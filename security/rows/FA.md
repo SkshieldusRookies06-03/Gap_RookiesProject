@@ -8,11 +8,11 @@
 | 항목 | 값 |
 |---|---|
 | 조치 전 커밋 | `security/evidence/S-01/before-commit.txt` |
-| 재현 요청·응답 | |
-| 재현 위치 | main / demo/S-01(방어 해제 브랜치) 중 하나 |
-| 조치 커밋(T-026) | |
-| 재확인 요청·응답 | |
-| 증거 | `S-01/before.json` · `burp-before.png` · `after.json` · `burp-after.png` · `audit.log` |
+| 재현 요청·응답 | kim 토큰으로 lee 리소스: `GET /api/documents/3` → **200** + lee 문서(id 3 "샘플 공고 - 데이터 엔지니어") · `GET /api/analyses/1/messages` → **200** + lee 분석 메시지 2개 (2026-11-11 KST · curl + Burp Repeater `127.0.0.1:8080`) |
+| 재현 위치 | 임시 브랜치(push·merge 안 함) — 문서: `demo/S-01` = `1145cfa` + cherry-pick `4dc6410`(누락된 `DocumentRepository.java`만 · 기술 리드 승인 · 조치 코드 미포함) · 분석: `demo/S-01-analysis` = `1ea077e` 원본 그대로. 조치(T-026)가 재현보다 먼저 머지되어 조치 전 커밋으로 재현 |
+| 조치 커밋(T-026) | `2a3bf48` 문서 소유 검증(`findOwned` + `AuditLog.forbidden`) · `ecfc7bd` 분석 소유 검증(+ `AnalysisOwnershipRegressionTest`) — 둘 다 `origin/dev` `927bcb5`의 조상 |
+| 재확인 요청·응답 | `927bcb5`(`demo/S-01-after`) · 같은 kim 계정·같은 두 요청 → 둘 다 **403** `FORBIDDEN` "접근 권한이 없습니다" · 데이터 없음 · 백엔드 로그 `403 owner-mismatch` resource=document id=3 · resource=analysis id=1 |
+| 증거 | `S-01/before.json` · `burp-before.png` · `after.json` · `burp-after.png` · `audit.log` — 원본 응답 `document-before.txt` · `analysis-before.txt` · `document-after.txt` · `analysis-after.txt` · 분석 캡처 `burp-analysis-before.png` · `burp-analysis-after.png` · `burp-after.png` = `burp-document-after.png` 사본 · 캡처의 Authorization 값은 가림 |
 
 ## 원장 행
 

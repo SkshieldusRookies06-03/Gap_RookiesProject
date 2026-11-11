@@ -1,0 +1,71 @@
+{
+  "_note": "S-01 (B-2) 조치 전 재현 — kim(11111111-…) Access 토큰으로 lee 소유 리소스 요청 → 200 + 타인 데이터. 응답 본문은 *-before.txt의 실제 curl 응답을 그대로 파싱(Authorization 값 미기록)",
+  "_actor": "kim@example.com (seed V2) · 대상 소유자: lee",
+  "_env": "docker compose (docker-compose.yml + docker-compose.dev.yml) · 127.0.0.1:8080 직접 호출",
+  "document": {
+    "_commit": "1145cfa (T-014 · 소유 검증 없음) + cherry-pick 4dc6410(DocumentRepository.java만 추가) — 임시 브랜치 demo/S-01 · before-commit.txt 참고",
+    "request": "GET /api/documents/3",
+    "response": {
+      "status": 200,
+      "statusLine": "HTTP/1.1 200",
+      "date": "Wed, 11 Nov 2026 01:09:29 GMT",
+      "rawFile": "document-before.txt",
+      "body": {
+        "success": true,
+        "data": {
+          "id": "3",
+          "type": "JOB_POSTING",
+          "title": "샘플 공고 - 데이터 엔지니어",
+          "charCount": 50,
+          "createdAt": "2026-11-11T10:05:07.23136+09:00",
+          "content": "[자격요건]\n- Python, SQL\n- Airflow\n[우대사항]\n- Spark, AWS",
+          "maskedCount": 0
+        },
+        "message": "문서를 조회했습니다",
+        "timestamp": "2026-11-11T10:09:29.108847836+09:00"
+      }
+    }
+  },
+  "analysisMessages": {
+    "_commit": "1ea077e (원본 그대로 · messages() 소유 검증 없음) — 임시 브랜치 demo/S-01-analysis",
+    "request": "GET /api/analyses/1/messages",
+    "response": {
+      "status": 200,
+      "statusLine": "HTTP/1.1 200",
+      "date": "Wed, 11 Nov 2026 01:32:57 GMT",
+      "rawFile": "analysis-before.txt",
+      "body": {
+        "success": true,
+        "data": {
+          "content": [
+            {
+              "id": "1",
+              "role": "USER",
+              "content": "갭 분석 리포트",
+              "sources": [],
+              "createdAt": "2026-11-11T10:05:07.239883+09:00"
+            },
+            {
+              "id": "2",
+              "role": "ASSISTANT",
+              "content": "## 요구 기술\n| 기술 | 보유 |\n|---|---|\n| Airflow | 없음 |",
+              "sources": [],
+              "createdAt": "2026-11-11T10:05:07.239883+09:00"
+            }
+          ],
+          "page": {
+            "number": 0,
+            "size": 50,
+            "totalElements": 2,
+            "totalPages": 1,
+            "first": true,
+            "last": true,
+            "numberOfElements": 2
+          }
+        },
+        "message": "메시지를 조회했습니다",
+        "timestamp": "2026-11-11T10:32:57.807279835+09:00"
+      }
+    }
+  }
+}
