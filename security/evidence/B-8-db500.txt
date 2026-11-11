@@ -1,0 +1,21 @@
+# B-8 [예외 / 로그] 실제 500 응답 본문 재확인 (FE-분석 evidence/B-8.txt 16:29 측정의 교차 확인)
+# 환경: docker compose (dev · nginx 경유) · 2026-11-10 17:56 KST · 측정: 기술 리드 · 결과: 미발견
+# 코드 변경 없음 — DB 연결 대기만 환경변수로 3초로 줄여 화면 타임아웃(10초) 안에 실제 500을 받는다
+
+## 1. backend 재기동 (임시 compose override · 측정 뒤 원래대로)
+backend.environment.SPRING_DATASOURCE_HIKARI_CONNECTIONTIMEOUT: "3000"     # 기본 30000 → 3초
+
+## 2. 로그인(lee) → DB만 중지 → 인증된 요청
+$ docker stop jobgap-database-1
+$ curl -s "http://localhost/api/documents?page=0&size=10" -H "Authorization: Bearer $LEE"
+{"success":false,"data":null,"message":"잠시 후 다시 시도해 주세요","timestamp":"2026-11-10T17:56:58.324717129+09:00","statusCode":500,"code":"INTERNAL_SERVER_ERROR"}  [HTTP 500 · 3.08s]
+→ 스택·예외 클래스·SQL·DB 호스트·내부 경로 노출 0
+
+## 3. 복구
+$ docker start jobgap-database-1                      → healthy
+backend 원래 설정(override 제거)으로 재기동             → healthy · GET /api/documents 200
+
+## 참고 (같은 날 · 가용성)
+- AI 중지 상태 업로드: 503 AI_UNAVAILABLE "분석 서버가 응답하지 않습니다" 2.3s · 저장된 문서 0건(롤백)
+- AI 중지 상태 후속 질문: HTTP 200 스트림 안 event:error(503 AI_UNAVAILABLE) 14.3s
+- 브라우저 재현 방법(FE-분석 F-7 미검증 2건): 위 override로 실제 500 · `docker stop jobgap-ai-service-1`로 AI 503 — 화면을 연 채로, 새로고침 없이
