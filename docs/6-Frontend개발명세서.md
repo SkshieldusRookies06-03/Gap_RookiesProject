@@ -45,7 +45,7 @@ frontend/src/
 | 로그인 `ROUTES.LOGIN` `/login` · 공개 | `LoginPage` (FE-화면) | 로그인 → `/documents` · 실패 문구(401·423) · 빈 상태 없음 |
 | 회원가입 `ROUTES.REGISTER` `/register` · 공개 | `RegisterPage` (FE-화면) | 가입 · 400 `fields[]`를 필드 아래에 · 빈 상태 없음 |
 | 내 문서 `ROUTES.DOCUMENTS` `/documents` · 보호 | `DocumentsPage` (FE-화면) | 타입 탭 · 정렬 · 페이지 · 업로드 · 제목 수정 · 삭제 · 빈 "공고나 이력서를 올려 보세요" |
-| 분석 `ROUTES.ANALYSIS_NEW` `/analyses/new` · `ROUTES.ANALYSIS` `/analyses/:id` · 보호 | `AnalysisPage` (FE-분석 · 구현 예정 T-022·T-030) | 공고·이력서 선택 → 리포트 스트리밍 · 중단 · 출처 · 후속 질문 · 빈 "공고 1개와 이력서 1개를 고르세요" |
+| 분석 `ROUTES.ANALYSIS_NEW` `/analyses/new` · `ROUTES.ANALYSIS` `/analyses/:id` · 보호 | `AnalysisPage` (FE-분석) | 공고·이력서 선택 → 리포트 스트리밍 · 중단 · 출처 · 후속 질문 · 빈 "공고 1개와 이력서 1개를 고르세요" |
 | 분석 기록 `ROUTES.ANALYSES` `/analyses` · 보호 | `AnalysesPage` (FE-화면) | 분석 목록 · `INCOMPLETE` = "중단됨" · 클릭 → `ROUTES.analysis(id)` · 빈 "아직 분석이 없습니다" |
 
 보호 라우트(`App.jsx`의 `Protected`): Refresh 토큰이 없으면 `/login`으로 · 그 밖 경로는 `/documents`로.
@@ -72,24 +72,24 @@ frontend/src/
 
 ### 5.2 채팅 컴포넌트
 
-분석 화면 계층(FE-분석 · 구현 예정 T-022·T-030):
+분석 화면 계층(FE-분석):
 ```
 AnalysisPage                    state: useChatStream() → {messages, streaming, error, analysisId}
-├── DocumentPicker              props: postings[], resumes[], onStart({postingId, resumeId}), disabled=streaming
+├── DocumentPicker              props: onStart({postingId, resumeId}), disabled=streaming — 공고·이력서 목록은 안에서 불러온다 · /analyses/new에서만
 ├── MessageList                 props: messages[] (USER는 텍스트 white-space: pre-wrap)
 │   ├── ReportText              props: text — ASSISTANT 응답. 제목·표·목록만 React 요소로 만들고 나머지는 텍스트(SPEC §5 · 기술 리드 T-054)
 │   └── SourceChips             props: sources[] (type doc → 문서 제목 · web → 새 탭 링크 rel="noopener noreferrer" ·
 │                                 url이 http:/https:가 아니면 링크 대신 텍스트 — javascript: 차단, dev엔 CSP가 없다)
 ├── LoadingSpinner "생성 중…" + Button "중단"(stop)   — streaming일 때
 ├── ErrorMessage                props: error · onRetry
-└── FollowUpForm                props: onSubmit(question) · disabled=streaming · 1~1000자
+└── FollowUpForm                props: onSubmit(question) · 1~1000자 — streaming이 아니고 대화가 있을 때만 렌더
 ```
 
 ### 5.3 커스텀 Hook
 
 | Hook | 반환값 | 쓰는 화면 | 책임 |
 |---|---|---|---|
-| `useChatStream(initialAnalysisId?)` | `{ messages, streaming, error, analysisId, start, stop, hydrate }` | 분석 | `start({postingId,resumeId})` 새 분석 / `start({analysisId,question})` 후속 · `streamPost` + `getReader()` + `createSseParser` · 이벤트별 갱신(analysis → id · token 누적 · sources · done · error) · `stop()` = AbortController · `hydrate(messages)` = 지난 대화 채우기 (판정: `useChatStream.test.jsx`) |
+| `useChatStream()` | `{ messages, streaming, error, analysisId, start, stop, hydrate, reset }` | 분석 | `start({postingId,resumeId})` 새 분석 / `start({analysisId,question})` 후속 · `streamPost` + `getReader()` + `createSseParser` · 이벤트별 갱신(analysis → id · token 누적 · sources · error) · 스트림이 닫히면(done 뒤) streaming 해제 · `stop()` = AbortController · `hydrate(messages, id?)` = 지난 대화 채우기(id가 있으면 analysisId도) · `reset()` = 진행 중 스트림 중단 후 상태 비우기 (판정: `useChatStream.test.jsx`) |
 | `useUpload()` | `{ upload, uploading, error }` | 내 문서 | `upload({file,type,title})` → `DocumentSummary` · 클라이언트 사전 검증(.md/.txt · 200KB) 후 `api.upload` |
 
 ## 6. 상태 관리
@@ -124,7 +124,10 @@ export const useChatStore = create((set) => ({ analysisId: null, messages: [], s
 ## 8. 주요 기능
 
 - **반응형**: 브레이크포인트 768px · 1280px(`tokens.css`에 값 · `@media`에 같은 숫자) · 뷰포트 390·768·1280에서 분석 화면 확인
-  <!-- TODO(D5·FE-분석): 캡처 3장 경로 — docs/img/analysis-390.png · analysis-768.png · analysis-1280.png -->
+  - 분석 화면(`Analysis.module.css`): 기본(<768) 공고·이력서 선택이 세로 · 768↑ 가로 한 줄(`.picker` row) · 카드 여백 `--space-6` · 1280↑ 대화 열 `max-width: calc(var(--content-max) * 2 / 3)` 가운데 정렬. `Layout`은 768↑ `--space-6` · 1280↑ `--space-8` 여백 · 767 이하 내비 `order: 3`
+  - 캡처(분석 결과 — `/analyses/new`에서 공고·이력서 선택 → 분석 시작 → `done` 뒤 `/analyses/{id}`): `docs/img/analysis-390.png` · `docs/img/analysis-768.png` · `docs/img/analysis-1280.png`
+  - 보조 캡처(시작 전 선택 화면 `/analyses/new`): `docs/img/analysis-new-390.png` · `docs/img/analysis-new-768.png` · `docs/img/analysis-new-1280.png`
+  - 캡처 환경: 기준 커밋 `279904e` · 목(`node mock/server.mjs`) + `npm run dev` · headless Chrome 뷰포트 390×844 · 768×1024 · 1280×800 (2026-11-11). 세 너비 모두 `scrollWidth` = 뷰포트 폭(가로 스크롤 0) · 콘솔 에러 0 · 표가 표로 · 출처 칩 문서/웹 구분
 - **업로드**: 파일 선택(드래그앤드롭 선택) · 형식(.md/.txt)·크기(200KB) 안내와 클라이언트 검증 — 서버 검증이 정본(F-6) · 409·413·415는 `ErrorMessage` 문구
 - **스트리밍 렌더링**: `streamPost` → `res.body.getReader()` + `TextDecoder({stream:true})` → `createSseParser`로 프레임 → `token`을 마지막 ASSISTANT 메시지에 누적 · `sources`는 문서/웹 칩으로 구분 · `done`이면 생성 중 해제 · `error`면 `ErrorMessage` + 재시도 · 중단 버튼은 `AbortController`(부분 답변은 화면에만, 서버 저장 없음). AI 응답은 **텍스트로 렌더**(`dangerouslySetInnerHTML` 금지 — F-1).
 - **로딩**: 목록 첫 렌더부터 `LoadingSpinner` · 스트리밍 중 "생성 중…" + 중단 버튼
@@ -136,7 +139,7 @@ export const useChatStore = create((set) => ({ analysisId: null, messages: [], s
 - **토큰 만료 처리**: `TOKEN_EXPIRED`만 refresh 1회(탭 안·탭 사이 단일 비행) · 실패 시 세션 비우고 로그인으로 — F-3
 - **보호 라우트**: `App.jsx` `Protected`가 Refresh 없으면 `/login` · 서버가 최종 판정(401/403) — F-3
 - **의존성 점검**: `npm audit --json > security/evidence/npm-audit.json` — F-5
-  <!-- TODO(D5·FE-분석 T-043): npm audit 결과 요약(T-039 증거)(High 이상 건수) -->
+  - 결과(T-039 · `security/evidence/npm-audit.json` · fix 미실행): **High 이상 0건** — critical 0 · high 0 · moderate 0 · low 0 · info 0 · 의존성 280 → F-5 PASS
 - **에러 노출**: 서버 message 대신 `ErrorMessage.messageFor(code)` 사용자 문구 · 500은 "잠시 후 다시 시도해 주세요" — F-7
 
 ## 10. 빌드 및 배포
