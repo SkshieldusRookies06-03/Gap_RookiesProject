@@ -20,4 +20,18 @@
   --font-size-md: 15px;
   --font-size-lg: 20px;
   --content-max: 1120px;
+   /* 피그마 Foundations "추가 제안" 색 (11/11) */
+  --color-subtle: #f1f1ee;
+  --color-primary-soft: #eaf0ff;
+  --color-primary-ring: rgba(47, 91, 234, 0.18);
+  --color-accent: #0b7a6b;
+  --color-accent-soft: #e3f5f2;
+  --color-danger-soft: #fdecec;
+  --color-warning: #9a5b00;
+  --color-warning-soft: #fff4e0;
+  --color-success: #1e7b4f;
+  --color-success-soft: #e6f4ec;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+  --chat-max: 760px;
 }
