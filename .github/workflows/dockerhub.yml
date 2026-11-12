@@ -10,20 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@${{ github.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+        uses: docker/setup-buildx-action@${{ github.sha }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        uses: docker/login-action@${{ github.sha }}
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # 1. 백엔드 도커 이미지 빌드 & 푸시
       - name: Build and push Backend Image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@${{ github.sha }}
         with:
           context: ./backend
           file: ./backend/Dockerfile
@@ -32,7 +32,7 @@ jobs:
 
       # 2. 프론트엔드 도커 이미지 빌드 & 푸시 (필요시 경로 조정)
       - name: Build and push Frontend Image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@${{ github.sha }}
         with:
           context: .
           file: ./frontend/Dockerfile
@@ -41,7 +41,7 @@ jobs:
 
       # 3. ai-module 도커 이미지 빌드 & 푸시 (필요시 경로 조정)
       - name: Build and push ai-langchain Image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@${{ github.sha }}
         with:
           context: ./ai-module
           file: ./ai-module/Dockerfile
