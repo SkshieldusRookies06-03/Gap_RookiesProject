@@ -41,7 +41,7 @@ jobs:
 
       # 3. ai-module 도커 이미지 빌드 & 푸시 (필요시 경로 조정)
       - name: Build and push ai-langchain Image
-        uses: docker/build-push-action@$@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: ./ai-module
           file: ./ai-module/Dockerfile
