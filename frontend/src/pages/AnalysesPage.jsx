@@ -1,5 +1,244 @@
-// 골격 — 오너: FE-화면 · 티켓 T-031 · 분석 기록 (GET /api/analyses · lastStatus INCOMPLETE = 중단됨 · 클릭 → ROUTES.analysis(id))
-// 상태 넷(로딩·빈·에러·정상)은 LoadingSpinner · EmptyState · ErrorMessage를 쓴다.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PropTypes from 'prop-types';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../api/client.js';
+import { ROUTES } from '../routes.js';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
+import EmptyState from '../components/EmptyState.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
+import styles from './Analyses.module.css';
+
+function ChevronRightIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={styles.chevronIcon}
+      aria-hidden="true"
+    >
+      <path
+        d="M7.5 5L12.5 10L7.5 15"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function formatAnalysisDate(isoStr) {
+  if (!isoStr) return '-';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) {
+      return isoStr.slice(0, 10).replace(/-/g, '.');
+    }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}.${month}.${day} ${hours}:${minutes}`;
+  } catch {
+    return isoStr.slice(0, 10).replace(/-/g, '.');
+  }
+}
+
+function AnalysisRow({ item, onClick }) {
+  const isStopped = item.lastStatus === 'INCOMPLETE';
+  const dateStr = formatAnalysisDate(item.createdAt);
+  const msgCountStr = `메시지 ${item.messageCount ?? 0}`;
+
+  return (
+    <li
+      className={styles.row}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') onClick();
+      }}
+    >
+      <div className={styles.textArea}>
+        <p className={styles.title}>{item.title}</p>
+
+        <div className={styles.docsArea}>
+          <span className={`${styles.badge} ${styles.badgePosting}`}>공고</span>
+          <span className={styles.docTitle}>
+            {item.postingTitle || item.title}
+          </span>
+
+          {item.resumeTitle && (
+            <>
+              <span className={`${styles.badge} ${styles.badgeResume}`}>이력서</span>
+              <span className={styles.docTitle}>{item.resumeTitle}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.metaCol}>
+        <div className={styles.statusCol}>
+          {isStopped && (
+            <span className={`${styles.badge} ${styles.badgeStopped}`}>중단됨</span>
+          )}
+        </div>
+        <span className={styles.messageCount}>{msgCountStr}</span>
+        <span className={styles.metaDivider}>·</span>
+        <span className={styles.date}>{dateStr}</span>
+      </div>
+
+      <ChevronRightIcon />
+    </li>
+  );
+}
+
+AnalysisRow.propTypes = {
+  item: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    postingTitle: PropTypes.string,
+    resumeTitle: PropTypes.string,
+    messageCount: PropTypes.number,
+    lastStatus: PropTypes.string,
+    createdAt: PropTypes.string,
+  }).isRequired,
+  onClick: PropTypes.func.isRequired,
+};
+
+function Pager({ pageInfo, onPage }) {
+  const current = (pageInfo?.number ?? 0) + 1;
+  const total = Math.max(1, pageInfo?.totalPages ?? 1);
+  // first·last가 빠져도 유효한 페이지 경계가 있으면 판단할 수 있다.
+  const hasBounds = Number.isInteger(pageInfo?.number) && pageInfo.number >= 0
+    && Number.isInteger(pageInfo?.totalPages) && pageInfo.totalPages > 0;
+  const start = Math.max(0, Math.min(current - 3, total - 5));
+  const pages = hasBounds ? Array.from({ length: Math.min(total, 5) }, (_, i) => start + i) : [];
+
+  return (
+    <nav className={styles.pager} aria-label="페이지 이동">
+      <button
+        type="button"
+        className={styles.pageBtn}
+        disabled={!hasBounds}
+        onClick={() => onPage((current - 2 + total) % total)}
+      >
+        이전
+      </button>
+      {pages.map((number) => (
+        <button
+          key={number}
+          type="button"
+          className={`${styles.pageBtn} ${number === current - 1 ? styles.pageActive : ''}`}
+          aria-label={`${number + 1}페이지`}
+          aria-current={number === current - 1 ? 'page' : undefined}
+          onClick={() => onPage(number)}
+        >
+          {number + 1}
+        </button>
+      ))}
+      <button
+        type="button"
+        className={styles.pageBtn}
+        disabled={!hasBounds}
+        onClick={() => onPage(current % total)}
+      >
+        다음
+      </button>
+    </nav>
+  );
+}
+
+Pager.propTypes = {
+  pageInfo: PropTypes.shape({
+    number: PropTypes.number,
+    totalPages: PropTypes.number,
+    first: PropTypes.bool,
+    last: PropTypes.bool,
+  }),
+  onPage: PropTypes.func.isRequired,
+};
+
 export default function AnalysesPage() {
-  return <p>TODO T-031 — AnalysesPage</p>;
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const requestId = useRef(0);
+  const navigate = useNavigate();
+
+  const fetchAnalyses = useCallback(async () => {
+    const id = ++requestId.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await api.get(`/api/analyses?page=${page}&size=20`);
+      if (id === requestId.current) setData(result);
+    } catch (e) {
+      if (id === requestId.current) setError(e);
+    } finally {
+      if (id === requestId.current) setLoading(false);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    fetchAnalyses();
+    // 페이지 변경·언마운트 이후 도착하는 이전 응답은 버린다.
+    return () => { requestId.current += 1; };
+  }, [fetchAnalyses]);
+
+  return (
+    <div className={styles.container}>
+      <header className={styles.pageHeading}>
+        <div className={styles.pageTitles}>
+          <h1 className={styles.pageTitle}>분석 기록</h1>
+          <p className={styles.pageDescription}>
+            지난 분석을 최신순으로 보여 줍니다 · 행을 누르면 대화를 이어 갈 수 있어요
+          </p>
+        </div>
+        {!loading && !error && data?.content?.length > 0 && (
+          <Link to={ROUTES.ANALYSIS_NEW} className={styles.newBtn}>
+            새 분석
+          </Link>
+        )}
+      </header>
+
+      {loading && <LoadingSpinner />}
+      {!loading && error && (
+        <ErrorMessage error={error} onRetry={fetchAnalyses} />
+      )}
+      {!loading && !error && data?.content?.length === 0 && (
+        <EmptyState
+          message="아직 분석이 없습니다"
+          action={<Link to={ROUTES.ANALYSIS_NEW}>새 분석</Link>}
+        />
+      )}
+      {!loading && !error && data?.content?.length > 0 && (
+        <>
+          <ul className={styles.list}>
+            {data.content.map((item) => (
+              <AnalysisRow
+                key={item.id}
+                item={item}
+                onClick={() => navigate(ROUTES.analysis(item.id))}
+              />
+            ))}
+          </ul>
+        </>
+      )}
+      {!loading && !error && data && (data.content.length > 0 || data.page?.number > 0) && (
+        <Pager
+          pageInfo={data.page}
+          onPage={(nextPage) => {
+            if (nextPage === page) fetchAnalyses();
+            else setPage(nextPage);
+          }}
+        />
+      )}
+    </div>
+  );
 }

@@ -1,0 +1,91 @@
+# ===================================================
+#        AWS - EC2 내부에서 받아서 사용하는 도커-컴포즈.yml
+# ===================================================
+#          env        개발용 x  |   운영용 o      Env
+
+name: gap-docker-compose
+
+services:
+  database:
+    image: mariadb:10.11.10
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:?.env에 DB_NAME 필요}
+      MARIADB_USER: ${DB_USER:?.env에 DB_USER 필요}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?.env에 DB_PASSWORD 필요}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?.env에 DB_ROOT_PASSWORD 필요}
+      TZ: Asia/Seoul
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--default-time-zone=+09:00"]
+    expose:
+      - "3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [data]
+    restart: unless-stopped
+    mem_limit: 512m
+
+  ai-service:
+    image: ${DOCKERHUB_USERNAME}/gap-ai-module:${APP_TAG:?APP_TAG 필요}
+    environment:
+      AI_INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN:?.env에 AI_INTERNAL_TOKEN 필요}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
+      LLM_PROVIDER: openai
+      CHROMA_DIR: /data/vector
+    volumes:
+      - vector-data:/data/vector
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks: [app]
+    restart: unless-stopped
+    mem_limit: 512m
+
+  backend:
+    image: ${DOCKERHUB_USERNAME}/gap-backend:${APP_TAG:?APP_TAG 필요}
+    environment:
+      DB_URL: jdbc:mariadb://database:3306/${DB_NAME:?.env에 DB_NAME 필요}
+      DB_USER: ${DB_USER:?.env에 DB_USER 필요}
+      DB_PASSWORD: ${DB_PASSWORD:?.env에 DB_PASSWORD 필요}
+      JWT_SECRET: ${JWT_SECRET:?.env에 JWT_SECRET(32바이트+) 필요}
+      AI_BASE_URL: http://ai-service:8000
+      AI_INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN:?.env에 AI_INTERNAL_TOKEN 필요}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      ACTUATOR_EXPOSURE: ${ACTUATOR_EXPOSURE}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
+    mem_limit: 768m
+    depends_on:
+      database: { condition: service_healthy }
+      ai-service: { condition: service_healthy }
+    networks: [edge, app, data]
+    restart: unless-stopped
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/gap-frontend:${APP_TAG:?APP_TAG 필요}
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8080}
+    ports:
+      - "80:80"  # Rootless/일반 권한 환경에서 충돌 방지를 위해 8080으로 설정 (80번 사용 시 sudo 필요)
+    depends_on:
+      backend: { condition: service_healthy }
+    networks: [edge]
+    restart: unless-stopped
+    mem_limit: 256m
+
+networks:
+  edge: {}
+  app: {}
+  data:
+    internal: true
+
+volumes:
+  db-data: {}
+  vector-data: {}
+

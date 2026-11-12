@@ -11,6 +11,7 @@ export default function Layout({ children }) {
   const user = useAuthStore((s) => s.user);
   const clear = useAuthStore((s) => s.clear);
   const navigate = useNavigate();
+  const navClass = ({ isActive }) => `${styles.navLink}${isActive ? ` ${styles.navActive}` : ''}`;
   const logout = async () => {
     try { await api.post('/api/auth/logout'); } catch { /* 이미 만료여도 로컬은 비운다 */ }
     clear();
@@ -20,14 +21,20 @@ export default function Layout({ children }) {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <strong>JobGap</strong>
-        <nav className={styles.nav}>
-          <NavLink to={ROUTES.DOCUMENTS}>내 문서</NavLink>
-          <NavLink to={ROUTES.ANALYSIS_NEW}>새 분석</NavLink>
-          <NavLink to={ROUTES.ANALYSES}>분석 기록</NavLink>
+        <strong className={styles.brand}>
+          <svg className={styles.brandMark} viewBox="0 0 16 24" fill="none" aria-hidden="true">
+            <rect className={styles.brandPrimary} x="0" y="2" width="5" height="20" rx="2.5" />
+            <rect className={styles.brandAccent} x="9" y="9" width="5" height="13" rx="2.5" />
+          </svg>
+          GAP
+        </strong>
+        <nav className={styles.nav} aria-label="주 메뉴">
+          <NavLink to={ROUTES.DOCUMENTS} className={navClass}>내 문서</NavLink>
+          <NavLink to={ROUTES.ANALYSIS_NEW} className={navClass}>새 분석</NavLink>
+          <NavLink to={ROUTES.ANALYSES} end className={navClass}>분석 기록</NavLink>
         </nav>
         <span className={styles.user}>{user?.name}</span>
-        <button type="button" onClick={logout}>로그아웃</button>
+        <button type="button" className={styles.logout} onClick={logout}>로그아웃</button>
       </header>
       <main className={styles.main}>{children}</main>
     </div>

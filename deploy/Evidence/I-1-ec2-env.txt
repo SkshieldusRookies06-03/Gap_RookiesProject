@@ -1,0 +1,27 @@
+## 1. I-1-ec2-env.txt(.env 600)
+```bash
+ls -al    # 현재 폴더의 모든 파일 권한 등 보기
+```
+결과:
+```bash
+
+drwxr-xr-x. 4 ec2-user ec2-user  108 Nov 11 05:25 .
+drwx------. 7 ec2-user ec2-user  185 Nov 11 02:18 ..
+-rw-r--r---. 1 ec2-user ec2-user 1430 Nov 11 01:38 .env
+-rw-------. 1 ec2-user ec2-user 4548 Nov 12 04:34 docker-compose.yml
+```
+
+```bash
+sudo chmod 600 .env    # .env 파일의 권한 변경 600 소유자만 읽고 쓰기 가능으로
+ls -al
+```
+결과:
+```bash
+
+drwxr-xr-x. 4 ec2-user ec2-user  108 Nov 11 05:25 .
+drwx------. 7 ec2-user ec2-user  185 Nov 11 02:18 ..
+-rw-------. 1 ec2-user ec2-user 1430 Nov 11 01:38 .env
+-rw-------. 1 ec2-user ec2-user 4548 Nov 12 04:34 docker-compose.yml
+```
+
+

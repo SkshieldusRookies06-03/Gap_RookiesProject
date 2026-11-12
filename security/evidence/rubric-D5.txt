@@ -1,0 +1,58 @@
+# T-048 평가표 게이트 — D5 스냅숏 (Linux 실행)
+# 실행: docker run --rm -v "$PWD":/w -w /w node:20 sh -c 'git config --global --add safe.directory /w && node scripts/check-rubric-p3.mjs --human'
+# 시점: 2026-11-11 14:28 KST · 트리: feature/security 736aa4a (= PR #58 · origin/dev 82e949a + S-01 증거 #54 + 원장·점검서 반영)
+# 결과: MISS 0 · check-sec-deploy 무출력 — D3 MISS 22 → D5 0
+# 참고: Windows(cmd)에서는 R-SE11만 MISS로 나온다 — 스크립트가 git log --grep='\[S-0'를 작은따옴표로 넘기는데 cmd가 작은따옴표를 인식하지 못해 0건으로 센다(오탐).
+#       Linux 실행으로 확인: fix(security) S-ID 커밋 S-01 ×2 · S-02 ×1 · S-03 ×2 · S-04 ×1 · security/evidence/S-01~S-04/ 4폴더
+
+## 원문 출력 (Linux · node:20)
+$ uname -s → Linux · node v20.20.2 · HEAD 736aa4a
+$ node scripts/check-rubric-p3.mjs --human
+
+# 사람 판정 (rubric-p3.md 증거 열을 눈으로 확인 · 확인한 행은 docs/9 또는 해당 문서에 캡처가 있어야 한다)
+[사람] R-BE04 양방향 선택 이유 열(5번 §4.1.1)
+[사람] R-BE14 AI 중지 상태 호출 → 503 봉투 캡처
+[사람] R-FE01 공용 컴포넌트가 두 화면 이상에서 쓰임
+[사람] R-FE03 뷰포트 390·768·1280 캡처 3장
+[사람] R-FE07 업로드→채팅 시연 경로
+[사람] R-SE02 IDOR 재현·재확인 · USER 토큰 /actuator/metrics 403
+[사람] R-SE03 Burp Intruder 잠금 캡처
+[사람] R-SE06 curl -I CSP 헤더 캡처 · XSS 재현
+[사람] R-SE08 500 응답에 스택 없음 캡처
+[사람] R-SE09 감사 로그 4줄 캡처(마스킹 보임)
+[사람] R-SE13 Prompt Injection 재현 1건
+[사람] R-DC01~05 문서 9종 내용
+[사람] R-AI03 세 조건 수치가 발표 수치 1장과 같음
+[사람] R-DP05 EC2 URL 접속 · 외부 8080/8000/3306 실패 캡처
+[사람] R-DP06 (가산) CD 실행 캡처
+[사람] R-DP07 (가산) kubectl get all 캡처
+[사람] R-IN04 주석·자기 문서 절 커밋
+[사람] R-IN06 코드 복잡도 — 200줄 넘는 클래스·50줄 넘는 메서드가 있으면 쪼갰거나 이유가 있는가
+
+# R-IN01 커밋 분포 (전원 매일 1커밋 이상인지 눈으로)
+    48	dong279
+    26	sodamz
+    17	surimchai
+    15	benniejung
+     8	9bonyo2
+     8	lyhjoy90
+     3	bluejals13
+     1	yebin
+(exit 0)
+
+$ node scripts/check-sec-deploy.mjs
+(exit 0) · 무출력
+
+## 사람 판정 — 보안·배포 행의 증거 위치 (기술 리드 확인 11/11)
+| 행 | 증거 | 상태 |
+|---|---|---|
+| R-SE02 IDOR 재현·재확인 · USER 토큰 /actuator/metrics 403 | security/evidence/S-01/ · B-7.txt | ✔ |
+| R-SE03 Burp Intruder 잠금 캡처 | security/evidence/S-02/intruder-before.png · intruder-after.png | ✔ |
+| R-SE06 curl -I CSP 헤더 · XSS 재현 | F-1-csp.txt · F-1.txt · F-1.png · I-3-ec2-80.txt §3(EC2 헤더) | ✔ |
+| R-SE08 500 응답에 스택 없음 | B-8.txt · B-8-db500.txt · F-7.txt | ✔ |
+| R-SE09 감사 로그 4줄(마스킹) | B-9-audit.txt | ✔ |
+| R-SE13 Prompt Injection 재현 | A-2/ · S-04/README.md | ✔ |
+| R-BE14 AI 중지 → 503 봉투 | B-8-db500.txt 참고절(업로드 503 · 스트림 event:error 503) · F-7.txt D | ✔ (텍스트 · 화면 캡처는 F-7-stream.png) |
+| R-DP05 EC2 URL 접속 · 외부 8080/8000/3306 실패 | I-3-ec2-80.txt · I-3-ec2-closed.txt | ✔ 텍스트 · EC2 화면 캡처·보안그룹 캡처(I-3-sg.png)는 DevOps T-042 |
+| R-DP06 (가산) CD 실행 캡처 | — | 미적용 — SSH 자동 배포(aws-ec2.yml)는 22번을 넓히지 않기 위해 삭제(11/11 합의) · 수동 배포(docs/8 5.1) |
+| R-DP07 (가산) kubectl | — | 미적용(I-5 해당 없음) |
