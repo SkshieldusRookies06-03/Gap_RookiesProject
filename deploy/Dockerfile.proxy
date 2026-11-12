@@ -1,0 +1,2 @@
+FROM owasp/modsecurity-nginx:alpine-stable AS builder
+# 또는 표준 nginx:alpine에 modsecurity 동적 모듈을 빌드하는 방식 사용
