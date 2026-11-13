@@ -1,0 +1,48 @@
+# I-3 [포트 노출] · B-7 · S-01 — EC2 재배포 뒤 외부 재측정 (T-048 · 측정: 기술 리드)
+# 대상: EC2 15.165.164.247 · 측정 위치: 팀 밖 PC(외부망) · 2026-11-12 16:45 KST · DevOps가 EC2를 다시 켠 뒤
+# 방법: TCP 연결 4초 제한(bash /dev/tcp) + curl · 11/11 측정(I-3-ec2-80.txt · I-3-ec2-closed.txt)과 같은 방법
+
+## 1. TCP 연결
+80    OPEN
+443   closed/filtered
+8080  closed/filtered
+8443  closed/filtered
+8000  closed/filtered
+3306  closed/filtered
+22    closed/filtered
+
+## 2. HTTP
+$ curl http://15.165.164.247/                      → 200
+$ curl http://15.165.164.247/api/documents (토큰 없음)
+{"success":false,"data":null,"message":"로그인이 필요합니다","statusCode":401,"code":"UNAUTHORIZED"}
+$ curl http://15.165.164.247/actuator/health      → 200 text/html  (화면 index.html — 내부 상태 노출 없음)
+$ curl http://15.165.164.247/health               → 200 text/html  (AI /health 외부 노출 없음)
+$ curl -I / (보안 헤더)
+Server: nginx
+Content-Security-Policy: default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'
+X-Content-Type-Options: nosniff
+Content-Security-Policy: default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self';
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+
+## 3. B-7 CORS — 외부 Origin
+$ curl -H "Origin: https://evil.example" /api/documents
+HTTP/1.1 403 
+(Access-Control-Allow-Origin 없음)
+$ curl -X OPTIONS -H "Origin: https://evil.example" (preflight)
+HTTP/1.1 403 
+(Access-Control-Allow-Origin 없음)
+$ curl -X OPTIONS -H "Origin: http://<EC2>" (같은 출처 preflight)
+HTTP/1.1 200 
+
+## 4. S-01 — EC2에서 소유자 검증 유지 (kim 토큰으로 lee 리소스)
+kim 로그인 200 (시드 계정 · 토큰 값은 기록하지 않음)
+$ GET /api/documents          → 200
+$ GET /api/documents/3 (lee)  → {"success":false,"data":null,"message":"접근 권한이 없습니다","statusCode":403,"code":"FORBIDDEN"}
+$ GET /api/analyses/1/messages (lee) → 403
+
+## 판정
+I-3: 외부에서 80만 열림 · 443·8080·8443·8000·3306·22 실패 — 11/11과 같음 · 보안그룹(I-3-sg.png) 인바운드 22·80과 일치(22는 관리자 IP만이라 외부 측정 PC에선 closed) → 미발견 유지
+B-7: EC2 주소에서도 외부 Origin 403 · 허용 헤더 없음 → 11/9 로컬 판정과 같음
+S-01: EC2 배포본에서도 남의 문서·분석 403 → 조치 유지
+참고: CSP 헤더가 2개(proxy nginx · frontend nginx) — 둘 다 적용되어 더 엄격한 쪽 · 기능 영향 없음
